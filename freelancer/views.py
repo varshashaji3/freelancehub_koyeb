@@ -312,45 +312,6 @@ def AddProfileFreelancer(request, uid):
 
 
 
-import fitz  # PyMuPDF
-import cv2
-import numpy as np
-from io import BytesIO
-from django.core.files.base import ContentFile
-
-def extract_image_from_pdf(pdf_file):
-    pdf_document = fitz.open(stream=pdf_file.read(), filetype='pdf')
-    
-    page = pdf_document.load_page(0)
-    images = page.get_images(full=True)
-    
-    if images:
-        xref = images[0][0] 
-        base_image = pdf_document.extract_image(xref)
-        image_bytes = base_image["image"]
-        
-        # Convert image bytes to a numpy array
-        image_array = np.asarray(bytearray(image_bytes), dtype=np.uint8)
-        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-        
-        # Load a pre-trained face detection model
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        
-        # Convert image to grayscale for face detection
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # Detect faces
-        faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-        
-        if len(faces) > 0:
-            (x, y, w, h) = faces[0]
-            face_image = image[y:y+h, x:x+w]
-            _, buffer = cv2.imencode('.jpg', face_image)
-            return buffer.tobytes()
-        
-    return None
-
-
 @login_required
 @nocache
 def account_settings(request):
