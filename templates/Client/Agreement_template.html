@@ -1,0 +1,467 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+
+<script>
+   
+    $(document).ready(function () {
+        var today = new Date().toISOString().split('T')[0];
+        var projectDeadline = new Date("{{ proposal.deadline|date:'Y-m-d' }}").toISOString().split('T')[0];
+        $('input[type="date"]').attr('min', today).attr('max', projectDeadline);
+        $("#clientSignatureUpload").change(function () {
+            check_client_signature();
+        });
+
+        // Budget validation
+        $("#budget").keyup(function () {
+            check_budget();
+        });
+
+        // Installments validation
+        $(document).on('keyup', '.installment', function () {
+            check_installments();
+        });
+
+        $(document).on('change', 'input[name="installment_due_date[]"]', function () {
+            validate_due_dates();
+        });
+
+        $("#addInstallment").click(function () {
+            $("#installments").append(`
+                <li>
+                    <strong>Installment ${$("#installments li").length + 1}:</strong>
+                    <input type="number" name="installment_amount[]" class="installment" min="1" placeholder="Amount" required>
+                    <input type="date" name="installment_due_date[]" class="editable" placeholder="Due Date" required>
+                </li>
+            `);
+            validate_due_dates(); // Revalidate due dates whenever a new installment is added
+        });
+
+        // Error flags
+        var client_signature_error = false;
+        var freelancer_signature_error = false;
+        var budget_error = false;
+        var installment_error = false;
+        var due_date_error = false;
+
+        function check_client_signature() {
+            var fileInput = $("#clientSignatureUpload")[0];
+            var file = fileInput.files[0];
+            if (file) {
+                var fileType = file.type;
+                if (fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/jpg') {
+                    $("#error_client_signature").hide();
+                    $("#clientSignatureUpload").css("border", "2px solid green");
+                    client_signature_error = false;
+                } else {
+                    $("#error_client_signature").html("Client signature must be in JPEG, PNG, or JPG format").show();
+                    $("#clientSignatureUpload").css("border", "2px solid red");
+                    client_signature_error = true;
+                }
+            } else {
+                $("#error_client_signature").html("Client signature file cannot be null").show();
+                $("#clientSignatureUpload").css("border", "2px solid red");
+                client_signature_error = true;
+            }
+        }
+
+        function check_budget() {
+            var budget = parseFloat($("#budget").text().replace(/[^0-9.-]+/g,""));
+            if (isNaN(budget) || budget <= 0 ) {
+                $("#error_budget").html("Budget must be a number above 0").show();
+                $("#budget").css("border", "2px solid red");
+                budget_error = true;
+            } else {
+                $("#error_budget").hide();
+                $("#budget").css("border", "2px solid green");
+                budget_error = false;
+                check_installments(); // Check installments if the budget is valid
+            }
+        }
+
+        function check_installments() {
+            var totalInstallments = 0;
+            var budget = parseFloat($("#budget").text().replace(/[^0-9.-]+/g, ""));
+            var remainingBudget = budget;
+            var firstInstallmentEntered = false;
+            var installmentError = false; // Initialize error flag
+        
+            $(".installment").each(function () {
+                var value = parseFloat($(this).val());
+        
+                // Check if the value is valid and within the allowed range
+                if (value && !isNaN(value) && value > 0 && value <= 50000) {
+                    totalInstallments += value;
+                    $(this).css("border", "2px solid green");
+                    
+                    // Set the flag if the first installment is entered
+                    if (!firstInstallmentEntered) {
+                        firstInstallmentEntered = true;
+                    }
+                } else {
+                    // Show error if value is invalid
+                    $("#error_installments").html("Minimum 0 and Maximum Rs.50000 at a single installment").show();
+                    $(this).css("border", "2px solid red");
+                    installmentError = true; // Set error flag
+                    return; // Exit the loop if an invalid value is found
+                }
+            });
+        
+            // Additional error check: Total installments exceeding the budget
+            if (totalInstallments > budget) {
+                $("#error_installments").html("Total installments exceed the budget").show();
+                installmentError = true; // Set error flag
+            } else {
+                $("#error_installments").hide();
+                installmentError = false; // Clear error flag
+            }
+        
+            if (!installmentError) {
+                if (firstInstallmentEntered) {
+                    remainingBudget = budget - totalInstallments;
+                    $("#remainingBudget").text("Remaining Budget: Rs." + remainingBudget.toFixed(2)).show();
+        
+                    if (remainingBudget < 0) {
+                        $("#remainingBudget").css("color", "red");
+                        $("#error_installments").html("Installments exceed the total budget").show();
+                    } else {
+                        $("#remainingBudget").css("color", "black");
+                    }
+                } else {
+                    $("#remainingBudget").hide();
+                }
+            }
+        }
+       
+        
+
+
+
+
+
+
+
+        var projectDeadline = new Date("{{ proposal.deadline|date:'Y-m-d' }}");
+var today = new Date();
+today.setHours(0, 0, 0, 0); // Set the time to the start of today
+
+function validate_due_dates() {
+    var dueDates = [];
+    var valid = true;
+    
+    $('input[name="installment_due_date[]"]').each(function (index) {
+        var dateStr = $(this).val();
+        var dueDate = new Date(dateStr);
+        dueDate.setHours(0, 0, 0, 0); // Set time to the start of the due date
+        
+        if (dateStr) {
+            if (isNaN(dueDate.getTime())) {
+                $(this).css("border", "2px solid red");
+                $("#error_due_dates").html("Invalid due date format").show();
+                valid = false;
+            } else if (dueDate > projectDeadline) {
+                $(this).css("border", "2px solid red");
+                $("#error_due_dates").html("Due dates must be on or before the project deadline").show();
+                valid = false;
+            } else if (index > 0 && dueDate < today) { // Ensure due date is today or later for all but the first installment
+                $(this).css("border", "2px solid red");
+                $("#error_due_dates").html("Due dates must be today or later").show();
+                valid = false;
+            } else if (dueDates.includes(dateStr)) { 
+                $(this).css("border", "2px solid red");
+                $("#error_due_dates").html("Due dates must be unique").show();
+                valid = false;
+            } else {
+                $(this).css("border", "2px solid green");
+                dueDates.push(dateStr);
+            }
+        } else if (index > 0) { // Ensure that all but the first installment have a value
+            $(this).css("border", "2px solid red");
+            $("#error_due_dates").html("Due dates must be today or later").show();
+            valid = false;
+        }
+    });
+
+            if (!valid) {
+                $("#error_due_dates").html("Due dates must be on or before the project deadline and unique").show();
+                due_date_error = true;
+            } else {
+                $("#error_due_dates").hide();
+                due_date_error = false;
+            }
+        }
+
+        // Handle form submission
+        $("#myForm").submit(function () {
+            // Perform all validations
+            check_client_signature();
+            check_budget();
+            check_installments();
+            validate_due_dates();
+
+            if (client_signature_error ||  budget_error || installment_error || due_date_error) {
+                $("#form_error").html("Please correct the errors in the form").show();
+                return false; // Prevent form submission
+            } else {
+                $("#form_error").hide();
+                return true; // Allow form submission
+            }
+        });
+
+        // Set min date for all date inputs
+         // Disable dates before today and after the project deadline
+    });
+
+</script>
+
+<style>
+    .contract-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 30px;
+    }
+    h1 {
+        text-align: center;
+        font-size: 28px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #444;
+        margin-bottom: 40px;
+    }
+    .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 30px;
+        color: #555;
+    }
+    p {
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+    .editable {
+        background-color: #e9ecef;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        display: inline-block;
+        min-width: 200px;
+    }
+    .signature-container {
+        margin-top: 40px;
+    }
+    .signature-block {
+        margin-top: 50px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .signature-block div {
+        text-align: center;
+        width: 45%;
+        position: relative;
+    }
+    .signature-line {
+        border-top: 1px solid #333;
+        margin-top: 40px;
+        padding-top: 8px;
+    }
+    .signature-box {
+        border: 2px solid #ccc;
+        padding: 20px;
+        text-align: center;
+        border-radius: 4px;
+        margin-top: 0px;
+        position: relative;
+        margin-left: 60px;
+    }
+    .signature-box input[type="file"] {
+        display: none;
+    }
+    .signature-box label {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .signature-box img {
+        margin-top: 20px;
+        max-width: 100%;
+        max-height: 150px;
+        border-radius: 4px;
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .agree-section {
+        margin-top: 30px;
+        text-align: center;
+    }
+    .agree-section input[type="checkbox"] {
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    .submit-btn {
+        display: block;
+        margin: 30px auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #5252a9;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .submit-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    #remainingBudget {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 20px;
+    }
+</style>
+
+<div class="row" style="background-color:white;padding:20px;border-radius:10px;width:850px;">
+    <form class="contract-container" id="myForm" action="{% url 'client:submit_contract' project.id %}" method="POST" enctype="multipart/form-data">
+       {% csrf_token %}
+        <h1>Freelance Contract Agreement</h1>
+        <input type="hidden" name="client_id" value="{{ project.user_id }}">
+        <input type="hidden" name="freelancer_id" value="{{ project.freelancer_id }}">
+        <input type="hidden" name="project_id" value="{{ project.id }}">
+        <p class="section-title">1. Parties</p>
+        <p>This Freelance Contract ("Contract") is made and entered into on <span id="contractDate"></span></p>
+        <p><strong>Client:</strong> {% if client.client_type == 'Individual' %}{{profile2.first_name}} {{ profile2.last_name}}{% else %}{{ client.company_name}}{% endif %}</p>
+        <p><strong>Freelancer:</strong> {{freelancer_name}}</p>
+    
+        <p class="section-title">2. Project Description</p>
+        <p>The Client hereby engages the Freelancer to provide the following services:</p>
+        <p>Title : {{project.title}}</p>
+        <p>Description <br>{{project.description}}</p>
+    
+        <p class="section-title">3. Payment Terms</p>
+        <p>The Client agrees to pay the Freelancer as follows:</p>
+        <p>Budget : <span id="">{{ project.budget }}</span></p>
+        
+        <p>Total Budget (Including GST @ {{ project.gst_rate }}%): <span id="budget">{{ project.total_including_gst }}</span></p>
+        <p><strong>Payment Schedule:</strong></p>
+
+        <ul id="installments">
+            {% if payment_installments %}
+            <table id="installments_table" border="1" cellpadding="10">
+                <thead>
+                    <tr>
+                        <th>Installment No</th>
+                        
+                        <th>Due Date</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for installment in payment_installments %}
+                        <tr>
+                            <td>Installment {{ forloop.counter }}</td>
+                            
+                            <td>{{ installment.due_date|date:"F j, Y" }}</td>
+                            
+
+                            <td>{{ installment.amount }}</td>
+                        </tr>
+                        
+                    {% endfor %}
+                    <tr>
+                        <td colspan="2" style="text-align: left;"><strong>Total Amount (Before GST):</strong></td>
+                        <td>{{ project.budget }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="text-align: left;"><strong>GST ({{ project.gst_rate }}%):</strong></td>
+                        <td>{{ project.gst_amount }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="text-align: left;"><strong>Total Amount (Including GST):</strong></td>
+                        <td>{{ project.total_including_gst}}</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+            
+            {% else %}
+            <li>
+                <strong>Installment 1:</strong>
+                <input type="number" name="installment_amount[]" class="installment" min="1" placeholder="Amount" required>
+                <input type="date" name="installment_due_date[]" class="editable" placeholder="Due Date" required>
+            </li>
+            {% endif %}
+        </ul>
+        
+        {% if not existing_contract %}
+        <button type="button" id="addInstallment">Add Installment</button><br><br>
+        <span id="error_installments" style="color:red;display:none;"></span>
+        <br><span id="error_due_dates" style="color:red;display:none;"></span>
+<br>
+<p id="remainingBudget" style="font-weight: bold;display:none;"></p>
+
+        {% endif %}
+<br>        
+
+        <p>Each installment is due on the specified date. I agree to make all payments in accordance with the schedule. Late payments may result in delays in project deliverables or termination of this Contract.</p>
+    
+        <p class="section-title">4. Deadline and Deliverables</p>
+        <p>The Freelancer agrees to complete the project by:</p>
+        <p><strong>Deadline:</strong> {{proposal.deadline|date:"F j, Y" }}</p>
+        <p><strong>Deliverables:</strong> {{proposal.proposal_details | safe}}</p>
+    
+        <p class="section-title">5. Confidentiality</p>
+        <p>Both parties agree to keep all project-related information confidential and not disclose it to any third parties without prior consent.</p>
+    
+        <p class="section-title">6. Termination</p>
+        <p>Either party may terminate this Contract with written notice. The Client agrees to pay for all work completed up to the termination date.</p>
+    
+        <p class="section-title">7. Acceptance</p>
+        <p>By signing below, both parties agree to the terms of this Contract and signify their intent to fulfill their respective obligations.</p>
+    
+        <div class="signature-container">
+            <div class="signature-block">
+                <div>
+                    <div class="signature-box">
+                        <input type="file" id="clientSignatureUpload" name="client_signature" accept="image/*" onchange="displaySignature(event, 'clientSignatureImage')" {% if existing_contract %}disabled{% endif %}>
+                        <label for="clientSignatureUpload">Client Signature</label>
+                        <img id="clientSignatureImage" src="{% if existing_contract %}{{ existing_contract.client_signature.url }}{% endif %}" alt="Client Signature" style="{% if existing_contract %}display:block{% else %}display:none{% endif %};">
+                    </div>
+                    <span id="error_client_signature" style="color:red;display:none;"></span>
+                    
+                    <p class="signature-line">Client Signature</p>
+                    <p>{% if client.client_type == 'Individual' %}{{profile2.first_name}} {{ profile2.last_name}}{% else %}{{ client.company_name}}{% endif %}</p>
+                </div>
+                <div>
+                    <div class="signature-box">
+                        <input type="file" id="freelancerSignatureUpload" name="freelancer_signature" accept="image/*" disabled>
+                        <label for="freelancerSignatureUpload">Freelancer Signature</label>
+                        <img id="freelancerSignatureImage" 
+     src="{% if existing_contract and existing_contract.freelancer_signature %}{{ existing_contract.freelancer_signature.url }}{% else %}{{ default_image_url }}{% endif %}" 
+     alt="Freelancer Signature" 
+     style="{% if existing_contract and existing_contract.freelancer_signature %}display:block{% else %}display:none{% endif %};">
+
+                    </div>
+                    <p class="signature-line">Freelancer Signature</p>
+                    <p>{{ freelancer_name }}</p>
+                </div>
+            </div>
+        </div>
+<br>
+        {% if not existing_contract %}
+            <button type="submit" class="submit-button btn btn-primary" style="margin-left:300px;">Submit Contract</button>
+            <span id="form_error" style="color:red;display:none;"></span>
+        {% else %}
+        <br><br>
+            <p style="color:blueviolet">The contract has already been submitted. Please review the details above.</p>
+        {% endif %}
+    </form>
+</div>
+
+{% endblock %}

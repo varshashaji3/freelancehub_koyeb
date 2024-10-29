@@ -1,0 +1,212 @@
+{% extends 'admin/base.html' %}
+{% block 'admin_content' %}
+{% load static %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+    }
+    .container {
+        margin-top: 20px;
+    }
+    .btn-add {
+        margin-bottom: 15px;
+        float: right;
+    }
+    table.dataTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    table.dataTable thead th {
+        background-color: #4B49AC;
+        color: white;
+        text-align: center;
+    }
+    table.dataTable tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    table.dataTable tbody td {
+        text-align: center;
+    }
+    table.dataTable tbody td, table.dataTable thead th {
+        padding: 12px;
+        border: 1px solid #ddd;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 5px ;
+        margin: 0 2px;
+        border-radius: 3px;
+    }
+    .btn-add{
+        background-color: #4B49AC;
+    }
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">Recieved Complaints</h3>
+</div><br>
+<div class="row" style="margin-right:-30px;background-color:white;">
+    
+<div class="container">
+    <!-- DataTable for displaying complaints -->
+    <table id="complaintsTable" class="display table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Description</th>
+                <th>Date Filed</th>
+                <th>Solution</th> <!-- New column for Solution -->
+                <th>Status</th>   <!-- New column for Status -->
+                <th>Solution Status</th> <!-- New column for Resolution Status -->
+                
+                <th>Actions</th>  <!-- New column for Actions -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for complaint in complaints %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ complaint.subject }}</td>
+                <td>{{ complaint.description|default:''|truncatechars:50 }}</td> <!-- Display first 5 words of the description -->
+                <td>{{ complaint.date_filed|date:"Y-m-d" }}</td> <!-- Format date to show only YYYY-MM-DD -->
+                <td> {{ complaint.resolution|default:''|truncatechars:20 }}</td> <!-- Display Solution -->
+                <td>
+                    <span style="padding: 5px; border-radius: 5px; background-color: {% if complaint.status == 'Resolved' %}#9ee1ae{% elif complaint.status == 'Pending' %}#e8ca68{% elif complaint.status == 'Rejected' %}#d56872{% else %}#ffffff{% endif %};">
+                        {{ complaint.status }}
+                    </span>   <!-- Display Status with background color and rounded edges -->
+                </td>
+                <td>
+                    <span style="padding: 5px; border-radius: 5px; background-color: {% if complaint.resolution_status == 'Satisfactory' %}#9ee1ae{% elif complaint.resolution_status == 'Pending' %}#e8ca68{% elif complaint.resolution_status == 'Unsatisfactory' %}#d56872{% else %}#ffffff{% endif %};">
+                        {{ complaint.resolution_status }}
+                    </span>   <!-- Display Status with background color and rounded edges -->
+                </td>  <!-- Display Status with background color -->
+               
+                <td>
+                    {% if complaint.resolution_status == 'Unsatisfactory' or complaint.resolution_status == 'Pending' and complaint.status != 'Rejected'%}
+                        <a href="#" class="btn btn-success btn-sm" data-toggle="modal" data-target="#solutionModal{{ complaint.id }}">
+                            <i class="fas fa-plus"></i> {% if complaint.resolution %} Edit Solution {% else %} Add Solution {% endif %}
+                        </a>
+                    {% else %}
+                        <p>No Action Required</p>
+                    {% endif %}
+                </td> <!-- Action button for adding/editing solution -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script>
+$(document).ready(function () {
+    var solution_error = false;
+
+    // Validate Solution Textarea
+    function validateSolution() {
+        var solution = $("#solution_text").val();
+        // Adjusted regex to match specified conditions:
+        var regex = /^(?!.*\s{2})(?!^\s)(?!.*\s$)[a-zA-Z0-9-_.,!?'\s]{10,}$/;
+
+        // Reset error message
+        $("#error_solution").html("");
+
+        // Check if the solution is empty
+        if (solution === "") {
+            $("#error_solution").html("Solution is required.");
+            solution_error = true;
+        } 
+        // Validate with regex only if the solution is not empty
+        else if (!regex.test(solution)) {
+            $("#error_solution").html("Solution must be at least 10 characters long, contain letters, numbers, spaces, and specific punctuation (.,!?'-), with no leading/trailing spaces and no two consecutive spaces.");
+            solution_error = true;
+        } else {
+            solution_error = false; // Clear the error
+        }
+
+        checkSubmit();
+    }
+
+    // Check if the form can be submitted
+    function checkSubmit() {
+        $("#save_solution_btn").prop("disabled", solution_error);
+    }
+
+    // Validate on keyup
+    $("#solution_text").on("keyup", validateSolution);
+
+    // On button click, validate again
+    $("#save_solution_btn").click(function () {
+        validateSolution();
+        if (!solution_error) {
+            $("#solution_form").submit(); // Submit the form if no errors
+        }
+    });
+});
+</script>
+
+<!-- Include DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('#complaintsTable').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "pageLength": 10, // Number of records per page
+            "language": {
+                "search": "Filter records:"
+            }
+        });
+    });
+</script>
+
+<!-- Modal for adding/editing solution -->
+{% for complaint in complaints %}
+<div class="modal fade" id="solutionModal{{ complaint.id }}" tabindex="-1" role="dialog" aria-labelledby="solutionModalLabel{{ complaint.id }}" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="solutionModalLabel{{ complaint.id }}">Add/Edit Solution for Complaint #{{ complaint.id }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Subject:</strong> {{ complaint.subject }}</p> <!-- Display Subject -->
+                <p><strong>Description:</strong> {{ complaint.description }}</p> <!-- Display Description -->
+                <form id="solution_form" method="post" action="{% url 'administrator:update_solution' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="complaint_id" value="{{ complaint.id }}"> <!-- Pass complaint ID -->
+                    <textarea class="form-control" id="solution_text" name="solution" rows="5" placeholder="Enter solution here...">{{ complaint.resolution }}</textarea> <!-- Display existing solution -->
+                    <span id="error_solution" class="error" style="color:red;"></span> <!-- Error message placeholder -->
+                    <div class="modal-footer">
+                        <button type="button" id="save_solution_btn" class="btn btn-primary">Save Solution</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,275 @@
+{% extends 'base1.html' %}
+{% block 'content' %}
+{% load static %}
+<style>
+    
+    
+:root{
+
+    /* Colors */
+    --color-primary: #FF4B4B;
+    --color-text: #545d7a;
+    --color-white: #fff;
+    --color-title: #242e4c;
+    --color-background: #f7f8fb;
+    --color-border: #dae1f5;
+    
+    /* Fonts */
+    --font-family: "Satoshi", sans-serif;
+    --fs-sm: 1.4rem;
+    --fs-md: 1.6rem;
+    --fs-lg: 2.2rem;
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-bold: 700;
+    
+    /* Transition & Box Shadow */
+    --transition: 0.4s ease-in-out; 
+    --shadow: 0px 60px 56px -12px rgba(9, 40, 163, 0.05); 
+    
+    }
+    
+    html {
+        font-size: 62.5%;
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        /* box-sizing: content-box; */
+    }
+    
+    body {
+        background-color: var(--color-background);
+        font-family: var(--font-family);
+        color: var(--color-text);
+        font-size: var(--fs-md);
+        font-weight: var(--fw-regular);
+    }
+    
+    .accordion__wrapper {
+        background-color: var(--color-white);
+        box-shadow: var(--shadow);
+        border-radius: 2.5rem;
+        width: 100%;
+        padding: 5rem;
+    }
+    
+    .accordion__title{
+        font-size: var(--fs-lg);
+        font-weight: var(--fw-bold);
+        color: var(--color-title);
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+    
+    .accordion {
+        border-bottom: 0.1rem solid var(--color-border);
+        padding-bottom: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .accordion__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+    } 
+    
+    .accordion__icon {
+        background-color: var(--color-primary);
+        width: 2.2rem;
+        height: 2.2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        color: var(--color-white);
+        flex-shrink: 0;
+    }
+    
+    .accordion__question{
+        font-size: var(--fs-md);
+        font-weight: var(--fw-bold);
+        color: var(--color-title);
+    }
+    
+    .accordion__answer{
+        padding: 2rem 0;
+    }
+    
+    .accordion__content{
+        overflow: hidden;
+        height: 0;
+        transition: var(--transition);
+    }
+    
+    @media screen and (min-width: 580px) {
+        .accordion__wrapper {
+            padding: 5rem 8rem;
+        }
+    }
+    
+        
+</style>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header py-5 mb-5 wow fadeIn" data-wow-delay="0.1s"  style="background-image:url({% static 'img/bg4.jpg' %});">
+    <div class="container text-center py-5">
+        <h1 class="display-4 text-white animated slideInDown mb-4">FAQs</h1>
+        <nav aria-label="breadcrumb animated slideInDown">
+            <ol class="breadcrumb justify-content-center mb-0">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item "><a href="#">FAQs</a></li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<!-- Page Header End -->
+
+
+<!-- faqs Start -->
+<div class="container" style="background-color:#f7f8fb;">
+    <div class="accordion__wrapper">
+        <h1 class="accordion__title">Frequently Asked Questions</h1>
+
+        <!-- Accordion 1 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">What is a freelance services platform?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">A freelance services platform connects freelancers with clients who need various services, such as graphic design, writing, programming, and more. It allows freelancers to showcase their skills and clients to find the right talent for their projects.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 2 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">How do I post a job?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">To post a job, simply create an account, navigate to the 'Post a Job' section, and fill in the details of your project. Make sure to provide clear and concise information to attract the right freelancers.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 3 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">How can I manage proposals from freelancers?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">You can manage proposals from freelancers by going to your job posting page. Here, you will see all the proposals submitted for your job. You can review, communicate, and select the best proposal that fits your needs.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 4 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">How are payments handled?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">Payments are handled securely through our platform. Clients deposit funds into an escrow account, and the payment is released to the freelancer once the project is completed and approved. This ensures security for both parties.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 5 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">What support is available if I encounter issues?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">We offer 24/7 support to assist you with any issues or questions you may have. You can contact our support team through the 'Contact Us' page, and we will respond promptly to help resolve your concerns.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 6 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">How can I track the progress of my project?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">You can track the progress of your project using our progress tracking tools. Freelancers can update their status, submit milestones, and communicate with you regularly to ensure that the project stays on track.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 7 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">What happens if there is a dispute?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">In case of a dispute, our platform offers a dispute resolution service. Both parties can submit their case, and our team will review the information provided and work to mediate a fair resolution.</p>
+            </div>
+        </div>
+
+        <!-- Accordion 8 -->
+        <div class="accordion">
+            <div class="accordion__header">
+                <h2 class="accordion__question">How do I leave a review for a freelancer?</h2>
+                <span class="accordion__icon">
+                    <i id="accordion-icon" class="ri-add-line"></i>
+                </span>
+            </div>
+            <div class="accordion__content">
+                <p class="accordion__answer">After your project is completed, you can leave a review for the freelancer on their profile. This helps other clients know about the freelancer's performance and reliability, and it helps freelancers build their reputation.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- faqs End -->
+
+
+
+<script>
+    const accordions = document.querySelectorAll(".accordion");
+
+accordions.forEach((accordion, index) => {
+  const header = accordion.querySelector(".accordion__header");
+  const content = accordion.querySelector(".accordion__content");
+  const icon = accordion.querySelector("#accordion-icon");
+
+  header.addEventListener("click", () => {
+    const isOpen = content.style.height === `${content.scrollHeight}px`;
+
+    accordions.forEach((a, i) => {
+      const c = a.querySelector(".accordion__content");
+      const ic = a.querySelector("#accordion-icon");
+
+      c.style.height = i === index && !isOpen ? `${c.scrollHeight}px` : "0px";
+      ic.classList.toggle("ri-add-line", i !== index || !isOpen);
+      ic.classList.toggle("ri-subtract-fill", i === index && !isOpen);
+    });
+  });
+});
+
+</script>
+
+
+
+{% endblock %}
+

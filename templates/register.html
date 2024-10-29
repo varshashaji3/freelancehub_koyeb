@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  {% load static %}
+  <style>
+    import url("https://fonts.googleapis.com/css?family=Raleway:300,400,400i,700");
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Raleway, sans-serif;
+    }
+
+    .main-container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .main-container h2 {
+      margin: 0 0 80px 0;
+      color: #555;
+      font-size: 30px;
+      font-weight: 300;
+    }
+
+    .radio-buttons {
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .custom-radio input {
+      display: none;
+    }
+
+    .radio-btn {
+      margin: 10px;
+      width: 220px;
+      height: 240px;
+      border: 3px solid transparent;
+      display: inline-block;
+      border-radius: 10px;
+      position: relative;
+      text-align: center;
+      box-shadow: 0 0 20px #c3c3c367;
+      cursor: pointer;
+    }
+
+    .radio-btn>i {
+      color: #ffffff;
+      background-color: #FFDAE9;
+      font-size: 20px;
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%) scale(2);
+      border-radius: 50px;
+      padding: 3px;
+      transition: 0.5s;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .radio-btn .hobbies-icon {
+      width: 150px;
+      height: 150px;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .radio-btn .hobbies-icon img {
+      display: block;
+      width: 100%;
+      margin-bottom: 20px;
+
+    }
+
+    .radio-btn .hobbies-icon i {
+      color: #FFDAE9;
+      line-height: 80px;
+      font-size: 60px;
+    }
+
+    .radio-btn .hobbies-icon h3 {
+      color: #555;
+      font-size: 18px;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .custom-radio input:checked+.radio-btn {
+      border: 2px solid #FFDAE9;
+    }
+
+    .custom-radio input:checked+.radio-btn>i {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+
+
+    .create-account-btn {
+      background-color: #063970;
+      color: white;
+      /* Text color */
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-left: 170px;
+    }
+
+    .create-account-btn:hover {
+      background-color: #052a5d;
+      /* Slightly darker shade for hover effect */
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    {% if user.is_authenticated %}
+    <form action="{% url 'add_user_type' uid=user.id %}" method="post">
+      {% csrf_token %}
+      <h2>Join as Client or Freelancer.</h2>
+      <div class="radio-buttons">
+        <label class="custom-radio">
+          <input type="radio" name="user_type" value="client" checked>
+          <span class="radio-btn"><i class="las la-check"></i>
+            <div class="hobbies-icon">
+              <img src="{% static 'img/client.png' %}">
+              <h3 class="">Client</h3>
+            </div>
+          </span>
+        </label>
+        <label class="custom-radio">
+          <input type="radio" name="user_type" value="freelancer">
+          <span class="radio-btn"><i class="las la-check"></i>
+            <div class="hobbies-icon">
+              <img src="{% static 'img/freelancer.png' %}">
+              <h3 class="">Freelancer</h3>
+            </div>
+          </span>
+        </label>
+
+
+      </div><br><br>
+      <button class="create-account-btn" id="create-account-btn">
+        Create Account
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</body>

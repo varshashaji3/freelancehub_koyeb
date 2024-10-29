@@ -1,0 +1,40 @@
+/* :root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --navbar-bg: #f8f9fa;
+  }
+  
+  .dark-theme {
+    --bg-color: #1e1e1e;
+    --text-color: #ffffff;
+    --navbar-bg: #333333;
+  }
+  
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+  
+  .navbar {
+    background-color: var(--navbar-bg);
+  } */
+:root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --navbar-bg: #f8f9fa;
+  }
+  
+  .dark-theme {
+    --bg-color: #1e1e1e;
+    --text-color: #ffffff;
+    --navbar-bg: #333333;
+  }
+  
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+  
+  .navbar {
+    background-color: var(--navbar-bg);
+  }

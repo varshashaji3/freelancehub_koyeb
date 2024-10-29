@@ -1,0 +1,261 @@
+{% extends 'Admin/base.html' %}
+{% block 'admin_content' %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<style>
+    .table-container {
+        background-color: white;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .toggle-buttons {
+        margin-left: 630px;
+        margin-bottom: 20px;
+        margin-top: 20px;
+    }
+    .btn-toggle {
+        margin-right: 10px;
+        
+    }
+    .status-active {
+        background-color: #28a745;
+        color: white;
+    }
+    .status-inactive {
+        background-color: #dc3545;
+        color: white;
+    }
+    .permission-granted {
+        background-color: #007bff;
+        color: white;
+    }
+    .permission-rejected {
+        background-color: #ffc107;
+        color: white;
+    }
+    .verified {
+        color: green;
+    }
+    .not-verified {
+        color: red;
+    }
+    table {
+        width: 100%;
+    }
+    th {
+        font-size: 14px;
+        text-align: center;
+    }
+    td {
+        text-align: center;
+        vertical-align: middle;
+    }
+    h2{
+        color: #dc3545;
+        font-family: 'Dancing script',Courier New;
+        font-weight: 600;
+        margin-top: -20px;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        $('#clientsTable').DataTable();
+        $('#freelancersTable').DataTable();
+
+        $('#freelancersSection').hide();
+
+        $('#btnShowClients').click(function() {
+            $('#clientsSection').show();
+            $('#freelancersSection').hide();
+        });
+
+        $('#btnShowFreelancers').click(function() {
+            $('#clientsSection').hide();
+            $('#freelancersSection').show();
+        });
+    });
+</script>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <div class="toggle-buttons">
+        <button id="btnShowClients" class="btn btn-primary btn-toggle">Show Clients</button>
+        <button id="btnShowFreelancers" class="btn btn-secondary btn-toggle">Show Freelancers</button>
+    </div>
+
+    <div id="clientsSection" class="table-container">
+        <br><h2 align="center">Clients</h2><br>
+        <table id="clientsTable" class="display">
+            <thead>
+                <tr>
+                    <th>Sl. No.</th>
+                    <th>Email</th>
+                    <th>User Type</th>
+                    <th>Email Verified</th>
+                    <th>Status</th>
+                    <th>Permissions</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ client.user.email }}</td>
+                        <td>Client</td>
+                        <td class="{% if client.user.email_verified %}verified{% else %}not-verified{% endif %}">
+                            {% if client.user.email_verified %}Verified{% else %}Not Verified{% endif %}
+                        </td>
+                        <td>
+                            <form action="{% url 'administrator:toggle_status' client.user.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn {% if client.user.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if client.user.status == 'active' %}Active{% else %}Inactive{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <form action="{% url 'administrator:toggle_permission' client.user.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn {% if client.user.permission %}permission-granted{% else %}permission-rejected{% endif %}">
+                                    {% if client.user.permission %}Granted{% else %}Rejected{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#userModal{{ client.user.id }}">Details</button>
+                        </td>
+                    </tr>
+                    <div class="modal fade" id="userModal{{ client.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userModalLabel{{ client.user.id }}" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="userModalLabel{{ client.user.id }}">User Details</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Email: {{ client.user.email }}</p>
+                                    <p>User Type: Client</p>
+                                    <p>Email Verified: {% if client.user.email_verified %}<span class="verified">Verified</span>{% else %}<span class="not-verified">Not Verified</span>{% endif %}</p>
+                                    <p>Client Type: {{ client.client_type }}</p>
+                                    {% if client.client_type == 'Individual' %}
+                                            <p>Name: {{ client.user.register.first_name }} {{ client.user.register.last_name }}</p>
+                                            {% if client.aadhaar_document %}
+                                                <p>Aadhar Document: <a href="{{ client.aadhaar_document.url }}" target="_top">View Document</a></p>
+                                            {% endif %}
+                                    {% elif client.client_type == 'Company' %}
+                                        <p>Company Name: {{ client.company_name }}</p>
+                                        <p>License Number: {{ client.license_number }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="modal-footer">
+                                    <form action="{% url 'administrator:toggle_permission' client.user.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn {% if client.user.permission %}permission-granted{% else %}permission-rejected{% endif %}">
+                                            {% if client.user.permission %}Granted{% else %}Rejected{% endif %}
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="freelancersSection" class="table-container hidden">
+        <br><h2 align="center">Freelancers</h2><br>
+        <table id="freelancersTable" class="display">
+            <thead>
+                <tr>
+                    <th>Sl. No.</th>
+                    <th>Email</th>
+                    <th>User Type</th>
+                    <th>Email Verified</th>
+                    <th>Status</th>
+                    <th>Permissions</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for freelancer in freelancers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ freelancer.user.email }}</td>
+                        <td>Freelancer</td>
+                        <td class="{% if freelancer.user.email_verified %}verified{% else %}not-verified{% endif %}">
+                            {% if freelancer.user.email_verified %}Verified{% else %}Not Verified{% endif %}
+                        </td>
+                        <td>
+                            <form action="{% url 'administrator:toggle_status' freelancer.user.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn {% if freelancer.user.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if freelancer.user.status == 'active' %}Active{% else %}Inactive{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <form action="{% url 'administrator:toggle_permission' freelancer.user.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn {% if freelancer.user.permission %}permission-granted{% else %}permission-rejected{% endif %}">
+                                    {% if freelancer.user.permission %}Granted{% else %}Rejected{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#userModal{{ freelancer.user.id }}">Details</button>
+                        </td>
+                    </tr>
+                    <div class="modal fade" id="userModal{{ freelancer.user.id }}" tabindex="-1" role="dialog" aria-labelledby="userModalLabel{{ freelancer.user.id }}" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="userModalLabel{{ freelancer.user.id }}">User Details</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Email: {{ freelancer.user.email }}</p>
+                                    <p>User Type: Freelancer</p>
+                                    <p>Email Verified: {% if freelancer.user.email_verified %}<span class="verified">Verified</span>{% else %}<span class="not-verified">Not Verified</span>{% endif %}</p>
+                                    <p>Name: {{ freelancer.registrations.first_name }} {{ freelancer.registrations.last_name }}</p>
+                                    <p>Professional Title: {{ freelancer.professional_title }}</p>
+                                    <p>Years of Experience: {{ freelancer.experience_level }}</p>
+                                    <p>Skills: {{ freelancer.skills }}</p>
+                                    <p>Resume: <a href="{{ freelancer.resume.url }}" target="_top">View Resume</a></p>
+                                </div>
+                                <div class="modal-footer">
+                                    <form action="{% url 'administrator:toggle_permission' freelancer.user.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn {% if freelancer.user.permission %}permission-granted{% else %}permission-rejected{% endif %}">
+                                            {% if freelancer.user.permission %}Granted{% else %}Rejected{% endif %}
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

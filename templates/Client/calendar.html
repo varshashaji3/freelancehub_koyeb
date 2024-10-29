@@ -1,0 +1,942 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- Add Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize FullCalendar
+        var calendar = new FullCalendar.Calendar($('#calendar')[0], {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev',
+                center: 'title',
+                right: 'next'
+            },
+            // Add custom button styling
+            buttonText: {
+                prev: '❮',
+                next: '❯'
+            },
+            
+            events: function(fetchInfo, successCallback, failureCallback) {
+                var events = {{ events_data|safe }};
+                events = events.map(function(event) {
+                    return {
+                        ...event,
+                        start: moment(event.start).format('YYYY-MM-DD'),
+                        // Add one day to end date to make it inclusive
+                        end: moment(event.end).add(1, 'days').format('YYYY-MM-DD')
+                    };
+                });
+                successCallback(events);
+            },
+            eventClick: function(info) {
+                $('#event-details-title').text(info.event.title);
+                $('#event-details-description').text(info.event.extendedProps.description || 'No description');
+                $('#event-details-start').text(moment(info.event.start).format('YYYY-MM-DD'));
+                // Remove the subtraction since we're adding a day when loading events
+                $('#event-details-end').text(moment(info.event.end).subtract(1, 'days').format('YYYY-MM-DD'));
+                $('#event-details-color').css('background-color', info.event.backgroundColor || '#ffffff');
+                $('#event-details-id').text(info.event.id);
+
+                $('#event-details').show();
+                $('#update-event-form-container').hide();
+                $('.event-details-column').removeClass('hidden');
+                $('.calendar-left-container').addClass('collapsed'); // Hide left panel
+                calendar.updateSize(); // Refresh calendar size
+            },
+            dateClick: function(info) {
+                var clickedDate = moment(info.dateStr);
+                var today = moment().startOf('day');
+                
+                if (clickedDate.isBefore(today)) {
+                    // Show tooltip for past dates
+                    $(info.dayEl).tooltip({
+                        title: 'Cannot add events to past dates',
+                        placement: 'top',
+                        trigger: 'manual'
+                    }).tooltip('show');
+                    
+                    // Hide tooltip after 2 seconds
+                    setTimeout(function() {
+                        $(info.dayEl).tooltip('dispose');
+                    }, 2000);
+                    
+                    return false; // Prevent modal from opening
+                }
+                
+                // For current/future dates, show the modal as usual
+                $('#start-time').val(info.dateStr);
+                $('#end-time').val(info.dateStr);
+                $('#addEventModal').modal('show');
+            },
+            // Add tooltip to past dates on render
+            dayCellDidMount: function(info) {
+                var cellDate = moment(info.date);
+                var today = moment().startOf('day');
+                
+                if (cellDate.isBefore(today)) {
+                    $(info.el).tooltip({
+                        title: 'Cannot add events to past dates',
+                        placement: 'top',
+                        trigger: 'click' // Changed from 'hover' to 'click'
+                    });
+                    
+                    // Add click handler to dispose tooltip after a delay
+                    $(info.el).on('click', function() {
+                        var element = $(this);
+                        setTimeout(function() {
+                            element.tooltip('dispose');
+                        }, 2000);
+                    });
+                }
+            },
+            eventContent: function(arg) {
+                let eventTitle = $('<div>').text(arg.event.title);
+                let eventElement = $('<div>')
+                    .css('background-color', arg.event.backgroundColor || '#007bff')
+                    .css('color', '#ffffff')
+                    .css('padding', '5px')
+                    .css('border-radius', '4px')
+                    .append(eventTitle);
+                return { domNodes: [eventElement[0]] };
+            },
+            height: 'auto' // This will make the calendar's height adjust to its content
+        });
+
+        calendar.render();
+
+        // Edit event button click
+        $('#editEventButton').on('click', function() {
+            var eventId = $('#event-details-id').text();
+            if (eventId) {
+                $('#update-event-title').val($('#event-details-title').text());
+                $('#update-event-description').val($('#event-details-description').text());
+                $('#update-start-time').val($('#event-details-start').text());
+                $('#update-end-time').val($('#event-details-end').text());
+                $('#update-event-color').val($('#event-details-color').css('background-color'));
+                $('#update-event-id').val(eventId);
+
+                $('#event-details').hide();
+                $('#update-event-form-container').show();
+                $('.calendar-left-container').addClass('collapsed'); // Keep left panel hidden
+            }
+        });
+
+        // Cancel update button click
+        $('#cancelUpdateButton').on('click', function() {
+            hideEventDetails();
+            window.location.reload();
+        });
+
+        // Delete event button click
+        $('#deleteEventButton').on('click', function() {
+            $('#delete-event-id').val($('#event-details-id').text()); 
+            $('#deleteEventForm').submit(); 
+        });
+
+        // Add this new function to hide event details
+        function hideEventDetails() {
+            $('#event-details').hide();
+            $('#update-event-form-container').hide();
+            $('.event-details-column').addClass('hidden');
+            $('.calendar-left-container').removeClass('collapsed'); // Show left panel
+            calendar.updateSize(); // Refresh calendar size
+        }
+
+        // Add a close button to the event details
+        $('#event-details').prepend('<button id="closeEventDetails" class="btn btn-sm btn-secondary float-end">&times;</button>');
+        $('#closeEventDetails').on('click', function() {
+            hideEventDetails();
+            window.location.reload();
+        });
+
+        // Form submission handlers
+        $("#addEventForm").submit(function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            formData.set('start_time', moment(formData.get('start_time')).format('YYYY-MM-DD'));
+            formData.set('end_time', moment(formData.get('end_time')).format('YYYY-MM-DD'));
+            $.ajax({
+                type: "POST",
+                url: "{% url 'client:add_event' %}",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#addEventModal').modal('hide');
+                    calendar.refetchEvents();
+                    toastr.success('Event added successfully');
+                },
+                error: function(error) {
+                    toastr.error('Error adding event');
+                }
+            });
+        });
+
+        $("#updateEventForm").submit(function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            formData.set('start_time', moment(formData.get('start_time')).format('YYYY-MM-DD'));
+            formData.set('end_time', moment(formData.get('end_time')).format('YYYY-MM-DD'));
+            $.ajax({
+                type: "POST",
+                url: "{% url 'client:update_event' %}",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    hideEventDetails();
+                    calendar.refetchEvents();
+                    toastr.success('Event updated successfully');
+                },
+                error: function(error) {
+                    toastr.error('Error updating event');
+                }
+            });
+        });
+
+        $("#deleteEventForm").submit(function(e) {
+            e.preventDefault();
+            var formData = $(this).serialize();
+            $.ajax({
+                type: "POST",
+                url: "{% url 'client:delete_event' %}",
+                data: formData,
+                success: function(response) {
+                    hideEventDetails();
+                    calendar.refetchEvents();
+                    toastr.success('Event deleted successfully');
+                },
+                error: function(error) {
+                    toastr.error('Error deleting event');
+                }
+            });
+        });
+
+        // Function to update the current date display
+        function updateCurrentDate() {
+            const now = moment();
+            
+            // Update date number
+            $('#currentDateNumber').text(now.format('DD'));
+            
+            // Update day name
+            $('#currentDayName').text(now.format('dddd').toUpperCase());
+        }
+
+        // Initial update
+        updateCurrentDate();
+
+        // Update the date every minute (in case user keeps the page open past midnight)
+        setInterval(updateCurrentDate, 60000);
+
+        // Update current events when date changes
+        function updateCurrentEvents() {
+            const today = moment().format('YYYY-MM-DD');
+            const events = calendar.getEvents();
+            const currentEvents = events.filter(event => {
+                const eventStart = moment(event.start).format('YYYY-MM-DD');
+                const eventEnd = moment(event.end).subtract(1, 'days').format('YYYY-MM-DD');
+                return today >= eventStart && today <= eventEnd;
+            });
+
+            const eventsList = $('.events-list');
+            eventsList.empty();
+
+            if (currentEvents.length > 0) {
+                currentEvents.forEach(event => {
+                    const eventStart = moment(event.start).format('MMM D');
+                    const eventEnd = moment(event.end).subtract(1, 'days').format('MMM D');
+                    const dateRange = eventStart !== eventEnd ? 
+                        `<small class="event-date">${eventStart} - ${eventEnd}</small>` : '';
+                    
+                    eventsList.append(`
+                        <div class="event-item">
+                            <span class="event-title">${event.title}</span>
+                            ${dateRange}
+                        </div>
+                    `);
+                });
+            } else {
+                eventsList.append('<p class="no-events">No events today</p>');
+            }
+        }
+
+        // Update events when calendar data changes
+        calendar.on('eventAdd', updateCurrentEvents);
+        calendar.on('eventChange', updateCurrentEvents);
+        calendar.on('eventRemove', updateCurrentEvents);
+        
+        // Initial events update
+        updateCurrentEvents();
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        // Validation for Add Event Form
+        $("#event-title").keyup(function () {
+            checkEventTitle();
+        });
+        $("#event-description").keyup(function () {
+            checkEventDescription();
+        });
+        $("#start-time").change(function () {
+            checkStartTime();
+        });
+        $("#end-time").change(function () {
+            checkEndTime();
+        });
+
+        $("#update-event-title").keyup(function () {
+            checkUpdateEventTitle();
+        });
+        $("#update-event-description").keyup(function () {
+            checkUpdateEventDescription();
+        });
+        $("#update-start-time").change(function () {
+            checkUpdateStartTime();
+        });
+        $("#update-end-time").change(function () {
+            checkUpdateEndTime();
+        });
+
+        var title_error = false;
+        var description_error = false;
+        var start_time_error = false;
+        var end_time_error = false;
+
+        function checkEventTitle() {
+            var title = $("#event-title").val();
+            var titlePattern =/^[a-zA-Z ]*$/ // Title must be 5-50 characters long and only contain letters, numbers, and spaces
+            if (titlePattern.test(title) && title!='') {
+                $("#error-title").hide();
+                $("#event-title").css("border", "2px solid green");
+            } else {
+                $("#error-title").html("<br>Event title must  contain only letters,and spaces").show();
+                $("#event-title").css("border", "2px solid red");
+                title_error = true;
+            }
+        }
+
+        function checkEventDescription() {
+            var description = $("#event-description").val();
+            var descriptionPattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 .,'!""?\n]*$/; // Description must be 10-300 characters long
+            if (descriptionPattern.test(description)) {
+                $("#error-description").hide();
+                $("#event-description").css("border", "2px solid green");
+            } else {
+                $("#error-description").html("<br>Description must be 10-300 characters long").show();
+                $("#event-description").css("border", "2px solid red");
+                description_error = true;
+            }
+        }
+
+        function checkStartTime() {
+            var startTime = $("#start-time").val();
+            var today = new Date().toISOString().split('T')[0];
+            
+            if (startTime !== "" && startTime >= today) {
+                $("#error-start-time").hide();
+                $("#start-time").css("border", "2px solid green");
+            } else {
+                $("#error-start-time").html("<br>Start time cannot be in the past").show();
+                $("#start-time").css("border", "2px solid red");
+                start_time_error = true;
+            }
+        }
+        
+        function checkEndTime() {
+            var endTime = $("#end-time").val();
+            var startTime = $("#start-time").val();
+            var today = new Date().toISOString().split('T')[0];
+            
+            if (endTime !== "" && endTime >= today) {
+                if (startTime !== "" && endTime >= startTime) {
+                    $("#error-end-time").hide();
+                    $("#end-time").css("border", "2px solid green");
+                } else {
+                    $("#error-end-time").html("<br>End time must be after the start time").show();
+                    $("#end-time").css("border", "2px solid red");
+                    end_time_error = true;
+                }
+            } else {
+                $("#error-end-time").html("<br>End time cannot be in the past").show();
+                $("#end-time").css("border", "2px solid red");
+                end_time_error = true;
+            }
+        }
+        
+        
+function checkUpdateEventTitle() {
+        var title = $("#update-event-title").val();
+        var titlePattern = /^[a-zA-Z ]*$/;
+        if (titlePattern.test(title) && title != '') {
+            $("#error-update-title").hide();
+            $("#update-event-title").css("border", "2px solid green");
+        } else {
+            $("#error-update-title").html("<br>Event title must contain only letters and spaces").show();
+            $("#update-event-title").css("border", "2px solid red");
+            title_error = true;
+        }
+    }
+
+    function checkUpdateEventDescription() {
+        var description = $("#update-event-description").val();
+        var descriptionPattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 .,'!""?\n]*$/;
+        if (descriptionPattern.test(description)) {
+            $("#error-update-description").hide();
+            $("#update-event-description").css("border", "2px solid green");
+        } else {
+            $("#error-update-description").html("<br>Description must be 10-300 characters long").show();
+            $("#update-event-description").css("border", "2px solid red");
+            description_error = true;
+        }
+    }
+
+    function checkUpdateStartTime() {
+        var startTime = $("#update-start-time").val();
+        var today = new Date().toISOString().split('T')[0];
+        
+        if (startTime !== "" && startTime >= today) {
+            $("#error-update-start-time").hide();
+            $("#update-start-time").css("border", "2px solid green");
+        } else {
+            $("#error-update-start-time").html("<br>Start time cannot be in the past").show();
+            $("#update-start-time").css("border", "2px solid red");
+            start_time_error = true;
+        }
+    }
+
+    function checkUpdateEndTime() {
+        var endTime = $("#update-end-time").val();
+        var startTime = $("#update-start-time").val();
+        var today = new Date().toISOString().split('T')[0];
+        
+        if (endTime !== "" && endTime >= today) {
+            if (startTime !== "" && endTime >= startTime) {
+                $("#error-update-end-time").hide();
+                $("#update-end-time").css("border", "2px solid green");
+            } else {
+                $("#error-update-end-time").html("<br>End time must be after the start time").show();
+                $("#update-end-time").css("border", "2px solid red");
+                end_time_error = true;
+            }
+        } else {
+            $("#error-update-end-time").html("<br>End time cannot be in the past").show();
+            $("#update-end-time").css("border", "2px solid red");
+            end_time_error = true;
+        }
+    }
+
+
+        $("#addEventForm").submit(function () {
+            title_error = false;
+            description_error = false;
+            start_time_error = false;
+            end_time_error = false;
+
+            checkEventTitle();
+            checkEventDescription();
+            checkStartTime();
+            checkEndTime();
+
+            if (title_error === false && description_error === false && start_time_error === false && end_time_error === false) {
+                $("#add-event-error").hide();
+                return true;
+            } else {
+                $("#add-event-error").html("Please fill the form correctly.").show();
+                return false;
+            }
+        });
+
+        $("#updateEventForm").submit(function () {
+            title_error = false;
+            description_error = false;
+            start_time_error = false;
+            end_time_error = false;
+    
+            checkUpdateEventTitle();
+            checkUpdateEventDescription();
+            checkUpdateStartTime();
+            checkUpdateEndTime();
+    
+            if (title_error === false && description_error === false && start_time_error === false && end_time_error === false) {
+                $("#update-event-error").hide();
+                return true;
+            } else {
+                $("#update-event-error").html("Please fill the form correctly.").show();
+                return false;
+            }
+        });
+    });
+</script>
+
+
+
+<style>
+    body {
+        background-color: #f0f2f5;
+    }
+    h3 {
+        color: #4B49AC;
+        font-family: 'Poppins', sans-serif;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 2.5em;
+        font-weight: 600;
+        text-shadow: 2px 2px 4px rgba(75, 73, 172, 0.1);
+    }
+    .btn-primary {
+        background-color: #4B49AC;
+        border-color: #4B49AC;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: #3f3e8f;
+        border-color: #3f3e8f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(75, 73, 172, 0.2);
+    }
+    .calendar-container {
+        height: 100%;
+        display: flex;
+        background-color: #ffffff;
+        border-radius: 15px;
+        overflow: hidden;   
+        width: 950px;
+        margin-left: -28px;
+    }
+    #calendar {
+        flex-grow: 1;
+        width: 100%;
+        padding: 20px;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.4em;  /* Reduced from 1.8em */
+        color: #FF4747;
+        font-weight: 600;
+        margin: 0; /* Remove default margin */
+        padding: 10px 0; /* Add some padding instead */
+    }
+    .fc .fc-toolbar {
+        margin-bottom: 1em !important;
+        margin-top: -1em !important; /* Reduce bottom margin */
+    }
+    .fc .fc-button-primary {
+        background-color: #4B49AC;
+        border-color: #4B49AC;
+        transition: all 0.3s ease;
+    }
+    .fc .fc-button-primary:hover {
+        background-color: #3f3e8f;
+        border-color: #3f3e8f;
+    }
+    .fc-day-today {
+        background-color: rgba(75, 73, 172, 0.1) !important;
+    }
+    .fc-event {
+        border: none;
+        border-radius: 4px;
+        padding: 3px;
+        font-size: 0.9em;
+        transition: transform 0.2s ease;
+    }
+    .fc-event:hover {
+        transform: scale(1.05);
+    }
+    .fc-daygrid-day-number, .fc-col-header-cell-cushion {
+        color: #3a3a3a;
+        font-weight: 500;
+        text-decoration: none;
+    }
+    .fc-daygrid-day-number:hover, .fc-col-header-cell-cushion:hover {
+        color: #4B49AC;
+    }
+    .fc-day-sat, .fc-day-sun {
+        background-color: #f8f9fa;
+    }
+    .fc .fc-daygrid-day.fc-day-today {
+        background-color: rgba(75, 73, 172, 0.1);
+    }
+    .event-details-column {
+        width: 300px;
+        transition: all 0.3s ease;
+        overflow-y: auto;
+        background-color: #ffffff;
+    }
+    .event-details-column.hidden {
+        width: 0;
+    }
+    #event-details, #update-event-form-container {
+        padding: 20px;
+        border: none;
+        background-color: #ffffff;
+    }
+    #editEventButton, #deleteEventButton {
+        width: 100%;
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    #editEventButton {
+        background-color: #4B49AC;
+        border-color: #4B49AC;
+    }
+    #deleteEventButton {
+        background-color: #FF4747;
+        border-color: #FF4747;
+    }
+    #editEventButton:hover, #deleteEventButton:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    /* Style for past dates */
+    .fc .fc-day-past {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+    
+    /* Style for tooltip */
+    .tooltip .tooltip-inner {
+        background-color: #FF4747;
+        color: white;
+        padding: 8px 12px;
+        font-size: 0.9em;
+        border-radius: 4px;
+    }
+    
+    .tooltip .tooltip-arrow::before {
+        border-top-color: #FF4747;
+    }
+    
+    /* Update form validation colors */
+    .form-control:focus {
+        border-color: #4B49AC;
+        box-shadow: 0 0 0 0.2rem rgba(75, 73, 172, 0.25);
+    }
+    
+    /* Update tooltip colors */
+    .tooltip .tooltip-inner {
+        background-color: #FF4747;
+        color: white;
+    }
+    
+    .tooltip .tooltip-arrow::before {
+        border-top-color: #FF4747;
+    }
+    
+    /* Update error messages */
+    .text-danger {
+        color: #FF4747 !important;
+    }
+    
+    /* Update success validation border */
+    .form-control.is-valid,
+    .was-validated .form-control:valid {
+        border-color: #4B49AC !important;
+    }
+    
+    /* Update modal header */
+    .modal-header {
+        background-color: #4B49AC;
+        color: white;
+    }
+    
+    .modal-header .btn-close {
+        color: white;
+    }
+    
+    /* Calendar event styling */
+    .fc-event {
+        background-color: #4B49AC;
+        border-color: #4B49AC;
+    }
+    
+    .fc-event:hover {
+        background-color: #3f3e8f;
+        border-color: #3f3e8f;
+    }
+    
+    /* Left container styles */
+    .calendar-left-container {
+        width: 300px;
+        background-color: #34328e;
+        color: white;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .current-date {
+        text-align: center;
+    }
+
+    .date-number {
+        font-size: 72px;
+        font-weight: bold;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .day-name {
+        font-size: 24px;
+        text-transform: uppercase;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .current-events {
+        flex-grow: 1;
+    }
+
+    .current-events h3 {
+        color: white;
+        font-size: 18px;
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    .events-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .create-event-btn {
+        background-color: transparent;
+        border: none;
+        color: white;
+        padding: 15px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+        border-bottom: 1px solid #ffffff;
+        
+        border-top: 1px solid #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .create-event-btn:hover {
+        opacity: 0.8;
+    }
+
+    .plus-icon {
+        font-size: 24px;
+        font-weight: 300;
+    }
+
+    .event-item {
+        padding: 8px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+
+    .event-text {
+        color: white;
+        font-size: 0.9em;
+    }
+
+    .no-events {
+        color: rgba(255, 255, 255, 0.7);
+        font-style: italic;
+    }
+
+    /* Left container collapse styles */
+    .calendar-left-container {
+        width: 300px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .calendar-left-container.collapsed {
+        width: 0;
+        padding: 0;
+        opacity: 0;
+    }
+
+    /* Adjust calendar container to be more fluid */
+    .calendar-container {
+        height: 100%;
+        display: flex;
+        background-color: #ffffff;
+        border-radius: 15px;
+        overflow: hidden;   
+        width: 950px;
+        margin-left: -28px;
+        
+    }
+</style>
+
+<!-- Add Event Form Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1" role="dialog" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Add Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addEventForm" method="post" action="{% url 'client:add_event' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="event-title">Event Title</label>
+                        <input type="text" class="form-control" id="event-title" name="title" required>
+                        <span id="error-title" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">Description</label>
+                        <textarea class="form-control" id="event-description" name="description" rows="3"></textarea>
+                        <span id="error-description" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="start-time">Start Date</label>
+                        <input type="date" class="form-control" id="start-time" name="start_time" required>
+                        <span id="error-start-time" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="end-time">End Date</label>
+                        <input type="date" class="form-control" id="end-time" name="end_time" required>
+                        <span id="error-end-time" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-color">Event Color</label>
+                        <input type="color" class="form-control" id="event-color" name="color">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Event</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4" style="background-color:white;border-radius:15px;">
+    <div class="col-12">
+        <h3 class="text-center" style="color:#ff0057;font-family: 'Poppins', sans-serif;font-weight: 600;font-size: 30px;">Events Calendar</h3>
+    </div>
+</div>
+<!-- Event Details and Update Form -->
+<div class="container-fluid mt-5 p-3 rounded">
+    
+    <div class="calendar-container">
+        <!-- New left container -->
+        <div class="calendar-left-container">
+            <div class="current-date">
+                <h1 class="date-number" id="currentDateNumber"></h1><br>
+                <h2 class="day-name" id="currentDayName"></h2>
+            </div>
+            
+            <div class="current-events">
+                <h3>Today's Events</h3>
+                <div class="events-list">
+                    <!-- Events will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <button class="create-event-btn" data-bs-toggle="modal" data-bs-target="#addEventModal">
+                Create an Event
+                <span class="plus-icon">+</span>
+            </button>
+        </div>
+        
+        <div id='calendar'></div>
+        
+        <div class="event-details-column hidden">
+            <!-- Event Details Section -->
+            <div id="event-details" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f8f9fa;">
+                <h5 id="event-details-title">Select an event</h5>
+                <p id="event-details-description"></p>
+                <p><strong>Start:</strong> <span id="event-details-start"></span></p>
+                <p><strong>End:</strong> <span id="event-details-end"></span></p>
+                <p><strong>Color:</strong> <span id="event-details-color" style="display: inline-block; width: 20px; height: 20px; border-radius: 50%;"></span></p>
+                <p style="display: none;"><strong>ID:</strong> <span id="event-details-id"></span></p>
+
+                <button id="editEventButton" class="btn btn-primary">Edit Event</button>
+                <button id="deleteEventButton" class="btn btn-danger">Delete Event</button>
+            </div>
+
+            <!-- Update Event Form -->
+            <div id="update-event-form-container" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f8f9fa;">
+                <h5>Update Event</h5>
+                <form id="updateEventForm" method="post" action="{% url 'client:update_event' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="update-event-title">Event Title</label>
+                        <input type="text" class="form-control" id="update-event-title" name="title" required>
+                        <span id="error-update-title" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-event-description">Description</label>
+                        <textarea class="form-control" id="update-event-description" name="description" rows="3"></textarea>
+                        <span id="error-update-description" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-start-time">Start Date</label>
+                        <input type="date" class="form-control" id="update-start-time" name="start_time" required>
+                        <span id="error-update-start-time" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-end-time">End Date</label>
+                        <input type="date" class="form-control" id="update-end-time" name="end_time" required>
+                        <span id="error-update-end-time" class="text-danger" style="display: none;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-event-color">Event Color</label>
+                        <input type="color" class="form-control" id="update-event-color" name="color">
+                    </div>
+                    <input type="hidden" id="update-event-id" name="event_id">
+                    <button type="submit" class="btn btn-primary">Update Event</button>
+                    <button type="button" id="cancelUpdateButton" class="btn btn-secondary">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Event Form -->
+<form id="deleteEventForm" method="post" action="{% url 'client:delete_event' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" id="delete-event-id" name="event_id">
+</form>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

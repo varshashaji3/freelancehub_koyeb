@@ -1,0 +1,410 @@
+{% extends 'Client/base.html'%}
+{% block 'client_content' %}
+{% load static %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+  $(document).ready(function () {
+
+
+
+
+    $("#title").keyup(function () {
+      check_title();
+    })
+   
+    $("#description").keyup(function () {
+      check_description();
+    })
+    
+    $("#file").change(function () {
+      check_file();
+    })
+    $("#budget").keyup(function () {
+      check_budget();
+  });
+
+  $("#category").change(function () {
+      check_category();
+  });
+
+  $("#end_date").change(function () {
+      check_end_date();
+  });
+
+
+    var title_error = false;
+    var description_error = false;
+    var file_error = false;
+
+    var budget_error = false;
+    var category_error = false;
+    var end_date_error = false;
+
+    function check_title() {
+      var pattern = /^[a-zA-Z ]*$/;
+      var title = $("#title").val();
+      if (pattern.test(title) && title !== "") {
+        $("#error_title").hide();
+        $("#title").css("border", "2px solid green");
+      } else {
+        $("#error_title").html("Should contain only letters").show();
+        $("#title").css("border", "2px solid red");
+        title_error = true;
+      }
+    }
+
+    
+    
+
+    function check_description() {
+      var pattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 .,'!""?\n]*$/;
+      var description = $("#description").val();
+      if (pattern.test(description) && description !== "") {
+        $("#error_des").hide();
+        $("#description").css("border", "2px solid green");
+        description_error = false;
+      } else {
+        $("#error_des").html("Invalid characters in description").show();
+        $("#description").css("border", "2px solid red");
+        description_error = true;
+      }
+    }
+
+
+    
+    function check_file() {
+      var file = $("#file")[0].files[0];
+      var allowedExtensions = /(\.pdf)$/i;
+      if (file && allowedExtensions.exec(file.name)) {
+        $("#error_file").hide();
+        $("#file").css("border", "2px solid green");
+        file_error = false;
+      } else {
+        $("#error_file").html("Invalid File type").show();
+        $("#file").css("border", "2px solid red");
+        file_error = true;
+      }
+    }
+
+
+    function check_budget() {
+      var budget = $("#budget").val();
+      if (budget > 0) {
+          $("#error_budget").hide();
+          $("#budget").css("border", "2px solid green");
+          budget_error = false;
+      } else {
+          $("#error_budget").html("Budget must be a positive number").show();
+          $("#budget").css("border", "2px solid red");
+          budget_error = true;
+      }
+  }
+
+
+  
+  function check_category() {
+      var category = $("#category").val();
+      if (category !== "") {
+          $("#error_category").hide();
+          $("#category").css("border", "2px solid green");
+          category_error = false;
+      } else {
+          $("#error_category").html("Please select a category").show();
+          $("#category").css("border", "2px solid red");
+          category_error = true;
+      }
+  }
+
+  
+  function check_end_date() {
+    var end_date = $("#end_date").val();
+    var today = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+
+    if (end_date <= today) {
+        $("#error_end_date").html("End date must be after today").show();
+        $("#end_date").css("border", "2px solid red");
+        end_date_error = true;
+    } else {
+        $("#error_end_date").hide();
+        $("#end_date").css("border", "2px solid green");
+        end_date_error = false;
+    }
+}
+    
+  $("#project_form").submit(function () {
+   
+    title_error = false;
+    description_error = false;
+    file_error = false;
+    budget_error = false;
+    category_error = false;
+    end_date_error = false;
+
+
+    
+    check_title();
+    check_description();
+    check_file();
+    check_budget();
+    check_category();
+    check_end_date();
+
+    if (title_error || description_error || file_error || budget_error || category_error || end_date_error) {
+        $("#project_err").html("Please fill the form correctly.").show();
+        return false; 
+    } else {
+        $("#project_err").hide(); 
+        return true; 
+    }
+});
+
+
+
+
+
+  });
+</script>
+<style>
+  .error {
+    color: red;
+    font-family: Comic Sans MS;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  /* Style the tab headings */
+  .custom-tab {
+    position: relative;
+    padding-bottom: 0.4em;
+    color: grey;
+    font-size: 18px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-decoration: none;
+    /* Remove underline */
+  }
+
+  .custom-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #000;
+    transform: scaleX(0);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .custom-tab:hover::after {
+    transform: scaleX(1);
+
+  }
+
+  .custom-tab.active::after {
+    transform: scaleX(1);
+  }
+
+  /* Additional styling */
+  .card {
+    border: none;
+    border-radius: 10px;
+  }
+
+  .form-floating {
+    margin-bottom: 1em;
+  }
+
+  .profile-box {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .profile-pic {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 10px;
+  }
+
+  .profile-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .profile-pic input {
+    display: none;
+  }
+
+  .profile p {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+  }
+
+  .profile h2 {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 28px;
+    color: #063970;
+    margin-top: -170px;
+  }
+
+  .profile .social-icons {
+    cursor: pointer;
+    margin-left: 205px;
+
+    margin-top: 30px;
+  }
+
+  .password-container {
+    position: relative;
+  }
+
+  .password-toggle-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #333;
+    font-size: 18px;
+  }
+
+  .password-toggle-icon i {
+    margin-left: -30px;
+  }
+
+  .change-photo button {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+
+    margin-top: 30px;
+  }
+
+  .change-photo input {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+
+    margin-top: -160px;
+  }
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <div class="tab-content" id="myTabContent"
+      style="background-color:white;padding:30px;border-radius:10px;border:none;">
+      <h3 align="center">Update Project</h3>
+      <br>
+      <div class="tab-pane active" id="update" role="tabpanel" aria-labelledby="update-tab">
+  
+        <div class="card">
+          <div class="card-body">
+            <form method="post" action="" enctype="multipart/form-data" id="project_form">
+              {% csrf_token %}
+              <div class="row gy-3">
+                  <!-- Project Title -->
+                  <div class="col-12 col-md-12">
+                      <div class="form-floating mb-3">
+                          <input type="text" class="form-control" id="title" name="title" placeholder="Title" value="{{ project.title }}" required>
+                          <label for="title" class="form-label">Title</label>
+                          <br><span id="error_title" class="error"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Project Description -->
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                          <textarea class="form-control" id="description" name="description" placeholder="Description" value="{{ project.description }}" style="height: 100px;" required>{{ project.description }}</textarea>
+                          <label for="description" class="form-label">Description</label>
+                          <br><span id="error_des" class="error"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Project Budget -->
+                  <div class="col-12 col-md-6">
+                      <div class="form-floating mb-3">
+                          <input type="number" class="form-control" id="budget" name="budget" placeholder="Budget" step="0.01" value="{{ project.budget }}" required>
+                          <label for="budget" class="form-label">Budget</label>
+                          <br><span id="error_budget" class="error"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Category of Work -->
+                  <div class="col-12 col-md-6">
+                      <div class="form-floating mb-3">
+                          <select class="form-control" id="category" name="category" required>
+                              <option value="">Select Category</option>
+                              {% for category in categories %}
+                              <option value="{{ category }}" {% if category == project.category %}selected{% endif %}>{{ category }}</option>
+                              {% endfor %}
+                          </select>
+                          <label for="category" class="form-label">Category of Work</label>
+                          <br><span id="error_category" class="error"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Allow Bid -->
+                  <div class="col-12">
+                      <div class="form-check mb-3">
+                          <input type="checkbox" class="form-check-input" id="allow_bid" value="True" name="allow_bid" {% if project.allow_bid %}checked{% endif %}>
+                          <label class="form-check-label" for="allow_bid">Allow Bidding</label>
+                      </div>
+                  </div>
+          
+                  <!-- End Date -->
+                  <div class="col-12 col-md-6">
+                      <div class="form-floating mb-3">
+                          <input type="date" class="form-control" id="end_date" name="end_date" placeholder="End Date" value="{{ project.end_date|date:'Y-m-d' }}">
+                          <label for="end_date" class="form-label">Proposal Submission End Date</label>
+                          <br><span id="error_end_date" class="error"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Additional File Upload -->
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                          <input type="file" class="form-control" id="file" name="file" value="{{ project.file_upload }}">
+                          <label for="file" class="form-label">Attach Additional Files</label>
+                          <br><span id="error_file" class="error"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Submit Button -->
+                  <div class="col-12">
+                      <div class="d-grid">
+                          <button type="submit" class="btn btn-dark btn-lg">Update Project</button>
+                      </div>
+                  </div>
+              </div>
+              <span id="project_err" class="error"></span>
+          </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+
+
+
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+{% endblock %}

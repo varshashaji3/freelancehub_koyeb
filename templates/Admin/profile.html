@@ -1,0 +1,372 @@
+
+{% extends 'Admin/base.html'%}
+{% block 'admin_content' %}
+{% load static %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+  $(document).ready(function () {
+    
+    $("#profile_picture").change(function () {
+      check_image();
+    })
+    
+    $("#new_password").keyup(function () {
+      check_pass();
+    })
+    $("#confirm_password").keyup(function () {
+      check_repass();
+    })
+
+
+    var pass_error = false;
+    var repass_error = false;
+    var image_error = false;
+
+    
+
+
+    function check_pass() {
+      var pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,10}$/;
+      var pass = $("#new_password").val();
+      if (pattern.test(pass) == true && pass != "") {
+        $("#error_pass").hide();
+        $("#new_password").css("border", "2px solid green");
+      } else {
+        $("#error_pass").html("<br>Minimum eight and maximum 10 characters, at least one uppercase letter, one lowercase letter, one number and one special character.").show();
+        $("#new_password").css("border", "2px solid red");
+        pass_error = true;
+      }
+    }
+    function check_repass() {
+      var pass = $("#new_password").val();
+      var repas = $("#confirm_password").val();
+      if (pass === repas && repas != "") {
+        $("#error_re").hide();
+        $("#confirm_password").css("border", "2px solid green");
+      } else {
+        $("#error_re").html("<br>Password doesn't matches.").show();
+        $("#confirm_password").css("border", "2px solid red");
+        repass_error = true;
+      }
+    }
+
+    function check_image() {
+      var file = $("#profile_picture")[0].files[0];
+      var allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+      if (file && allowedExtensions.exec(file.name)) {
+        $("#error_image").hide();
+        $("#profile_picture").css("border", "2px solid green");
+        image_error = false;
+      } else {
+        $("#error_image").html("Invalid Image File").show();
+        $("#profile_picture").css("border", "2px solid red");
+        image_error = true;
+      }
+    }
+
+
+    $("#password_form").submit(function () {
+      pass_error = false;
+      repass_error = false;
+
+      check_pass();
+      check_repass();
+      if (pass_error === false && repass_error === false) {
+        $("#pass_err").hide();
+        return true;
+      } else {
+        $("#pass_err").html("Please fill the form correctly.").show();
+        return false;
+      }
+    });
+
+
+    $("#image-form").submit(function () {
+      image_error = false;
+      check_image();
+      if (image_error === false) {
+        $("#imgform_err").hide();
+        return true;
+      } else {
+        $("#imgform_err").html("Please fill the form correctly.").show();
+        return false;
+      }
+    });
+  });
+</script>
+<style>
+  .error {
+    color: red;
+    font-family: Comic Sans MS;
+    font-weight: bold;
+    font-size: 12px;
+    display: block;
+    margin-top: 5px;
+  }
+
+  .password-container {
+    position: relative;
+  }
+
+  .password-toggle-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #333;
+    font-size: 18px;
+  }
+
+  .password-toggle-icon i {
+    margin-left: -30px;
+  }
+
+  /* Style the tab headings */
+  .custom-tab {
+    position: relative;
+    padding-bottom: 0.4em;
+    color: grey;
+    font-size: 18px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-decoration: none;
+    /* Remove underline */
+  }
+
+  .custom-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #000;
+    transform: scaleX(0);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .custom-tab:hover::after {
+    transform: scaleX(1);
+
+  }
+
+  .custom-tab.active::after {
+    transform: scaleX(1);
+  }
+
+  /* Additional styling */
+  .card {
+    border: none;
+    border-radius: 10px;
+  }
+
+  .form-floating {
+    margin-bottom: 1em;
+  }
+
+  .profile-box {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .profile-pic {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 10px;
+  }
+
+  .profile-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .profile-pic input {
+    display: none;
+  }
+
+  .profile p {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+  }
+
+  .profile h2 {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 28px;
+    color: #063970;
+    margin-top: -170px;
+  }
+
+  .profile .social-icons {
+    cursor: pointer;
+    margin-left: 205px;
+
+    margin-top: 30px;
+  }
+
+  .password-container {
+    position: relative;
+  }
+
+  .password-toggle-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #333;
+    font-size: 18px;
+  }
+
+  .password-toggle-icon i {
+    margin-left: -30px;
+  }
+
+  .change-photo button {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+
+    margin-top: 30px;
+  }
+
+  .change-photo input {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+
+    margin-top: -160px;
+  }
+</style>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <a class="custom-tab active" id="profile-tab" style="text-decoration:none;" data-toggle="tab" href="#profile"
+      role="tab" aria-selected="true">ACCOUNT</a>
+  </li>
+  
+  <li class="nav-item" role="presentation">
+    <a class="custom-tab" id="password-tab" data-toggle="tab" style="text-decoration:none;" href="#password" role="tab"
+      aria-controls="password" aria-selected="false">RESET PASSWORD</a>
+  </li>
+</ul>
+<br><br>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+  <div class="tab-content" id="myTabContent"
+    style="background-color:white;padding:30px;border-radius:10px;border:none;">
+
+    <!-- Account Details -->
+    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab"
+      style="border:none">
+      
+      <div class="row" style="background-color:white;padding:10px;border-radius:10px;margin-bottom:60px;">
+        <form action="{% url 'administrator:change_profile_image' profile1.id %}" method="post"
+          enctype="multipart/form-data" id="image-form">
+          {% csrf_token %}
+          <div class="profile-box">
+            <div class="profile-pic" style="height:170px;border-radius:50px;">
+              {% if profile.profile_picture %}
+              <img id="profileImage" src="{{profile.profile_picture.url}}" alt="Profile Picture"
+                style="object-fit:contain">
+                {% endif %}
+            </div>
+          </div>
+          <span class="change-photo">
+            <input type="file" class="form-control" id="profile_picture" name="profile_picture" style="width:300px;">
+            <br><span id="error_image" class="error" style="margin-left: 220px;"></span>
+
+            <button type=" button" class="btn btn-primary">Upload
+              New Picture</button>
+            <span id="imgform_err" class="error"></span>
+
+          </span>
+        </form>
+      </div>
+    </div>
+
+    <!-- Reset Password Form -->
+    <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+      <div class="card">
+        <div class="card-header">
+          <h4>Reset Password</h4>
+        </div>
+        <div class="card-body">
+
+          <form method="post" action="{% url 'administrator:change_password' profile1.id %}" id="password_form">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="current_password" class="form-label">Current Password</label>
+              <input type="password" class="form-control" id="current_password" name="current_password"
+                >
+            </div>
+            <div class="form-group mb-3">
+              <label for="new_password" class="form-label">New Password</label>
+              <div class="password-container">
+                <input type="password" class="form-control password" id="new_password" name="new_password" required>
+                <span class="password-toggle-icon" id="toggle_new_password"><i class="fa fa-eye"></i></span>
+                <span id="error_pass" class="error"></span>
+              </div>
+            </div>
+            <div class="form-group mb-3">
+              <label for="confirm_password" class="form-label">Confirm Password</label>
+              <div class="password-container">
+                <input type="password" class="form-control password" id="confirm_password" name="confirm_password"
+                  required>
+                <span class="password-toggle-icon" id="toggle_confirm_password"><i class="fa fa-eye"></i></span>
+                <br><span id="error_re" class="error"></span>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Reset Password</button>
+            <br><span id="pass_err" class="error"></span>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $(".password-toggle-icon").click(function () {
+      var input = $(this).siblings("input.password");
+      var icon = $(this).find("i");
+
+      if (input.attr("type") === "password") {
+        input.attr("type", "text");
+        icon.removeClass("fa-eye").addClass("fa-eye-slash");
+      } else {
+        input.attr("type", "password");
+        icon.removeClass("fa-eye-slash").addClass("fa-eye");
+      }
+    });
+  });
+</script>
+
+{% endblock %}

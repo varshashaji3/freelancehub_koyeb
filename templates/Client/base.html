@@ -1,0 +1,990 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% load static %}
+  <title>FreelanceHub</title>
+  <!-- plugins:css -->
+  <link rel="stylesheet" href="{%  static 'vendors/feather/feather.css'  %}">
+  <link rel="stylesheet" href="{%  static 'vendors/ti-icons/css/themify-icons.css' %}">
+  <link rel="stylesheet" href="{%  static 'vendors/css/vendor.bundle.base.css' %}">
+  <!-- endinject -->
+  <!-- Plugin css for this page -->
+  <link rel="stylesheet" href="{%  static 'vendors/datatables.net-bs4/dataTables.bootstrap4.css' %}">
+  <link rel="stylesheet" href="{%  static 'vendors/ti-icons/css/themify-icons.css' %}">
+  <link rel="stylesheet" type="text/css" href="{%  static 'js/select.dataTables.min.css' %}">
+  <!-- End plugin css for this page -->
+  <!-- inject:css -->
+  <link rel="stylesheet" href="{%  static 'css/vertical-layout-light/style.css' %}">
+  <!-- endinject -->
+  <link rel="shortcut icon" href="{%  static 'images/favicon.png' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+  <script>
+    toastr.options = {
+      "closeButton": true,
+      "debug": false,
+      "newestOnTop": true,
+      "progressBar": true,
+      "positionClass": "toast-top-right",
+      "preventDuplicates": true,
+      "onclick": null,
+      "showDuration": "300",
+      "hideDuration": "1000",
+      "timeOut": "5000",
+      "extendedTimeOut": "1000",
+      "showEasing": "swing",
+      "hideEasing": "linear",
+      "showMethod": "fadeIn",
+      "hideMethod": "fadeOut"
+    };
+  </script>
+  <script>
+    $(document).ready(function () {
+      {% if messages %}
+      {% for message in messages %}
+      toastr.options = {
+        "closeButton": true,
+        "progressBar": true
+      };
+      toastr.{ { message.tags } } ("{{ message }}");
+      {% endfor %}
+      {% endif %}
+    });
+  </script>
+
+  <style>
+    .preview-item {
+      padding: 10px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+    }
+
+    .preview-thumbnail {
+      margin-right: 10px;
+    }
+
+    .preview-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 18px;
+    }
+
+    .preview-item-content {
+      flex-grow: 1;
+    }
+
+    .preview-subject {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .small-text {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .mark-as-read {
+      font-size: 12px;
+      color: #092b51;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .mark-as-read:hover {
+      text-decoration: none;
+      color: #0d3d70;
+    }
+
+
+
+    
+
+
+    .modal {
+      
+      left: 0;
+      top: 0;
+      background-color: rgba(0, 0, 0, 0.5); 
+      
+    }
+
+  
+ 
+    .modal-content {
+      background-color: #fefefe; /* White background */
+      margin: 5% auto; /* Centered */
+      padding: 20px;
+      border: 1px solid #888; /* Light gray border */
+      width: 80%; /* Width of the modal */
+      max-width: 600px; /* Max width of the modal */
+      border-radius: 8px; /* Rounded corners */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+     
+    }
+    
+    /* Close Button */
+    .close-button {
+      color: #aaa; /* Gray color */
+      float: right; /* Right-align */
+      font-size: 28px; /* Large font size */
+      font-weight: bold; /* Bold text */
+      cursor: pointer; /* Pointer cursor */
+    }
+    
+    .close-button:hover,
+    .close-button:focus {
+      color: black; /* Darker color on hover/focus */
+      text-decoration: none; /* No underline */
+    }
+    
+    /* Modal Header */
+    .modal-content h2 {
+      margin: 0 0 10px; /* Margin at bottom */
+      font-size: 24px; /* Font size */
+      color: #333; /* Dark gray color */
+      text-align: center; /* Center-align text */
+    }
+    
+    /* Modal Image */
+    .modal-image {
+      display: block; /* Block-level element */
+      max-width: 100%; /* Responsive width */
+      height: 200px; /* Maintain aspect ratio */
+      margin: 0 auto; /* Center the image */
+    }
+    
+    /* Form Styles */
+    #reviewForm {
+      display: flex;
+      flex-direction: column; /* Stack elements vertically */
+      gap: 15px; /* Space between elements */
+    }
+    
+    /* Textarea */
+    #reviewForm textarea {
+      width: 100%; /* Full width */
+      height: 100px; /* Height */
+      padding: 10px; /* Padding */
+      border: 1px solid #ccc; /* Light border */
+      border-radius: 4px; /* Rounded corners */
+      resize: vertical; /* Allow vertical resizing */
+    }
+    
+   
+    
+
+    .star-rating {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: center;
+      margin: 10px 0;
+  }
+  
+  .star-rating input[type="radio"] {
+      display: none;
+  }
+  
+  .star-rating label {
+      font-size: 2rem;
+      color: #ccc;
+      cursor: pointer;
+      transition: color 0.3s;
+      margin: 0 5px;
+  }
+  
+  .star-rating label:hover,
+  .star-rating label:hover ~ label {
+      color: #ffca08;
+  }
+  
+  .star-rating input[type="radio"]:checked ~ label {
+      color: #ffca08;
+  }
+
+
+    
+    
+    /* Submit Button */
+    #reviewForm button {
+      background-color: #4CAF50; /* Green background */
+      color: white; /* White text */
+      border: none; /* Remove border */
+      padding: 10px 20px; /* Padding */
+      text-align: center; /* Center text */
+      text-decoration: none; /* Remove underline */
+      display: inline-block; /* Inline-block */
+      font-size: 16px; /* Font size */
+      border-radius: 4px; /* Rounded corners */
+      cursor: pointer; /* Pointer cursor */
+    }
+    
+    #reviewForm button:hover {
+      background-color: #45a049; /* Darker green on hover */
+    }
+
+  
+  </style>
+
+  <style>
+    .sidebar {
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 999;
+        transition: width 0.25s ease, background 0.25s ease;
+        -webkit-transition: width 0.25s ease, background 0.25s ease;
+        -moz-transition: width 0.25s ease, background 0.25s ease;
+        -ms-transition: width 0.25s ease, background 0.25s ease;
+    }
+
+    .main-panel {
+        margin-left: 260px; /* Adjust this value based on your sidebar width */
+        transition: margin 0.25s ease;
+        width: calc(100% - 260px);
+    }
+
+    @media (max-width: 991px) {
+        .sidebar {
+            position: fixed;
+            z-index: 1030;
+        }
+        
+        .main-panel {
+            margin-left: 0;
+            width: 100%;
+        }
+        
+        .sidebar-offcanvas {
+            position: fixed;
+            max-height: calc(100vh - 70px); /* Adjust based on your navbar height */
+            top: 70px; /* Should match your navbar height */
+            bottom: 0;
+            overflow: auto;
+            right: -260px; /* Should match sidebar width */
+            -webkit-transition: all 0.25s ease-out;
+            -o-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+        }
+        
+        .sidebar-offcanvas.active {
+            right: 0;
+        }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-scroller">
+    <!-- partial:partials/_navbar.html -->
+    <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
+        <a class="navbar-brand brand-logo mr-5" href="#"><img src="{% static 'img/logo.png' %}" class="mr-2"
+            alt="logo" /></a><a class="navbar-brand brand-logo-mini" href="#"><img src="{% static 'img/logo2.png' %}"
+            alt="logo" /></a>
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+        <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+          <span class="icon-menu"></span>
+        </button>
+        
+        <ul class="navbar-nav navbar-nav-right">
+          <li class="nav-item dropdown">
+            <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#"
+              data-toggle="dropdown">
+              <i class="icon-bell mx-0"></i>
+              <span
+                style="margin-left:8px;color:white; font-size:10px;background-color:rgb(14, 14, 160);margin-top:-5px;height:16px;width:16px;"
+                class="count">{{ unread_notifications.count }}</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list"
+              aria-labelledby="notificationDropdown">
+              <p class="mb-0 font-weight-normal float-left dropdown-header">Notifications</p>
+              {% for notification in unread_notifications|slice:":10" %}
+              <a class="dropdown-item preview-item">
+                <div class="d-flex align-items-center">
+                  <div class="preview-thumbnail">
+                    <div class="preview-icon bg-success">
+                      <i class="ti-info-alt mx-0"></i>
+                    </div>
+                  </div>
+                  <div class="preview-item-content flex-grow-1">
+                    <h6 class="preview-subject font-weight-normal">{{ notification.message }}</h6>
+                    <p class="font-weight-light small-text mb-0 text-muted">
+                      {{ notification.created_at|timesince }} ago
+                    </p>
+                  </div>
+                  <form
+                    action="{% url 'client:notification_mark_as_read' not_id=notification.id %}?next={{ request.path }}"
+                    method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-link">Mark as Read</button>
+                  </form>
+
+                </div>
+              </a>
+              {% endfor %}
+              {% if not unread_notifications %}
+              <p class="font-weight-light small-text mb-0 text-muted">No unread notifications</p>
+              {% endif %}
+            </div>
+          </li>
+
+
+          {% if client.client_type == 'Individual' %}
+          <li class="nav-item nav-search d-none d-lg-block">
+            <span>Hi,{{ profile2.first_name }}</span>
+          </li>
+          {% else %}
+          <li class="nav-item nav-search d-none d-lg-block">
+            <span>Hi,{{ client.company_name }}</span>
+          </li>
+          {% endif %}
+          <li class="nav-item nav-profile dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
+              {% if profile2.profile_picture %}
+              <img src="{{ profile2.profile_picture.url }}" alt="profile" />
+              {% else %}
+              <img src="{% static 'img/default.png' %}" alt="profile" />
+              {% endif %}
+            </a>
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+              <a class="dropdown-item" href="{% url 'client:account_settings' %}">
+                <i class="ti-profil text-primary"></i>
+                Profile
+              </a>
+             
+              <a class="dropdown-item" href="{% url 'logout' %}">
+                <i class="ti-power-off text-primary"></i>
+                Logout
+              </a>
+            </div>
+          </li>
+          <li class="nav-item nav-settings d-none d-lg-flex">
+            <a class="nav-link" href="#">
+              <i class="icon-ellipsis"></i>
+            </a>
+          </li>
+        </ul>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
+          data-toggle="offcanvas">
+          <span class="icon-menu"></span>
+        </button>
+      </div>
+    </nav>
+    <!-- partial -->
+    <div class="container-fluid page-body-wrapper">
+
+      <div id="right-sidebar" class="settings-panel">
+        <i class="settings-close ti-close"></i>
+        <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="todo-tab" data-toggle="tab" href="#todo-section" role="tab"
+              aria-controls="todo-section" aria-expanded="true">TO DO LIST</a>
+          </li>
+          <!-- <li class="nav-item">
+            <a class="nav-link" id="chats-tab" data-toggle="tab" href="#chats-section" role="tab" aria-controls="chats-section">CHATS</a>
+          </li> -->
+        </ul>
+        <div class="tab-content" id="setting-content">
+          <div class="tab-pane fade show active scroll-wrapper" id="todo-section" role="tabpanel"
+            aria-labelledby="todo-section">
+            <div class="add-items d-flex px-3 mb-0">
+              <form class="form w-100">
+                <div class="form-group d-flex">
+                  <input type="text" class="form-control todo-list-input" placeholder="Add To-do">
+                  <button type="submit" class="add btn btn-primary todo-list-add-btn" id="add-task">Add</button>
+                </div>
+              </form>
+            </div>
+            <div class="list-wrapper px-3">
+              <ul class="d-flex flex-column-reverse todo-list">
+                <li>
+                  <div class="form-check">
+                    <label class="form-check-label">
+                      <input class="checkbox" type="checkbox">
+                      Team review meeting at 3.00 PM
+                    </label>
+                  </div>
+                  <i class="remove ti-close"></i>
+                </li>
+
+              </ul>
+            </div>
+
+          </div>
+          <!-- To do section tab ends -->
+
+        </div>
+      </div>
+      <!-- partial -->
+      <!-- partial:partials/_sidebar.html -->
+      <nav class="sidebar sidebar-offcanvas" id="sidebar" style="margin-left:-13px;">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'client:client_view' %}">
+                    <i class="fas fa-th-large menu-icon"></i> <!-- Dashboard Icon -->
+                    <span class="menu-title">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'client:account_settings' %}">
+                    <i class="fas fa-user-cog menu-icon"></i> <!-- Account Settings Icon -->
+                    <span class="menu-title">Account</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="collapse" href="#work" aria-expanded="false" aria-controls="ui-basic">
+                    <i class="fas fa-project-diagram menu-icon"></i> <!-- Project Icon -->
+                    <span class="menu-title">Project</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse" id="work">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item"> <a class="nav-link" href="{% url 'client:project_list' %}">Project List</a></li>
+                        <li class="nav-item"> <a class="nav-link" href="{% url 'client:add_new_project' %}">Post New Project</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="collapse" href="#repos" aria-expanded="false" aria-controls="ui-basic">
+                    <i class="fas fa-code-branch menu-icon"></i> <!-- Repositories Icon -->
+                    <span class="menu-title">Repositories</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse" id="repos">
+                    <ul class="nav flex-column sub-menu">
+                        {% for repo in repositories %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'client:view_repository' repo.id %}">{{ repo.name }}</a>
+                        </li>
+                        {% empty %}
+                        <li class="nav-item">No repositories found.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'client:freelancer_list' %}">
+                    <i class="fas fa-users menu-icon"></i> <!-- Freelancers Icon -->
+                    <span class="menu-title">Freelancers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'client:calendar' %}">
+                    <i class="far fa-calendar-alt menu-icon"></i> <!-- Calendar Icon -->
+                    <span class="menu-title">Calendar</span>
+                </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'client:payments' %}">
+                  <i class="fas fa-calculator menu-icon"></i> <!-- Payment Icon -->
+                  <span class="menu-title">Payments</span>
+              </a>
+          </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'client:chat_view' %}">
+                    <i class="fas fa-comments menu-icon"></i> <!-- Chat Icon -->
+                    <span class="menu-title">Chat</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="collapse" href="#complaints" aria-expanded="false" aria-controls="ui-basic">
+                    <i class="fas fa-exclamation-triangle menu-icon"></i> <!-- Complaints Icon -->
+                    <span class="menu-title">Complaints</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse" id="complaints">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item"> <a class="nav-link" href="{% url 'client:add_complaint' %}">Add Complaint</a></li>
+                        <li class="nav-item"> <a class="nav-link" href="{% url 'client:view_complaints' %}">Submitted</a></li>
+                        <li class="nav-item"> <a class="nav-link" href="{% url 'client:view_complaints_recieved' %}">Received</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt menu-icon"></i> <!-- Logout Icon -->
+                    <span class="menu-title">Logout</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+      <!-- partial -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          {% block 'client_content' %}
+
+
+          {% endblock %}
+        </div>
+      </div>
+      <!-- main-panel ends -->
+    </div>
+    <!-- page-body-wrapper ends -->
+  </div>
+  <!-- container-scroller -->
+
+  <!---Modal -->
+
+  
+
+ 
+  <script>
+    $(document).ready(function () {
+      {% if project_status.status == 'Completed' and not project_status.client_review_given %}
+      $('#freelancerName').text('{{ project_status.freelancer_name }}');
+      $('#clientName').text('{{ project_status.client_name }}');
+      $('#projectId').val('{{ project_status.project_id }}');
+      $('#freelancerId').val('{{ project_status.freelancer_id }}');
+      $('#clientId').val('{{ project_status.client_id }}');
+      $('#title').text('{{ project_status.project_title }}');
+
+
+      $('#qualityOfWork').val(0);
+      $('#communication').val(0);
+      $('#adherenceToDeadlines').val(0);
+      $('#professionalism').val(0);
+      $('#problemSolvingAbility').val(0);
+      
+      $('#overallRating').text('{{ review.overall_rating|default:0 }}');
+      $('#reviewModal').modal('show');
+      
+{% endif %}
+    });
+  </script>
+
+
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reviewModalLabel">Submit Review for Freelancer: <span id="freelancerName"></span></h5>
+        <br>
+        <p>Client: <span id="clientName"></span></p><br>
+        <p>Project Title: <span id="title"></span></p>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="reviewForm" action="{% url 'client:submit_review' %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% if is_client %}
+          <!-- Additional fields for clients -->
+          <div class="form-group">
+            <label for="qualityOfWork">Quality of Work:</label>
+            <select class="form-control" id="qualityOfWork" name="quality_of_work">
+              <option value="1">1 - Poor</option>
+              <option value="2">2 - Fair</option>
+              <option value="3">3 - Good</option>
+              <option value="4">4 - Very Good</option>
+              <option value="5">5 - Excellent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="communication">Communication:</label>
+            <select class="form-control" id="communication" name="communication">
+              <option value="1">1 - Poor</option>
+              <option value="2">2 - Fair</option>
+              <option value="3">3 - Good</option>
+              <option value="4">4 - Very Good</option>
+              <option value="5">5 - Excellent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="adherenceToDeadlines">Adherence to Deadlines:</label>
+            <select class="form-control" id="adherenceToDeadlines" name="adherence_to_deadlines">
+              <option value="1">1 - Poor</option>
+              <option value="2">2 - Fair</option>
+              <option value="3">3 - Good</option>
+              <option value="4">4 - Very Good</option>
+              <option value="5">5 - Excellent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="professionalism">Professionalism:</label>
+            <select class="form-control" id="professionalism" name="professionalism">
+              <option value="1">1 - Poor</option>
+              <option value="2">2 - Fair</option>
+              <option value="3">3 - Good</option>
+              <option value="4">4 - Very Good</option>
+              <option value="5">5 - Excellent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="problemSolvingAbility">Problem Solving Ability:</label>
+            <select class="form-control" id="problemSolvingAbility" name="problem_solving_ability">
+              <option value="1">1 - Poor</option>
+              <option value="2">2 - Fair</option>
+              <option value="3">3 - Good</option>
+              <option value="4">4 - Very Good</option>
+              <option value="5">5 - Excellent</option>
+            </select>
+          </div>
+          {% endif %}
+          <div class="form-group">
+            <label for="review">Review:</label>
+            <textarea class="form-control" id="review" name="review" rows="3"></textarea>
+          </div>
+          <input type="hidden" id="projectId" name="project_id" value="">
+          <input type="hidden" id="freelancerId" name="freelancer_id" value="">
+          <input type="hidden" id="clientId" name="client_id" value="">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Submit Review</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<div id="siteReviewModal" class="modal">
+  <div class="modal-content">
+      <h2>We Value Your Feedback</h2>
+      <img src="{% static 'img/review.png' %}" alt="Feedback Image" class="modal-image">
+      <form id="reviewForm" method="post" action="{% url 'site_review' %}?next={{ request.path }}">
+          {% csrf_token %}
+          <textarea name="review_text" placeholder="Your review" required></textarea>
+          <p>Please rate your experience with FreelanceHub on a scale from 1 to 5</p>
+          <div class="star-rating">
+            <input type="radio" id="star5" name="rating" value="5">
+            <label for="star5" title="5 stars">&#9733;</label>
+            <input type="radio" id="star4" name="rating" value="4">
+            <label for="star4" title="4 stars">&#9733;</label>
+            <input type="radio" id="star3" name="rating" value="3">
+            <label for="star3" title="3 stars">&#9733;</label>
+            <input type="radio" id="star2" name="rating" value="2">
+            <label for="star2" title="2 stars">&#9733;</label>
+            <input type="radio" id="star1" name="rating" value="1">
+            <label for="star1" title="1 star">&#9733;</label>
+          </div>
+          
+        
+          <button type="submit">Submit Review</button>
+      </form>
+  </div>
+</div>
+
+
+
+<script>
+  $(document).ready(function () {
+    const reviewDue = "{{ review_due }}";
+    const modal = document.getElementById('siteReviewModal');
+    const closeButton = document.getElementById('.close-button');
+  
+
+    if (reviewDue === 'True') {
+      modal.style.display = 'block';
+    }
+  
+    closeButton.addEventListener('click', function () {
+      modal.style.display = 'none';
+    });
+  
+    window.addEventListener('click', function (event) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+});
+
+</script>
+
+
+{% if has_refund_payment %}
+<div id="paymentDetailsModal" class="modal" tabindex="-1" role="dialog" style="display: none;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Total Paid: {{ refund_payment.total_paid }}</p>
+                <p>Amount Due: {{ refund_payment.amount }}</p>
+                <p>Compensation Amount: {{ refund_payment.compensation_amount }}</p>
+                <p>Refund Payment To: {{ refund_payment.pay_to }}</p>
+            </div>
+            <div class="modal-footer">
+                <button id="payButton" type="button" class="btn btn-primary" onclick="makePayment({{ refund_payment.amount }}, '{{ refund_payment.pay_to.id }}')">Pay Now</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+{% if has_refund_payment and not refund_payment.is_paid %}
+    $('#paymentDetailsModal').modal('show');
+{% endif %}
+
+document.getElementById("payButton").addEventListener("click", function() {
+    console.log("Pay button clicked, initiating Razorpay payment.");
+
+    var options = {
+        "key": "{{ razorpay_key }}",
+        "amount": "{{ amount_in_paisa }}",
+        "currency": "INR",
+        "name": "Refund Payment",
+        "description": "Refund Payment to {{ refund_payment.pay_to }}",
+        "order_id": "{{ razorpay_order_id }}",
+        "handler": function (response) {
+            console.log("Payment successful, sending AJAX request.");
+            
+            $.ajax({
+                url: "{% url 'payment_success' %}",
+                method: "POST",
+                data: {
+                    payment_id: response.razorpay_payment_id,
+                    order_id: response.razorpay_order_id,
+                    signature: response.razorpay_signature,
+                    refund_payment_id: "{{ refund_payment.id }}",
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(data) {
+                  $('#paymentDetailsModal').modal('hide');
+                  
+                    console.log("Payment success AJAX response:", data);
+                    
+                    // Create a confetti canvas with a high z-index
+                    const confettiCanvas = document.createElement('canvas');
+                    confettiCanvas.style.position = 'fixed';
+                    confettiCanvas.style.top = '0';
+                    confettiCanvas.style.left = '0';
+                    confettiCanvas.style.width = '100%';
+                    confettiCanvas.style.height = '100%';
+                    confettiCanvas.style.zIndex = '9999'; // Ensure it's on top
+                    document.body.appendChild(confettiCanvas);
+
+                    const myConfetti = confetti.create(confettiCanvas, {
+                        resize: true,
+                        useWorker: true
+                    });
+
+                    myConfetti({
+                        particleCount: 1000,
+                        spread: 160,
+                        startVelocity: 60,
+                        origin: { y: 0.6 }
+                    });
+
+                    // Remove the confetti canvas after 3 seconds
+                    setTimeout(() => {
+                        document.body.removeChild(confettiCanvas);
+                    }, 3000);
+
+                    Swal.fire({
+                        title: 'Payment Successful!',
+                        text: 'Thank you for your payment.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload(); // Reload the page
+                    });
+                },
+                error: function(err) {
+                    console.error("Payment verification failed", err);
+                    alert('Payment verification failed');
+                }
+            });
+        },
+        "prefill": {
+            "name": "{{ request.user.name }}",
+            "email": "{{ request.user.email }}",
+            "contact": ""  // Add contact if available
+        },
+        "theme": {
+            "color": "#41436A"
+        }
+    };
+
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+});
+
+});
+</script>
+
+{% if projects_completed %}
+{% for project in projects_completed %}
+<div class="modal fade" id="projectCompletionModal{{ project.id }}" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="projectCompletionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="projectCompletionModalLabel">Project Completion</h5>
+            </div>
+            <div class="modal-body">
+                <p>The project "<span id="projectTitle" style="font-weight: bold;color: #a3064f;">{{ project.title }}</span>" has completed all tasks!</p>
+                <div class="project-details">
+                    <p><strong>Total Tasks:</strong> <span id="totalTasks">{{ project.total_tasks }}</span></p>
+                    <p><strong>Budget:</strong> ₹ <span id="projectBudget">{{ project.budget }}</span></p>
+                    <p><strong>Freelancer:</strong> <span id="freelancerName">{{ project.freelancer_first_name }} {{ project.freelancer_last_name }}</span></p>
+                </div>
+                <p>Please mark this project as completed to proceed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="markProjectCompleted({{ project.id }})">Mark as Completed</button>
+                <button type="button" class="btn btn-secondary" onclick="dismissProjectModal({{ project.id }})">Not Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+<script>
+$(document).ready(function() {
+    const projectId = {{ project.id }};
+    $('#projectCompletionModal' + projectId).modal({
+        show: true,
+        backdrop: 'static',  // This prevents closing when clicking outside
+        keyboard: false      // This prevents closing with keyboard
+    });
+});
+
+function dismissProjectModal(projectId) {
+    $('#projectCompletionModal' + projectId).modal('hide');
+    
+}
+
+function markProjectCompleted(projectId) {
+    $.ajax({
+        url: "{% url 'client:mark_project_completed' %}",
+        type: "POST",
+        data: {
+            'project_id': projectId,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            $('#projectCompletionModal' + projectId).modal('hide');
+            
+            // Create a confetti canvas with a high z-index
+            const confettiCanvas = document.createElement('canvas');
+            confettiCanvas.style.position = 'fixed';
+            confettiCanvas.style.top = '0';
+            confettiCanvas.style.left = '0';
+            confettiCanvas.style.width = '100%';
+            confettiCanvas.style.height = '100%';
+            confettiCanvas.style.zIndex = '9999';
+            document.body.appendChild(confettiCanvas);
+
+            const myConfetti = confetti.create(confettiCanvas, {
+                resize: true,
+                useWorker: true
+            });
+
+            myConfetti({
+                particleCount: 1000,
+                spread: 160,
+                startVelocity: 60,
+                origin: { y: 0.6 }
+            });
+
+            // Remove the confetti canvas after animation
+            setTimeout(() => {
+                document.body.removeChild(confettiCanvas);
+            }, 3000);
+
+            Swal.fire({
+                title: 'Congratulations!',
+                text: 'Project has been successfully marked as completed!',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                location.reload(); // Reload the page to update the UI
+            });
+        },
+        error: function(xhr, errmsg, err) {
+            // Add detailed error logging
+            console.error("Error details:", {
+                status: xhr.status,
+                responseText: xhr.responseText,
+                error: err
+            });
+            
+            Swal.fire({
+                title: 'Error!',
+                text: `Error marking project as completed: ${xhr.responseText || 'Unknown error'}`,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+}
+</script>
+{% endfor %}
+{% endif %}
+
+
+
+  <!---modal ends -->
+  <!-- plugins:js -->
+  <script src="{%  static 'vendors/js/vendor.bundle.base.js' %}"></script>
+  <!-- endinject -->
+  <!-- Plugin js for this page -->
+  <script src="{%  static 'vendors/chart.js/Chart.min.js' %}"></script>
+  <script src="{%  static 'vendors/datatables.net/jquery.dataTables.js' %}"></script>
+  <script src="{%  static 'vendors/datatables.net-bs4/dataTables.bootstrap4.js' %}"></script>
+  <script src="{%  static 'js/dataTables.select.min.js' %}"></script>
+
+  <!-- End plugin js for this page -->
+  <!-- inject:js -->
+  <script src="{%  static 'js/off-canvas.js' %}"></script>
+  <script src="{%  static 'js/hoverable-collapse.js' %}"></script>
+  <script src="{%  static 'js/template.js' %}"></script>
+  <script src="{%  static 'js/settings.js' %}"></script>
+  <script src="{%  static 'js/todolist.js' %}"></script>
+  <!-- endinject -->
+  <!-- Custom js for this page-->
+  <script src="{%  static 'js/dashboard.js' %}"></script>
+  <script src="{%  static 'js/Chart.roundedBarCharts.js' %} "></script>
+  <!-- End custom js for this page-->
+</body>
+
+
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

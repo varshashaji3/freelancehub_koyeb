@@ -1,0 +1,482 @@
+{% extends 'base1.html' %}
+{% block 'content' %}
+{% load static %}
+
+{% load custom_filters %}
+
+
+<style>
+  
+    .star-rating i {
+        color: #FFD700;
+       
+      }
+
+.star-rating {
+    display: flex;
+    align-items: center;
+    direction: ltr;
+    font-size: 1.5em; /* Adjust size as needed */
+    margin-left:200px;
+    user-select: none; /* Prevent text selection */
+}
+
+/* Hide radio inputs */
+.star-rating input {
+    display: none;
+}
+
+/* Star appearance for checked inputs */
+.star-rating label {
+    color: #dcdcdc; /* Gray color for unfilled stars */
+    cursor: pointer;
+    transition: color 0.2s ease-in-out;
+}
+
+.star-rating input:checked ~ label {
+    color: #ffcc00; /* Gold color for filled stars */
+}
+
+.star-rating input:checked ~ label ~ label {
+    color: #dcdcdc; /* Gray color for stars that are not filled */
+}
+
+/* Star appearance for hover state */
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #ffcc00; /* Gold color for stars on hover */
+}
+
+
+</style>
+    <!-- Carousel Start -->
+    <div class="container-fluid p-0 mb-5">
+        <div id="header-carousel" class="carousel slide"  data-bs-ride="carousel">
+            <div class="carousel-inner">
+
+                <div class="carousel-item active">
+                    <img class="w-100" src="{% static 'img/bg3.jpeg' %}" alt="Image">
+                    <div class="carousel-caption">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-7 pt-5">
+                                    <h1 class="display-4 text-white mb-4 animated slideInDown">Empower Your Freelance
+                                        Career with Freelance Hub</h1>
+                                    <p class="fs-5 text-body mb-4 pb-2 mx-sm-5 animated slideInDown">Connect with Top
+                                        Clients, Showcase Your Skills, Secure Payments, and Enjoy Real-time
+                                        Communication.</p>
+                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">Explore More</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img class="w-100" src="{% static 'img/bg4.jpg' %}" alt="Image">
+                    <div class="carousel-caption">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-7 pt-5">
+                                    <h1 class="display-4 text-white mb-4 animated slideInDown">Find the Perfect
+                                        Freelancer for Your Project on Freelance Hub</h1>
+                                    <p class="fs-5 text-body mb-4 pb-2 mx-sm-5 animated slideInDown">Quickly post jobs,
+                                        manage proposals, track progress, and get reliable support with Freelance Hub.
+                                    </p>
+                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">Explore More</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Carousel End -->
+
+
+    <!-- About Start -->
+    <div class="container-xxl py-5">
+        <div class="container">
+            <div class="row g-5 align-items-center">
+                <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.5s">
+                    <div class="h-100">
+                        <h1 class="display-6 mb-5">Welcome to Freelance Hub: Your Premier Platform for Freelancers and
+                            Clients</h1>
+                        <div class="row g-4 mb-4">
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <img class="flex-shrink-0 me-3" src="{% static 'img/icon/icon-07-primary.png' %}" alt="">
+                                    <h5 class="mb-0">Expert Technician</h5>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <img class="flex-shrink-0 me-3" src="{% static 'img/icon/icon-09-primary.png' %}" alt="">
+                                    <h5 class="mb-0">Best Quality Services</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mb-4">Welcome to Freelance Hub, your premier platform for connecting skilled
+                            freelancers with top clients. Enjoy effortless job posting, efficient proposal management,
+                            real-time progress tracking, and reliable support to ensure your success.</p>
+                        <div class="border-top mt-4 pt-4">
+                            <div class="d-flex align-items-center">
+                                <div class="btn-lg-square bg-secondary rounded-circle me-2">
+                                    <i class="fa fa-envelope text-white"></i>
+                                </div>
+                                <h5 class="mb-0">freelancehub76@gmail.com</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row g-3">
+                        <div class="col-6 text-end">
+                            <img class="img-fluid w-75 wow zoomIn" data-wow-delay="0.1s" src="{% static 'img/bg10.jpg' %}"
+                                style="margin-top: 25%;">
+                        </div>
+                        <div class="col-6 text-start">
+                            <img class="img-fluid w-100 wow zoomIn" data-wow-delay="0.3s" src="{% static 'img/bg5.jpg' %}">
+                        </div>
+                        <div class="col-6 text-end">
+                            <img class="img-fluid w-50 wow zoomIn" data-wow-delay="0.5s" src="{% static 'img/bg11.jpg' %}">
+                        </div>
+                        <div class="col-6 text-start">
+                            <img class="img-fluid w-75 wow zoomIn" data-wow-delay="0.7s" src="{% static 'img/bg8.jpg' %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- About End -->
+
+
+    <!-- Facts Start -->
+    <div class="container-fluid facts my-5 py-5" data-parallax="scroll" data-image-src="{% static 'img/bg4.jpg' %}">
+        <div class="container py-5">
+            <div class="row g-5">
+                <div class="col-sm-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
+                    <h1 class="display-4 text-white" data-toggle="counter-up">{{ client_count }}</h1>
+                    <span class="text-primary">Happy Clients</span>
+                </div>
+                <div class="col-sm-6 col-lg-4 wow fadeIn" data-wow-delay="0.3s">
+                    <h1 class="display-4 text-white" data-toggle="counter-up">{{ project_count }}</h1>
+                    <span class="text-primary">Projects Succeed</span>
+                </div>
+                <div class="col-sm-6 col-lg-4 wow fadeIn" data-wow-delay="0.5s">
+                    <h1 class="display-4 text-white" data-toggle="counter-up">{{ freelancer_count }}</h1>
+                    <span class="text-primary">Professional Freelancers</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Facts End -->
+
+
+    <!-- Features Start -->
+    <div class="container-xxl py-5">
+        <div class="container">
+            <div class="row g-5">
+                <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.1s">
+                    <h1 class="display-6 mb-5">Few Reasons Why People Choose Us!</h1>
+                    <p class="mb-5">Discover why Freelance Hub is the preferred platform for freelancers and clients
+                        alike. Experience seamless job management, secure payments, and top-notch support.</p>
+                    <div class="d-flex mb-5">
+                        <div class="flex-shrink-0 btn-square bg-secondary rounded-circle"
+                            style="width: 90px; height: 90px;">
+                            <img class="img-fluid" src="{% static 'img/icon/icon-08-light.png' %}" alt="">
+                        </div>
+                        <div class="ms-4">
+                            <h5 class="mb-3">Trusted Service Center</h5>
+                            <span>We are dedicated to providing reliable and transparent services to ensure the best
+                                experience for both freelancers and clients.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex mb-5">
+                        <div class="flex-shrink-0 btn-square bg-secondary rounded-circle"
+                            style="width: 90px; height: 90px;">
+                            <img class="img-fluid" src="{% static 'img/icon/icon-10-light.png' %}" alt="">
+                        </div>
+                        <div class="ms-4">
+                            <h5 class="mb-3">Reasonable Price</h5>
+                            <span>Our platform offers competitive pricing with no hidden fees, making it affordable for
+                                everyone to find and offer freelance services.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex mb-0">
+                        <div class="flex-shrink-0 btn-square bg-secondary rounded-circle"
+                            style="width: 90px; height: 90px;">
+                            <img class="img-fluid" src="{% static 'img/icon/icon-06-light.png' %}" alt="">
+                        </div>
+                        <div class="ms-4">
+                            <h5 class="mb3">24/7 Support</h5>
+                            <span>Our support team is available around the clock to help you with any issues or
+                                questions you may have, ensuring you never face problems alone.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.5s">
+                    <div class="position-relative rounded overflow-hidden h-100" style="min-height: 400px;">
+                        <img class="position-absolute w-100 h-100" src="{% static 'img/bg9.jpg' %}" alt="" style="object-fit: cover;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features End -->
+
+
+    <br><br><br>
+    <!-- Service Start -->
+    <div class="container-xxl py-5" data-parallax="scroll" data-image-src="{% static 'img/bg6.jpg' %}" style=" height:400px;background-color: linear-gradient(rgba(0,0,0,0.8),rgba(0,0,0,0.8),rgba(0,0,0,0.85),rgba(0,0,0,0.8));">
+        <div class="container">
+            <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.1s"  style="max-width:500px">
+                <h1 class="display-6 mb-5" style="color:white;">We Provide Professional Freelance Services</h1>
+            </div>
+            <div id="serviceCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-1.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-01-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Job Posting</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-2.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-02-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Proposal Management</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-3.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-03-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Progress Tracking</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-4.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-04-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Secure Payments</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-5.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-05-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">24/7 Support</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-6.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-06-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Freelancer Reviews</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-7.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-07-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Dispute Resolution</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-8.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-08-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Portfolio Management</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-9.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-09-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Skill Assessment</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-10.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-10-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Contract Management</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-11.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-11-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Project Management Tools</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-12.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-12-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Freelancer Training</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="service-item">
+                                    <img class="img-fluid" src="{% static 'img/service-13.jpg' %}" alt="">
+                                    <div class="d-flex align-items-center bg-light">
+                                        <div class="service-icon flex-shrink-0 bg-primary">
+                                            <img class="img-fluid" src="{% static 'img/icon/icon-13-light.png' %}" alt="">
+                                        </div>
+                                        <a class="h4 mx-4 mb-0" href="">Chat System</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#serviceCarousel"
+                    data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#serviceCarousel"
+                    data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Service End -->
+<br><br><br>
+
+
+
+    <!-- Testimonial Start -->
+    
+    
+
+    <div class="container-xxl py-5">
+        <div class="container">
+            <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.1s" style="max-width: 500px;">
+                <h1 class="display-6 mb-5">What They Say About Our Services</h1>
+            </div>
+            <div class="row g-5">
+                <div class="col-lg-3 d-none d-lg-block">
+                    <div class="testimonial-left h-100">
+                        <!-- Static images or leave as is -->
+                        <img class="img-fluid animated pulse infinite" src="{% static 'img/face1.jpg' %}" alt="">
+                        <img class="img-fluid animated pulse infinite" src="{% static 'img/face5.jpg' %}" alt="">
+                        <img class="img-fluid animated pulse infinite" src="{% static 'img/face6.jpg' %}" alt="">
+                    </div>
+                </div>
+                <div class="col-lg-6 wow fadeIn" data-wow-delay="0.5s">
+                    <div class="owl-carousel testimonial-carousel">
+                        {% for detail in review_details %}
+                            <div class="testimonial-item text-center">
+                                
+                                <img class="img-fluid mx-auto mb-4" src="{% if detail.user_info.profile_picture %}{{ detail.user_info.profile_picture }}{% else %}{% static 'img/default-user.jpg' %}{% endif %}" alt="">
+                                <h5>{{ detail.user_info.name }}</h5>
+                                <p class="fs-5">{{ detail.review.review_text }}</p>
+                                
+                                <span class="star-rating">
+                                    {% for i in 1|to:5 %}
+                                        {% if i <= detail.review.rating %}
+                                            <i class="fas fa-star"></i> <!-- Full Star -->
+                                        {% elif i == detail.review.rating|floatformat:1|stringformat:".1"|slice:":-2" %}
+                                            <i class="fas fa-star-half-alt"></i> <!-- Half Star -->
+                                        {% else %}
+                                            <i class="far fa-star"></i> <!-- Empty Star -->
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+
+                            </div>
+                        {% empty %}
+                            <p>No reviews available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-lg-3 d-none d-lg-block">
+                    <div class="testimonial-right h-100">
+                        <!-- Static images or leave as is -->
+                        <img class="img-fluid animated pulse infinite" src="{% static 'img/face10.jpg' %}" alt="">
+                        <img class="img-fluid animated pulse infinite" src="{% static 'img/face16.jpg' %}" alt="">
+                        <img class="img-fluid animated pulse infinite" src="{% static 'img/face18.jpg' %}" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Testimonial End -->
+
+
+
+{% endblock %}

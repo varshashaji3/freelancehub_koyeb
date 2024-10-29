@@ -1,0 +1,11 @@
+
+{% extends 'Client/base.html'%}
+{% block 'client_content' %}
+{% load static %}
+<div class="alert" role="alert" style="background-color:#fff;">
+    
+    <img src="{%  static 'img/no-access.png' %}" alt="Image Description" style="height:250px;margin-left:330px" class="img-fluid mb-3">
+    <p style="margin-left:270px;font-size:20px;">You are not permitted to access this feature<br> until administrator verifies your account details.</p>
+</div>
+  
+{% endblock %}

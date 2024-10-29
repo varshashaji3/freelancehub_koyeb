@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Account Deactivation Notice</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .email-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: -30px;
+        }
+
+        .content h1 {
+            font-size: 30px;
+            margin: 20px 0;
+            margin-top: -10px;
+            color: #063970;
+            font-family: 'Dancing Script', cursive;
+        }
+
+        .content p {
+            color: #555555;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+
+        .footer {
+            background-color: #063970;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://i.postimg.cc/mks7tgfG/logo.png" alt="Company Logo">
+        </div>
+        <div class="content">
+            <h1>Account Deactivation Notice</h1>
+            <p>Dear {{user_name}},</p>
+            <p>We regret to inform you that your account with FreelanceHub has been deactivated. Our verification process could not confirm the authenticity of your account.</p>
+            <p>If you believe this is a mistake or have any questions, please contact our support team at freelancehub76@gmail.com. We are here to help you resolve this issue and reactivate your account if possible.</p>
+            <p>Thank you for your understanding.</p>
+        </div>
+        <div class="footer">
+            &copy; 2024 FreelanceHub. All rights reserved.
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,244 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">Clients</h3>
+</div><br>
+
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <form method="GET" id="searchForm">
+            <input type="text" name="search" id="searchInput" placeholder="Search by name..." class="form-control search-input">
+        </form>
+    </div>
+    <div class="col-md-4">
+        <form method="GET" id="filterForm">
+            <select name="filter" id="filter" class="form-control filter-select" onchange="document.getElementById('filterForm').submit();">
+                <option value="">Filter by type</option>
+                <option value="Individual">Individual</option>
+                <option value="Company">Company</option>
+            </select>
+        </form>
+    </div>
+</div>
+<br><br>
+
+<style>
+    .search-input {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        width: 100%;
+    }
+    
+    .filter-select {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        width: 100%;
+    }
+    
+    .apply-btn {
+        background-color: #ff0057;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+    }
+    
+    .apply-btn:hover {
+        background-color: #e6004e;
+    }
+    
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }
+    
+    .card {
+        background-color: #fff;
+        width: 300px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transform: scale(0.98);
+    }
+    
+    .card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .profile-img {
+        width: 100px;
+        height: 100px;
+        margin:10px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .card-body {
+        padding: 20px;
+        text-align: center;
+        flex-grow: 1;
+    }
+    
+    .name {
+        font-size: 22px;
+        margin: 10px 0 5px;
+    }
+    
+    .profession {
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 10px;
+    }
+    
+    .bio {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+    }
+    
+    .hire-btn {
+        background-color: #ff0057;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+    
+    .hire-btn:hover {
+        background-color: #e6004e;
+    }
+    
+    .card-footer {
+        display: flex;
+        justify-content: center;
+        padding: 10px;
+        background-color: #f7f7f7;
+        width: 100%;
+    }
+    
+    .social-media {
+        display: flex;
+        gap: 10px; /* Spacing between icons */
+    }
+    
+    .social-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #000;
+        padding-left:15px;
+    }
+    
+    .social-icon img {
+        width: 30px;
+        height: 30px;
+    }
+</style>
+<div class="card-container">
+    {% for user_data in users %}
+    {% if user_data.client_profile %}
+        {% if user_data.client_profile.client_type == "Individual" and user_data.register.first_name and user_data.register.last_name %}
+            <div class="card"> 
+                {% if user_data.register.profile_picture %}
+                    <img src="{{ user_data.register.profile_picture.url }}" alt="Client Image" class="profile-img">
+                {% else %}
+                    <img src="{% static 'img/default-profile.jpg' %}" alt="Default Profile Image" class="profile-img">
+                {% endif %}
+
+                <div class="card-body">
+                    <h2 class="name">{{ user_data.register.first_name }} {{ user_data.register.last_name }}</h2>
+                    <p class="profession">{{ user_data.client_profile.client_type|default:'Not specified' }}</p>
+                    <!-- <p class="bio">{{ user_data.register.bio_description|default:'No description available' }}</p> -->
+                    <a href="{% url 'freelancer:client_detail' user_data.user.id %}" class="hire-btn">View Details</a>
+                </div>
+                <div class="card-footer">
+                    {% if user_data.register %}
+                    <a href="{{ user_data.register.linkedin }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/linkedin.png' %}" alt="LinkedIn">
+                    </a>
+                    {% if user_data.register.instagram %}
+                    <a href="{{ user_data.register.instagram }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/instagram.png' %}" alt="Instagram">
+                    </a>
+                    {% else %}
+                    <span class="social-icon">Instagram: Not provided</span>
+                    {% endif %}
+                    {% if user_data.register.twitter %}
+                    <a href="{{ user_data.register.twitter }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/twitter.png' %}" alt="Twitter">
+                    </a>
+                    {% else %}
+                    <span class="social-icon">Twitter: Not provided</span>
+                    {% endif %}
+                    {% if user_data.client_profile.client_type == "Company" and user_data.client_profile.website %}
+                    <a href="{{ user_data.client_profile.website }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/web.png' %}" alt="Website">
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        {% elif user_data.client_profile.client_type == "Company" and user_data.client_profile.company_name %}
+            <div class="card"> 
+                {% if user_data.register.profile_picture %}
+                    <img src="{{ user_data.register.profile_picture.url }}" alt="Client Image" class="profile-img">
+                {% else %}
+                    <img src="{% static 'img/default-profile.jpg' %}" alt="Default Profile Image" class="profile-img">
+                {% endif %}
+
+                <div class="card-body">
+                    <h2 class="name">{{ user_data.client_profile.company_name }}</h2>
+                    <p class="profession">{{ user_data.client_profile.client_type|default:'Not specified' }}</p>
+                    <!-- <p class="bio">{{ user_data.register.bio_description|default:'No description available' }}</p> -->
+                    <a href="{% url 'freelancer:client_detail' user_data.user.id %}" class="hire-btn">View Details</a>
+                </div>
+                <div class="card-footer">
+                    {% if user_data.register %}
+                    <a href="{{ user_data.register.linkedin }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/linkedin.png' %}" alt="LinkedIn">
+                    </a>
+                    {% if user_data.register.instagram %}
+                    <a href="{{ user_data.register.instagram }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/instagram.png' %}" alt="Instagram">
+                    </a>
+                    {% else %}
+                    <span class="social-icon">Instagram: Not provided</span>
+                    {% endif %}
+                    {% if user_data.register.twitter %}
+                    <a href="{{ user_data.register.twitter }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/twitter.png' %}" alt="Twitter">
+                    </a>
+                    {% else %}
+                    <span class="social-icon">Twitter: Not provided</span>
+                    {% endif %}
+                    {% if user_data.client_profile.client_type == "Company" and user_data.client_profile.website %}
+                    <a href="{{ user_data.client_profile.website }}" class="social-icon" target="_blank">
+                        <img src="{% static 'img/web.png' %}" alt="Website">
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% endblock %}

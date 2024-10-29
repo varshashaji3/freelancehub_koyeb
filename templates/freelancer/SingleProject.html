@@ -1,0 +1,66 @@
+
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<style>
+    h1{
+        color: #dc3545;
+        font-family: 'Dancing script',Courier New;
+        font-weight: 600;
+        margin-top: -10px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    strong{
+        color: blueviolet;
+        font-size: 17px;
+    }
+    p{
+        line-height: 27px;
+    }
+    h5{
+        color: #dc3545;
+        font-family: 'Dancing script',Courier New;
+        font-weight: 600;
+        font-size: 20px;
+        margin-left: 280px;
+    }
+    img{
+        width:200px;
+        height:200px;
+        border-radius:50%;
+        margin-top:-620px;
+        margin-right:50px;
+    }
+</style>
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;display:flex;align-items:center;">
+    <div class="container" style="background-color:white;padding:20px;border-radius:10px;">
+        <br>
+        <h1>{{ project.title }}</h1>
+        <p style="max-width:700px;"><strong>Description:</strong> {{ project.description }}</p>
+        <p><strong>Budget:</strong> {{ project.budget }}</p>
+        <p><strong>Status:</strong> {{ project.status }}</p>
+        <p><strong>Category:</strong> {{ project.category }}</p>
+        <p><strong>Proposal Start Date:</strong> {{ project.created_at }}</p>
+        <p><strong>Proposal End Date:</strong> {{ project.end_date }}</p>
+
+        <br>    <br>    
+        {% if project.status == "closed" %}
+            <p><strong style="color:red;">This project is closed.</strong></p>
+        {% else %}
+            {% if proposal_exists %}
+                <p><strong style="color:green;">You have already submitted a proposal for this project.</strong></p>
+            {% else %}
+                <a class="btn btn-primary" href="{% url 'freelancer:generate_proposal' project.id %}">Submit Proposal</a>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div style="margin-left:auto;">
+        <img src="{{ client_register.profile_picture.url }}" alt="Client Profile Picture">
+    </div>
+
+    
+</div>
+
+{% endblock %}

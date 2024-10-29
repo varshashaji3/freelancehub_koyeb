@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resume Preview</title>
+</head>
+<body>
+    <h1>Resume Preview</h1>
+    <p>Your resume has been successfully processed. You can download or preview your generated portfolio below:</p>
+
+    <!-- Display a link to download the HTML file -->
+    <p><a href="{{ preview_file_url }}" target="_blank">Download your portfolio preview</a></p>
+    
+    <!-- Optionally, you could include an iframe to preview the HTML file directly in the browser -->
+    <h2>Portfolio Preview</h2>
+    <iframe src="{{ preview_file_url }}" style="width: 100%; height: 600px;" frameborder="0"></iframe>
+
+</body>
+</html>

@@ -1,0 +1,250 @@
+{% extends 'Admin/base.html'%}
+{% block 'admin_content' %}
+{% load custom_filters %}
+<style>
+    /* Page Background */
+    body {
+        background-color: #f8f9fa;
+        font-family: Arial, sans-serif;
+    }
+
+    h1 {
+        text-align: center;
+        color: #007bff;
+        font-size: 2.5rem; /* Increased font size */
+        margin-bottom: 30px; /* Increased margin */
+        animation: slideIn 1s ease-in-out;
+    }
+    
+    /* Enhanced Filter Form Styles */
+    #filter-form {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 20px auto;
+        width: 970px;
+        margin-left: -30px;
+    }
+    
+    #filter-form label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-right: 10px;
+        font-size: 0.95rem;
+    }
+    
+    #filter-form select {
+        background-color: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-right: 20px;
+        color: #495057;
+        font-size: 0.95rem;
+        min-width: 150px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    #filter-form select:hover {
+        border-color: #007bff;
+    }
+    
+    #filter-form select:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    }
+    
+    #filter-form button {
+        background: #103b69;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+    
+    #filter-form button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+    }
+    
+    #filter-form button:active {
+        transform: translateY(0);
+    }
+    
+    /* Review Cards Container */
+    #reviews-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px; /* Increased gap */
+        justify-content: center; /* Centered cards */
+    }
+    
+    /* Review Cards */
+    .review-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        width: calc(30% - 20px); /* Adjusted width */
+        box-sizing: border-box;
+        animation: fadeInUp 1s ease-in-out;
+    }
+    
+    .review-card:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        transform: translateY(-5px);
+    }
+    
+    .review-card h3 {
+        margin-top: 0;
+        color: #007bff;
+        font-size: 1.5rem; /* Increased font size */
+    }
+    
+    .review-card p {
+        margin: 10px 0; /* Increased margin */
+    }
+    
+    /* Load More Button */
+    #load-more-btn {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.2rem; /* Increased font size */
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        animation: fadeIn 1s ease-in-out;
+    }
+    
+    #load-more-btn:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .star-rating i {
+        color: #FFD700;
+    }
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">Site Reviews</h3>
+</div>
+<div class="container">
+
+    <!-- Filter Form -->
+    <form id="filter-form" method="GET" action="{% url 'administrator:reviews' %}">
+        <label for="rating">Filter by Rating:</label>
+        <select id="rating" name="rating">
+            <option value="">Any Rating</option>
+            <option value="1">1 Star</option>
+            <option value="2">2 Stars</option>
+            <option value="3">3 Stars</option>
+            <option value="4">4 Stars</option>
+            <option value="5">5 Stars</option>
+        </select>
+
+        <label for="sort">Sort by:</label>
+        <select id="sort" name="sort">
+            <option value="newest">Newest First</option>
+            <option value="rating">Rating</option>
+        </select>
+
+        <button type="submit">Apply Filters</button>
+    </form><br>
+
+    <!-- Review Cards -->
+     <div id="reviews-container">
+        {% for review in reviews %}
+            <div class="review-card">
+                <h3>{{ review.user.username }}</h3>
+                <div class="rating-section">
+                    <span class="star-rating">
+                        {% for i in 1|to:5 %}
+                            {% if i <= review.rating %}
+                                <i class="fas fa-star"></i> <!-- Full Star -->
+                            {% elif i == review.rating|floatformat:1|stringformat:".1"|slice:":-2" %}
+                                <i class="fas fa-star-half-alt"></i> <!-- Half Star -->
+                            {% else %}
+                                <i class="far fa-star"></i> <!-- Empty Star -->
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+                <p>{{ review.review_text }}</p>
+            </div>
+        {% empty %}
+            <p>No reviews found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Load More Button -->
+    {% if reviews.has_next %}
+        <button id="load-more-btn">Load More</button>
+    {% endif %}
+</div>
+
+<!-- JavaScript to handle Load More functionality -->
+<script>
+    document.getElementById('load-more-btn')?.addEventListener('click', function() {
+        const nextUrl = '{{ reviews.next_page_url }}';
+        if (nextUrl) {
+            fetch(nextUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const reviewsContainer = document.getElementById('reviews-container');
+                    data.reviews.forEach(review => {
+                        const reviewCard = document.createElement('div');
+                        reviewCard.className = 'review-card';
+                        reviewCard.innerHTML = `
+                            <h3>${review.user}</h3>
+                            <p>Rating: ${review.rating}</p>
+                            <p>${review.review_text}</p>
+                        `;
+                        reviewsContainer.appendChild(reviewCard);
+                    });
+                    if (!data.has_next) {
+                        document.getElementById('load-more-btn').style.display = 'none';
+                    }
+                });
+        }
+    });
+</script>
+
+
+           
+{% endblock %}

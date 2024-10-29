@@ -1,0 +1,213 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    table, th, td {
+        border: 1px solid black;
+    }
+    
+    th, td {
+        padding: 8px;
+        text-align: left;
+    }
+    
+    th {
+        background-color: #f2f2f2;
+        color: black;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .file-upload-wrapper {
+        display: flex;
+        align-items: center;
+    }
+    
+    .file-upload-group {
+        flex: 1;
+    }
+    
+    #add-file-btn {
+        margin-left: 10px; /* Adjust as needed for spacing */
+    }
+</style>
+
+<button id="download-btn" class="btn btn-primary">Download PDF</button>
+<br><br>
+
+
+
+
+    <div class="row" style="background-color:white;padding:20px;border-radius:10px;width:950px;" id="invoice-section">
+        <div class="card invoice-preview-card p-sm-12 p-6" style="margin:20px;">
+            <div class="card-body invoice-preview-header rounded" style="background-color: #f2f3f4;padding:30px;">
+                <div class="d-flex flex-wrap flex-column flex-sm-row justify-content-between text-heading">
+                    <div class="mb-md-0 mb-6">
+                        <div class="d-flex svg-illustration mb-6 gap-2 align-items-center">
+                            <span class="app-brand-logo demo">
+                                <img src="{{ profile2.profile_picture.url }}" alt="profile" style="height: 80px;width:80px;margin-right:20px;border-radius:50%;">
+                            </span>
+                            <span class="app-brand-text demo fw-bold ms-50">{{ profile2.first_name }} {{ profile2.last_name }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-5 col-8 pe-0 ps-0 ps-md-2">
+                        <dl class="row mb-0 gx-4">
+                            <dt class="col-sm-5 mb-1 d-md-flex align-items-center justify-content-end">
+                                <span class="fw-normal">Proposal:</span>
+                            </dt>
+                            <dd class="col-sm-7">
+                                {{ proposal.fancy_num }}
+                            </dd>
+                        </dl>
+                        <dl class="row mb-0 gx-4">
+                            <dt class="col-sm-5 mb-1 d-md-flex align-items-center justify-content-end">
+                                <span class="fw-normal">Date Issued:</span>
+                            </dt>
+                            <dd class="col-sm-7">
+                                {{ proposal.date_issued }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <hr class="mt-0 mb-6">
+
+            <div class="card-body px-0">
+                <div class="row">
+                    <div class="col-md-6 col-sm-5 col-12 mb-sm-0 mb-6">
+                        <h6>Proposal To:<br>
+                            <br>
+                            {% if client_profile.client_type == 'Individual' %}
+                                {{ client_register.first_name }} {{ client_register.last_name }}
+                            {% else %}
+                                {{ client_profile.company_name }}
+                            {% endif %}
+                        </h6>
+                        <p class="mb-0">
+                            {{ userprofile.email }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <hr class="mt-0 mb-6">
+
+            <div class="card-body pt-0 px-0">
+                <div class="mb-4">
+                    <label for="proposalDetails" class="form-label"><b>Proposal Details:</b></label><br>
+                    {{ proposal.proposal_details|safe }}
+                </div>
+            </div><br>
+            <p><strong>Budget : </strong>{{proposal.budget}}</p>
+            
+            <p><strong>Expected Project Deadline : </strong>{{proposal.deadline}}</p>
+            <hr class="my-0">
+            <br>
+            <p>
+                Please find below my contact details and portfolio link for your reference:
+            </p>
+            <p>
+                <strong>Phone Number:</strong> <span id="phone_number_value">{{ profile2.phone_number }}</span><br>
+                <strong>Email:</strong> <span id="email_value">{{ profile1.email }}</span><br>
+                <strong>Portfolio Link:</strong> <a href="{{ freelancer.portfolio_link.url }}" id="portfolio_link_value" target="_blank">{{ freelancer.portfolio_link }}</a>
+            </p>
+
+            <br>
+
+            <hr class="my-0">
+            <div class="card-body px-0 pb-0">
+                <div class="row">
+                    <div class="col-12">
+                        <p>Thank you for considering my proposal. I’m excited about the possibility of working together and am confident I can deliver exceptional results. Feel free to reach out if you have any questions or need more information. Thank You!</p>
+                    </div>
+                </div>
+            </div>
+           
+        </div>
+
+        
+        
+    </div>
+    
+<script src="https://cdn.ckeditor.com/ckeditor5/36.0.0/classic/ckeditor.js"></script>
+<script>
+    ClassicEditor
+    .create(document.querySelector('#editor'), {
+        ckfinder: {
+            uploadUrl: '/media/uploads/'
+        }
+    })
+    .catch(error => {
+        console.error(error);
+    });
+</script>
+<script>
+
+
+    
+        document.getElementById('download-btn').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const invoiceSection = document.getElementById('invoice-section');
+        
+            // Capture the dimensions of the invoice section
+            const sectionWidth = invoiceSection.scrollWidth;
+            const sectionHeight = invoiceSection.scrollHeight;
+        
+            // Capture the entire content of the section
+            html2canvas(invoiceSection, {
+                useCORS: true,
+                scrollX: 0,
+                scrollY: 0,
+                width: sectionWidth, // Full width
+                height: sectionHeight, // Full height
+                scale: 2 // Increase scale for better resolution
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF();
+                
+                // PDF dimensions
+                const imgWidth = 210; // A4 size width in mm
+                const pageHeight = 295; // A4 size height in mm
+                
+                // Calculate the height of the image based on the PDF width
+                const imgHeight = sectionHeight * imgWidth / sectionWidth;
+                
+                // Calculate the number of pages needed
+                let heightLeft = imgHeight;
+                let position = 0;
+        
+                // Add the first page
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+        
+                // Add more pages if necessary
+                while (heightLeft > 0) {
+                    pdf.addPage();
+                    position = heightLeft - imgHeight;
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+        
+                // Save the PDF
+                pdf.save('proposal.pdf');
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
+            });
+        });
+        
+
+
+
+</script>
+
+
+{% endblock %}

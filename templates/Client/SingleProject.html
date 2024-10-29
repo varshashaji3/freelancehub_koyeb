@@ -1,0 +1,411 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+{% load custom_filters %}
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        function updateSubmitButtons() {
+            $('tr.proposal-row').each(function() {
+                var status = $(this).find('select[name="status"]').val();
+                var button = $(this).find('.agreement-button');
+                
+                if (status === 'Accepted') {
+                    button.prop('disabled', false);
+                    button.on('click', function() {
+                        window.location.href = $(this).data('href');
+                    });
+                } else {
+                    button.prop('disabled', true);
+                    button.off('click');
+                }
+            });
+        }
+    
+        // Set initial button states
+        updateSubmitButtons();
+    
+        // Update button states on status change
+        $(document).on('change', 'select[name="status"]', function() {
+            updateSubmitButtons();
+        });
+    });
+    
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<style>
+    h1 {
+        color: #dc3545;
+        font-family: 'Dancing Script', Courier New;
+        font-weight: 600;
+        margin-top: -10px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    strong {
+        color: blueviolet;
+        font-size: 17px;
+    }
+    p {
+        line-height: 27px;
+    }
+    h3 {
+        color: #dc3545;
+        font-family: 'Courier New';
+        font-weight: 600;
+        margin-top: 20px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    .file-list {
+        display: flex;
+        flex-wrap: wrap; /* Allows items to wrap to the next line if they exceed container width */
+        padding: 0;
+        margin: 0;
+        margin-left: 30px;
+    }
+    
+    .file-item {
+        margin-right: 50px; /* Spacing between items */
+    }
+    
+    .file-link {
+        text-decoration: none;
+        color: #007BFF; /* Blue color for the link */
+        font-size: 16px;
+    }
+    
+    .file-link:hover {
+        text-decoration: underline;
+    }
+    
+    /*#dc3545*/
+    .buttons{
+        background-color: transparent;  
+        
+        border: none;
+        
+    }
+    .buttons:hover{
+        background-color: transparent;
+    }
+    
+    /* Add this style to ensure the table fits within the div */
+    .table-container {
+        overflow-x: auto; /* Allow horizontal scrolling if needed */
+    }
+    .table {
+        width: 100%; /* Make the table take the full width of its container */
+        table-layout: auto; /* Allow the table to adjust column widths automatically */
+    }
+    
+    /* Adjust padding and icon alignment */
+    .table td, .table th {
+        padding: 10px; /* Adjust padding for table cells */
+        vertical-align: middle; /* Center align content vertically */
+    }
+    .table .buttons {
+        display: flex; /* Use flexbox for button alignment */
+        align-items: center; /* Center align icons and text */
+    }
+    .modal-content{
+        width:700px;
+    }
+    /* Add these styles */
+    .pdf-container {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Default shadow */
+    }
+
+    .pdf-container:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);  /* Deeper shadow on hover */
+        transform: translateY(-2px);  /* Slight lift effect */
+    }
+
+    .pdf-container {
+        position: relative;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 70%;
+    }
+
+    .pdf-background {
+        position: absolute;
+        z-index: 1;
+    }
+
+    .pdf-background i {
+        font-size: 64px;
+        color: #dc3545;
+        opacity: 0.8;
+    }
+
+    .file-actions-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 2;
+    }
+
+    .pdf-container:hover .file-actions-overlay {
+        opacity: 1;
+    }
+
+    .btn-file-action {
+        color: white;
+        padding: 10px;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+
+    .btn-file-action:hover {
+        transform: scale(1.1);
+        color: white;
+    }
+
+    .btn-view {
+        background-color: #007bff;
+    }
+
+    .btn-download {
+        background-color: #28a745;
+    }
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <div class="col-md-8">
+        <div class="container" style="background-color:white;padding:20px;border-radius:10px;">
+            <br>
+            <h1>{{ project.title }}</h1>
+            <p><strong>Description:</strong> {{ project.description }}</p>
+            <p><strong>Budget:</strong> {{ project.budget }}</p>
+            <p><strong>Category:</strong> {{ project.category }}</p>
+            <p><strong>Status:</strong> {{ project.status }}</p>
+            
+            {% if assigned_freelancer %}
+                <p><strong>Assigned Freelancer:</strong> {{ freelancer_first_name }} {{ freelancer_last_name }}</p>
+                <br>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    {% if repository_id %}
+                        <a href="{% url 'client:view_repository' repository_id %}" class="btn btn-info" target="_blank">
+                            <i class="fab fa-github"></i> View Repository
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'client:project_list' %}" class="btn btn-primary">Back to Projects</a>
+                </div>
+            {% else %}
+                <div style="margin-top: 15px;">
+                    <a href="{% url 'client:project_list' %}" class="btn btn-primary">Back to Projects</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Right side card remains the same -->
+    <div class="col-md-4">
+       
+        <div class="file-upload mb-4" style="margin-top: 120px;">
+            <h5><strong>Project File:</strong></h5>
+            <div class="card mb-3 file-card">
+                <div class="card-body">
+                    {% if project.file_upload %}
+                        <div class="pdf-container">
+                            <div class="pdf-background">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="file-actions-overlay">
+                                <a href="{{ project.file_upload.url }}" target="_blank" class="btn-file-action btn-view">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ project.file_upload.url }}" download class="btn-file-action btn-download">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No file uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br><br>
+<div style="background-color:white;padding:10px;border-radius:10px;">
+    <h3>Project Proposals</h3>
+    <!-- Buttons to filter proposals -->
+    <div class="btn-group" role="group" aria-label="Proposal Status">
+        <button type="button" class="btn btn-secondary" id="allProposals">All Proposals</button>
+        <button type="button" class="btn btn-secondary" id="lockedProposals">Locked Proposals</button>
+        <button type="button" class="btn btn-secondary" id="unlockedProposals">Unlocked Proposals</button>
+    </div>
+    <br><br>
+    {% if proposals %}
+    <div class="table-container"> <!-- Added container for the table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Freelancer</th>
+                    <th>Email</th>
+                    <th>Budget</th>
+                    <th>Status</th>
+                    <th colspan="2">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="proposalBody">
+                {% for proposal in proposals %}
+                    <tr class="proposal-row" data-locked="{{ proposal.locked|yesno:'True,False' }}">
+                        <td>
+                            {% for profile in reg_details %}
+                                {% if profile.user_id == proposal.freelancer.id %}
+                                    <img src="{{ profile.profile_picture.url }}" alt="{{ proposal.freelancer.username }}" style="width:50px; height:50px; border-radius:50%;">
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ proposal.freelancer.email }}</td>
+                        <td>{{ proposal.budget }}</td>
+                        <td>{{ proposal.status }}</td>
+                        
+                        <td class="buttons">
+                            <button type="button" class="btn" data-toggle="modal" data-target="#proposalModal{{ proposal.id }}" style="color: #dc3545;">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if proposal.status == 'Accepted' %}
+                                <a href="{% url 'client:submit_contract' project.id %}" class="btn btn-success agreement-button" style="color:green;">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+
+                            {% if proposal.status == 'Pending' %}
+                                <form method="post" action="{% url 'client:update_proposal_status' pro_id=proposal.id %}">
+                                    {% csrf_token %}
+                                    <select name="status">
+                                        <option value="Pending" {% if proposal.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                        <option value="Accepted" {% if proposal.status == 'Accepted' %}selected{% endif %}>Accepted</option>
+                                        <option value="Rejected" {% if proposal.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                </form>
+                             {% endif %}
+                        </td>
+                    </tr>
+                    <!-- Modal for viewing proposal details -->
+                    <div class="modal fade" id="proposalModal{{ proposal.id }}" tabindex="-1" aria-labelledby="proposalModalLabel{{ proposal.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="proposalModalLabel{{ proposal.id }}">Proposal Details</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    {% for profile in reg_details %}
+                                        {% if profile.user_id == proposal.freelancer.id %}
+                                            <img src="{{ profile.profile_picture.url }}" alt="{{ proposal.freelancer.username }}" style="width:100px; height:100px; margin-top:-20px;margin-left:360px;">
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% for reg in reg_details %}
+                                        {% if reg.user_id == proposal.freelancer.id %}
+                                            <p style="margin-top:-100px;"><strong>Freelancer:</strong> {{ reg.first_name }} {{ reg.last_name }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <p><strong>Email:</strong> {{ proposal.freelancer.email }}</p>
+                                    <p><strong>Skills:</strong> 
+                                        {% for profile in freelancer_profiles %}
+                                            {% if profile.user_id == proposal.freelancer.id %}
+                                                {% for skill in profile.skills %}
+                                                    {{ skill }},
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                    <p><strong>Proposal:</strong> <a href="{{ proposal.proposal_file.url }}">view file</a></p>
+                                    <p><strong>Budget:</strong> {{ proposal.budget }}</p>
+                                    <p>Additional Files:</p>
+                                    {% if additional_files %}
+                                        <ul class="file-list">
+                                            {% for file in additional_files %}
+                                                <li class="file-item">
+                                                    <a href="{{ file.file.url }}" class="file-link">file{{ forloop.counter }}</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p>No additional files.</p>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    {% if proposal.locked %}
+                                        <button type="submit" class="btn btn-success">Locked Proposal</button>
+                                    {% else %}
+                                        <p>Do you like this proposal? Lock the proposal so that the freelancer can't edit it.</p>
+                                        <form action="{% url 'client:lock_proposal' proposal.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Lock Proposal</button>
+                                        </form>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No proposals yet.</p>
+    {% endif %}
+</div>
+
+<!-- Add Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Filter proposals based on button clicks
+        $('#allProposals').click(function() {
+            $('.proposal-row').show();
+        });
+
+        $('#lockedProposals').click(function() {
+            $('.proposal-row').hide();
+            $('.proposal-row[data-locked="True"]').show();
+        });
+
+        $('#unlockedProposals').click(function() {
+            $('.proposal-row').hide();
+            $('.proposal-row[data-locked="False"]').show();
+        });
+    });
+</script>
+
+{% endblock %}
+

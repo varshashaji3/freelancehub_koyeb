@@ -1,0 +1,238 @@
+{% extends 'Admin/base.html' %}
+{% block 'admin_content' %}
+{% load static %}
+<style>
+    .user-list-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        margin-top: 20px;
+    }
+
+    .user-list-table th, .user-list-table td {
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+
+    .user-list-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    .export-button-container {
+        margin-bottom: 20px;
+        text-align: right;
+    }
+
+    .export-button {
+        padding: 10px 15px;
+        border: 1px solid #007bff;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .export-button:hover {
+        background-color: #0056b3;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        margin-left :-80px;
+    }
+
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #f1f1f1;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropdown:hover .export-button {
+        background-color: #0056b3;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Add logo
+    const logoImg = new Image();
+    logoImg.src = '{% static "img/logo.png" %}';
+    
+    logoImg.onload = function() {
+        // Calculate center position for logo
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const logoWidth = 40;
+        const logoHeight = (logoWidth * logoImg.height) / logoImg.width;
+        const logoX = (pageWidth - logoWidth) / 2;
+        
+        // Add logo
+        doc.addImage(logoImg, 'PNG', logoX, 10, logoWidth, logoHeight);
+
+        // Add title and date
+        doc.setFontSize(15);
+        doc.setTextColor(255, 0, 87); // #FF0057
+        doc.text('Complaints Report', pageWidth/2, logoHeight + 25, { align: 'center' });
+        
+        // Add generated date
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        const today = new Date().toLocaleDateString('en-US', { 
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+        doc.text(`Generated on: ${today}`, pageWidth - 15, logoHeight + 35, { align: 'right' });
+
+        // Get the table data
+        const table = document.querySelector('.user-list-table');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        const tableData = rows.map(row => {
+            return Array.from(row.querySelectorAll('th, td')).map(cell => cell.textContent.trim());
+        });
+
+        // PDF table styling
+        doc.autoTable({
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            startY: logoHeight + 45,
+            margin: { left: 10, right: 10 },
+            theme: 'grid',
+            styles: {
+                fontSize: 8,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.1,
+            },
+            headStyles: {
+                fillColor: [0, 32, 96],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'left'
+            },
+            columnStyles: {
+                0: {cellWidth: 10},  // #
+                1: {cellWidth: 30},  // Complainant
+                2: {cellWidth: 25},  // Type
+                3: {cellWidth: 30},  // Subject
+                4: {cellWidth: 40},  // Description
+                5: {cellWidth: 25},  // Date
+                6: {cellWidth: 20},  // Status
+            },
+            didDrawPage: function(data) {
+                // Add logo and title on each new page
+                if (data.pageCount > 1) {
+                    doc.addImage(logoImg, 'PNG', logoX, 10, logoWidth, logoHeight);
+                    doc.setFontSize(15);
+                    doc.setTextColor(255, 0, 87);
+                    doc.text('Complaints Report', pageWidth/2, logoHeight + 25, { align: 'center' });
+                    doc.setFontSize(10);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Generated on: ${today}`, pageWidth - 15, logoHeight + 35, { align: 'right' });
+                }
+                // Update startY for table on new pages
+                data.settings.startY = logoHeight + 45;
+            }
+        });
+
+        doc.save('complaints_report.pdf');
+    };
+
+    logoImg.onerror = function() {
+        console.warn('Logo failed to load, generating PDF without logo');
+        generatePDFWithoutLogo();
+    };
+}
+
+function exportToExcel() {
+    const complaints = [
+        {% for complaint in complaints %}
+            {
+                "No": "{{ forloop.counter }}",
+                "Complainant": "{{ complaint.user }}",
+                "Type": "{{ complaint.complaint_type }}",
+                "Subject": "{{ complaint.subject }}",
+                "Description": "{{ complaint.description }}",
+                "Date Filed": "{{ complaint.date_filed|date:'Y-m-d' }}",
+                "Status": "{{ complaint.status }}"
+            },
+        {% endfor %}
+    ];
+    
+    const worksheet = XLSX.utils.json_to_sheet(complaints);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Complaints");
+    XLSX.writeFile(workbook, "complaints_report.xlsx");
+}
+</script>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">All Compalints</h3>
+</div><br>
+<div class="export-button-container">
+    <div class="dropdown">
+        <button class="export-button">Export</button>
+        <div class="dropdown-content">
+            <a href="#" onclick="exportToExcel(); return false;">Export as Excel</a>
+            <a href="#" onclick="exportToPDF(); return false;">Export as PDF</a>
+        </div>
+    </div>
+</div><br><br>
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;margin-top:-25px;">
+    <br>
+<table class="user-list-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Complainant</th>
+            <th>Complaint Type</th>
+            <th>Subject</th>
+            <th>Description</th>
+            <th>Date Filed</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for complaint in complaints %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ complaint.user }}</td>
+                <td>{{ complaint.complaint_type }}</td>
+                <td>{{ complaint.subject }}</td>
+                <td>{{ complaint.description }}</td>
+                <td>{{ complaint.date_filed|date:"Y-m-d" }}</td>
+                <td>{{ complaint.status }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

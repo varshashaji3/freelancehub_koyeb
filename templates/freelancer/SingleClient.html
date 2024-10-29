@@ -1,0 +1,352 @@
+
+{% extends 'freelancer/base.html'%}
+{% block 'freelancer_content' %}
+{% load static %}
+
+{% load custom_filters %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+<style>
+  .error {
+    color: red;
+    font-family: Comic Sans MS;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  /* Style the tab headings */
+  .custom-tab {
+    position: relative;
+    padding-bottom: 0.4em;
+    color: grey;
+    font-size: 18px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-decoration: none;
+    /* Remove underline */
+  }
+
+  .custom-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #000;
+    transform: scaleX(0);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .custom-tab:hover::after {
+    transform: scaleX(1);
+
+  }
+
+  .custom-tab.active::after {
+    transform: scaleX(1);
+  }
+
+  /* Additional styling */
+  .card {
+    border: none;
+    border-radius: 10px;
+  }
+
+  .form-floating {
+    margin-bottom: 1em;
+  }
+
+  .profile-box {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .profile-pic {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 10px;
+  }
+
+  .profile-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .profile-pic input {
+    display: none;
+  }
+
+  .profile p {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 18px;
+  }
+
+  .profile h2 {
+    cursor: pointer;
+    margin-left: 220px;
+    font-size: 28px;
+    color: #063970;
+    margin-top: -170px;
+  }
+
+  .profile .social-icons {
+    cursor: pointer;
+    margin-left: 205px;
+
+    margin-top: 30px;
+  }
+
+
+
+
+
+
+  
+ .row1 .card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width:300px;
+  margin-top: 10px;
+}
+
+.row1 .card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 100%;
+  max-width: 350px;
+  position: relative;
+}
+
+.row1 .card-body {
+  padding: 15px;
+  padding-bottom: 50px; /* Ensure space for the profile image */
+  position: relative;
+}
+
+.rating-section {
+  margin-bottom: 10px;
+}
+
+.star-rating i {
+  color: #FFD700;
+}
+
+.row1  h2 {
+  margin-top: 0;
+  font-size: 1.6em;
+  color: #b00a0a;
+}
+
+.row1 .card-body p {
+  margin: 10px 0 0;
+  font-size: 1em;
+  color: #555;
+}
+
+
+.review-date {
+  font-size: 0.9em;
+  color: #888;
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+}
+
+
+.row1 .card {
+background-color: #fff;
+border-radius: 10px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+overflow: hidden;
+width: 100%;
+max-width: 350px;
+position: relative;
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.row1 .card:hover {
+transform: scale(1.03);
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.row1 .card-body {
+padding: 15px;
+padding-bottom: 50px; /* Ensure space for the profile image */
+position: relative;
+transition: background-color 0.3s ease;
+}
+
+.row1 .card:hover .card-body {
+background-color: #f9f9f9;
+}
+
+
+.reviewer-info {
+display: flex;
+align-items: center;
+margin-top: 15px;
+margin-bottom: -20px;
+}
+
+/* Style for the profile image */
+.profile-img {
+width: 50px; /* Adjust size as needed */
+height: 50px; /* Adjust size as needed */
+border-radius: 50%;
+margin-right: 15px; /* Space between image and text */
+}
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+  <div class="tab-content" id="myTabContent"
+    style="background-color:white;padding:30px;border-radius:10px;border:none;">
+
+    <!-- Account Details -->
+    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab"
+      style="border:none">
+      <div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+        <div class="profile-box">
+          <div class="profile-pic" style="height:170px;border-radius:50px;">
+            <img id="profileImage" src="{{profile4.profile_picture.url}}" alt="Profile Picture"
+              style="object-fit:contain">
+          </div>
+
+
+        </div>
+        <span class="profile">
+          {% if client.client_type == "Individual" %}
+          <h2>{{profile4.first_name}} {{profile4.last_name}}</h2>
+          {% elif client.client_type == "Company" %}
+          <h2>{{client.company_name}}</h2>
+          {% endif %}
+          <br>
+          <p>{{profile4.bio_description}}</p>
+
+
+          <div class="col-md-6">
+            <div class="social-icons" style="display: flex; align-items: center;">
+              <div>
+                {% if profile4.linkedin %}
+                <a href="{{ profile4.linkedin }}" target="_blank" style="margin-right: 10px;">
+                  <img src="{% static 'img/linkedin.png' %}" alt="LinkedIn" style="width:35px;height:35px;">
+                </a>
+                {% else %}
+                Not provided
+                {% endif %}
+              </div>
+              <div>
+                {% if profile4.instagram %}
+                <a href="{{ profile4.instagram }}" target="_blank" style="margin-right: 10px;">
+                  <img src="{% static 'img/instagram.png' %}" alt="Instagram" style="width:35px;height:35px;">
+                </a>
+                {% else %}
+                Not provided
+                {% endif %}
+              </div>
+              <div>
+                {% if profile4.twitter %}
+                <a href="{{ profile4.twitter }}" target="_blank">
+                  <img src="{% static 'img/twitter.png' %}" alt="Twitter" style="width:35px;height:35px;">
+                </a>
+                {% else %}
+                Not provided
+                {% endif %}
+              </div>
+              <div>
+                {% if client.client_type == "Company" and client.website %}
+                <a href="{{ client.website  }}" target="_blank" style="margin-left: 10px;">
+                  <img src="{% static 'img/web.png' %}" alt="Twitter" style="width:35px;height:35px;">
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+
+        </span>
+      </div><br><br>
+      <div class="card account-details">
+        <h4>Account Details</h4>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Client Type:</strong> {{ client.client_type }}</p>
+              {% if client.client_type == "Individual" %}
+              <p><strong>First Name:</strong> {{ profile4.first_name }}</p>
+              <p><strong>Last Name:</strong> {{ profile4.last_name }}</p>
+              <p><strong>Aadhar:</strong> <a href="{{ client.aadhaar_document.url }}">view aadhar</a></p>
+              {% elif client.client_type == "Company" %}
+              <p><strong>Company Name:</strong> {{ client.company_name }}</p>
+
+              </p>
+              <p><strong>License Number:</strong> {{ client.license_number }}</p>
+              {% endif %}
+
+            </div>
+
+            <div class="col-md-6">
+
+              <p><strong>Email:</strong> {{ profile3.email }}</p>
+              <p><strong>Phone:</strong> {{ profile4.phone_number }}</p>
+              <p><strong>Location:</strong> {{ profile4.location }}</p>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<br>
+<div class="row row1" style="padding:10px;border-radius:10px;">
+  <h2>Reviews</h2>
+  
+  <section class="card-container">
+    {% if reviews %}
+    {% for detail in reviews %}
+      <article class="card">
+          <div class="card-body">
+              <p>{{ detail.review.review_text }}</p><br>
+              <div class="rating-section">
+                  <span class="star-rating">
+                      {% for i in 1|to:5 %}
+                          {% if i <= detail.review.overall_rating %}
+                              <i class="fas fa-star"></i> <!-- Full Star -->
+                          {% elif i == detail.review.overall_rating|floatformat:1|stringformat:".1"|slice:":-2" %}
+                              <i class="fas fa-star-half-alt"></i> <!-- Half Star -->
+                          {% else %}
+                              <i class="far fa-star"></i> <!-- Empty Star -->
+                          {% endif %}
+                      {% endfor %}
+                  </span>
+              </div>
+              <div class="reviewer-info">
+                  <img src="{{ detail.reviewer_image }}" alt="{{ detail.review.reviewer.first_name }}'s Profile Image" class="profile-img">
+                  <p>{{ detail.reviewer_name }}</p>
+              </div>
+          </div>
+      </article>
+    {% endfor %}
+    {% else %}
+      <p>No reviews available for this freelancer.</p>
+    {% endif %}
+</section>
+</div>
+
+
+{% endblock %}

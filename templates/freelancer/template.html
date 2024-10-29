@@ -1,0 +1,236 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        
+        $("#proposal_description").keyup(function () {
+            check_description();
+        });
+
+        $("#proposal_budget").keyup(function () {
+            check_budget();
+        });
+
+        $("#proposal_deadline").change(function () {
+            check_deadline();
+        });
+
+
+        var description_error = false;
+        var budget_error = false;
+        var deadline_error = false;
+
+        
+          
+          
+      
+          function check_description() {
+            var description = $("#proposal_description").val();
+            if (description !== "") {
+              $("#error_des").hide();
+              $("#proposal_description").css("border", "2px solid green");
+              description_error = false;
+            } else {
+              $("#error_des").html("Invalid characters in description").show();
+              $("#proposal_description").css("border", "2px solid red");
+              description_error = true;
+            }
+          }
+
+        function check_budget() {
+            var budget = $("#proposal_budget").val();
+            if (budget !== "" && !isNaN(budget) && budget > 0) {
+                $("#error_budget").hide();
+                $("#proposal_budget").css("border", "2px solid green");
+            } else {
+                $("#error_budget").html("Enter a valid budget").show();
+                $("#proposal_budget").css("border", "2px solid red");
+                budget_error = true;
+            }
+        }
+
+        function check_deadline() {
+            var deadline = $("#proposal_deadline").val();
+            var today = new Date().toISOString().split('T')[0]; 
+            if (deadline !== "" && deadline > today) {
+                $("#error_deadline").hide();
+                $("#proposal_deadline").css("border", "2px solid green");
+            } else {
+                $("#error_deadline").html("Deadline should be a future date").show();
+                $("#proposal_deadline").css("border", "2px solid red");
+                deadline_error = true;
+            }
+        }
+
+        $("#proposal_form").submit(function () {
+            description_error = false;
+            budget_error = false;
+            deadline_error = false;
+
+            check_description();
+            check_budget();
+            check_deadline();
+
+            if (description_error || budget_error || deadline_error) {
+                $("#proposal_err").html("Please fill the form correctly.").show();
+                return false;
+            } else {
+                $("#proposal_err").hide();
+                return true;
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var dateIssuedInput = document.getElementById("date_issued");
+        var today = new Date().toISOString().split('T')[0];
+        dateIssuedInput.value = today;
+        dateIssuedInput.disabled = true;
+    });
+</script>
+
+<div class="row" style="background-color:white;padding:20px;border-radius:10px;width:850px;">
+    <div class="card-body px-0">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h6>Project Details:</h6>
+                <p><strong>Title:</strong> {{ project.title }}</p>
+                <p><strong>Category:</strong> {{ project.category }}</p>
+                <p>{{ project.description }}</p>
+                <p><strong>Budget:</strong> {{ project.budget }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+
+<hr class="mt-0 mb-6"><br>
+
+<form id="proposal_form" action="" method="post">
+    {% csrf_token %}
+    <div class="row" style="background-color:white;padding:20px;border-radius:10px;width:850px;">
+        <div class="card invoice-preview-card p-sm-12 p-6" style="margin:20px;">
+            <div class="card-body invoice-preview-header rounded" style="background-color: #f2f3f4;padding:30px;">
+                <div class="d-flex flex-wrap flex-column flex-sm-row justify-content-between text-heading">
+                    <div class="mb-md-0 mb-6">
+                        <div class="d-flex svg-illustration mb-6 gap-2 align-items-center">
+                            <span class="app-brand-logo demo">
+                                <img src="{{ profile2.profile_picture.url }}" alt="profile" style="height: 80px; width: 80px; margin-right:20px;border-radius:50%;">
+                            </span>
+                            <span class="app-brand-text demo fw-bold ms-50">{{profile2.first_name}} {{profile2.last_name}}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-5 col-8 pe-0 ps-0 ps-md-2">
+                        <dl class="row mb-0 gx-4">
+                            <dt class="col-sm-5 mb-1 d-md-flex align-items-center justify-content-end">
+                                <span class="fw-normal">Proposal:</span>
+                            </dt>
+                            <dd class="col-sm-7">
+                                <input type="text" class="form-control invoice-date" name="fancy" value="{{ number }}" style="width: 150px;" disabled>
+                            </dd>
+                        </dl>
+                        <dl class="row mb-0 gx-4">
+                            <dt class="col-sm-5 mb-1 d-md-flex align-items-center justify-content-end">
+                                <span class="fw-normal">Date Issued:</span>
+                            </dt>
+                            <dd class="col-sm-7">
+                                <input type="date" id="date_issued" name="date_issued" class="form-control invoice-date" placeholder="MM/DD/YYYY" value="{{ proposal.date_issued|date:'Y-m-d' }}" style="width: 150px;">
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <hr class="mt-0 mb-6">
+
+            <div class="card-body px-0">
+                <div class="row">
+                    <div class="col-md-6 col-sm-5 col-12 mb-sm-0 mb-6">
+                        <h6>Proposal To:<br><br><strong>{% if client_profile.client_type == 'Individual'%}{{client_register.first_name}}  {{client_register.last_name}}{% else %}{{client_profile.company_name}} {% endif %}</strong></h6>
+                        <p class="mb-0">{{userprofile.email}}</p>
+                    </div>
+                </div>
+            </div>
+            <hr class="mt-0 mb-6">
+
+          
+
+            <!-- Proposal Description -->
+            <div class="card-body pt-0 px-0">
+                <div class="mb-4">
+                    <label for="proposal_description" class="form-label">Proposal Details:</label>
+                    <textarea id="proposal_description" name="proposal_description" rows="50" cols="80" placeholder="Enter details" class="form-control"></textarea>
+                    <span id="error_des" class="text-danger"></span> 
+                </div>
+            </div>
+
+            <!-- Proposal Budget -->
+           <!-- Proposal Budget -->
+           {% if project.allow_bid %}
+           <div class="mb-4">
+               <label for="proposal_budget" class="form-label">Proposal Budget:</label>
+               <input type="text" id="proposal_budget" name="proposal_budget" class="form-control" placeholder="Enter budget">
+               <span id="error_budget" class="text-danger"></span> <!-- Error span for budget -->
+           </div>
+           {% else %}
+           <div class="mb-4">
+               <label for="proposal_budget" class="form-label">Proposal Budget:</label>
+               <input type="text" id="proposal_budget" name="proposal_budget" class="form-control" value="{{ project.budget }}" disabled>
+               <input type="hidden" id="proposal_budget" name="proposal_budget" value="{{ project.budget }}">
+           </div>
+           {% endif %}
+           
+
+
+            <!-- Proposal Deadline -->
+            <div class="mb-4">
+                <label for="proposal_deadline" class="form-label">Expected Project Deadline:</label>
+                <input type="date" id="proposal_deadline" name="proposal_deadline" class="form-control" placeholder="Select deadline">
+                <span id="error_deadline" class="text-danger"></span> <!-- Error span for deadline -->
+            </div>
+            
+            <hr class="my-0">
+            <br>
+            <p>Please find below my contact details and portfolio link for your reference:</p>
+            <p>
+                <strong>Phone Number:</strong> <span id="phone_number_value">{{profile2.phone_number}}</span><br>
+                <strong>Email:</strong> <span id="email_value">{{profile1.email}}</span><br>
+                <strong>Portfolio Link:</strong> <a href="{{ freelancer.portfolio_link.url }}" id="portfolio_link_value" target="_blank">{{ freelancer.portfolio_link }}</a>
+            </p>
+            
+            <br><hr class="my-0">
+
+            <div class="card-body px-0 pb-0">
+                <div class="row">
+                    <div class="col-12">
+                        <p>Thank you for considering my proposal. I’m excited about the possibility of working together and am confident I can deliver exceptional results. Feel free to reach out if you have any questions or need more information. Thank You!</p>
+                    </div>
+                </div>
+            </div>
+            <br><br>
+            <div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+            <span id="proposal_err" class="text-danger"></span> <!-- Error span for form submission -->
+        </div>
+    </div>
+</form>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/36.0.0/classic/ckeditor.js"></script>
+<script>
+    ClassicEditor
+        .create(document.querySelector('#proposal_description'), {
+            ckfinder: {
+                uploadUrl: '/media/uploads/'
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
+</script>
+{% endblock %}

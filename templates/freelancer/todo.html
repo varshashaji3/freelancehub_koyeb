@@ -1,0 +1,280 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $("#update_form").hide();
+
+        $(".btn-edit").click(function (e) {
+            e.preventDefault();
+
+            var title = $(this).data('title');
+            var todoId = $(this).data('id');
+            $("#update_title").val(title);
+            $("#update_todo_id").val(todoId); 
+            $("#add_form").hide();
+            $("#update_form").show();
+        });
+
+        
+        $("#cancel_update").click(function (e) {
+            e.preventDefault();
+
+            $("#update_form").hide();
+            $("#add_form").show();
+        });
+    });
+</script>
+
+<style>
+    .error {
+        color: red;
+        font-family: Comic Sans MS;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .todo-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .todo-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .todo-list li:last-child {
+        border-bottom: none;
+    }
+
+    .todo-list li .form-check-label {
+        display: flex;
+        align-items: center;
+    }
+
+    .todo-list li .form-check-label input {
+        margin-right: 10px;
+    }
+
+    .todo-list li.completed .form-check-label {
+        text-decoration: line-through;
+    }
+
+    .remove {
+        cursor: pointer;
+    }
+
+    .todo-form input {
+        margin-right: 10px;
+    }
+</style>
+
+
+
+<script>
+    $(document).ready(function () {
+  
+      $("#todo_title").keyup(function () {
+        check_title();
+      })
+     
+  
+  
+      var title_error = false;
+  
+      function check_title() {
+        var pattern = /^[a-zA-Z ]*$/;
+        var title = $("#todo_title").val();
+        if (pattern.test(title) && title !== "") {
+          $("#error_title").hide();
+          $("#todo_title").css("border", "2px solid green");
+        } else {
+          $("#error_title").html("Should contain only letters").show();
+          $("#todo_title").css("border", "2px solid red");
+          title_error = true;
+        }
+      }
+  
+      
+      
+    $("#todo_form").submit(function () {
+     
+      title_error = false;
+      check_title();
+  
+      if (title_error ) {
+          $("#todo_err").html("Please fill the form correctly.").show();
+          return false; 
+      } else {
+          $("#todo_err").hide(); 
+          return true; 
+      }
+  });
+
+
+  $("#update_title").keyup(function () {
+    check_update_title();
+  })
+ 
+
+
+  var update_title_error = false;
+
+  function check_update_title() {
+    var pattern = /^[a-zA-Z ]*$/;
+    var title = $("#update_title").val();
+    if (pattern.test(title) && title !== "") {
+      $("#error_title_update").hide();
+      $("#update_title").css("border", "2px solid green");
+    } else {
+      $("#error_title_update").html("Should contain only letters").show();
+      $("#update_title").css("border", "2px solid red");
+      update_title_error = true;
+    }
+  }
+
+  
+  
+$("#update_form").submit(function () {
+ 
+    update_title_error = false;
+    check_update_title();
+
+  if (update_title_error ) {
+      $("#todo_err_update").html("Please fill the form correctly.").show();
+      return false; 
+  } else {
+      $("#todo_err_update").hide(); 
+      return true; 
+  }
+});
+
+// Add this new event handler
+$(".todo-checkbox").change(function() {
+    var todoId = $(this).data('id');
+    var isCompleted = $(this).prop('checked');
+    
+    $.ajax({
+        url: "{% url 'freelancer:update_todo_status' %}",
+        method: "POST",
+        data: {
+            todo_id: todoId,
+            is_completed: isCompleted,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                if (isCompleted) {
+                    $(`#todo-item-${todoId}`).addClass('completed');
+                } else {
+                    $(`#todo-item-${todoId}`).removeClass('completed');
+                }
+            } else {
+                alert('Failed to update todo status');
+            }
+        },
+        error: function() {
+            alert('An error occurred while updating todo status');
+        }
+    });
+});
+    });
+</script>
+<div class="row">
+    <div class="col-md-8 grid-margin stretch-card" style="height: auto;">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">To Do Lists</h4>
+                <ul class="todo-list todo-list-custom">
+                    {% for todo in todos %}
+                    <li id="todo-item-{{ todo.id }}" class="{% if todo.is_completed %}completed{% endif %}">
+                        <div class="form-check form-check-flat">
+                            <label class="form-check-label">
+                                <input class="checkbox todo-checkbox" type="checkbox" data-id="{{ todo.id }}" {% if todo.is_completed %}checked{% endif %}>
+                                {{ todo.title }}
+                            </label>
+                        </div>
+                        <a href="#" class="btn btn-primary btn-edit" data-title="{{ todo.title }}" data-id="{{ todo.id }}"
+                           style="text-decoration: none; color: white; margin-left: 370px; padding: 10px;">
+                            Edit
+                        </a>
+                        <form action="{% url 'freelancer:delete_todo' todo.id %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit" class="btn btn-danger" style="padding: 10px; margin-left: 10px;">
+                                Delete
+                            </button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="row">
+            <div class="col-12 grid-margin stretch-card" style="height: 300px;">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title" style="margin-left: 80px; margin-top: 20px; margin-bottom: 20px;">
+                            Add To Do
+                        </h4>
+                        <div class="add-items d-flex mb-0 mt-2">
+                            <form method="post" action="{% url 'freelancer:add_todo'  %}" id="add_form"
+                                  style="margin-top: 10px; margin-bottom: 30px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="todo_title" name="title"
+                                               placeholder="Add Task">
+                                        <span id="error_title" class="error"></span>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="border-radius: 7px;">Save</button>
+                                <br><span id="todo_err" class="error"></span>
+                            </form>
+                        </div>
+
+                        <div class="add-items d-flex mb-0 mt-2">
+                            <form method="post" action="{% url 'freelancer:update_todo' %}" id="update_form"
+                                  style="margin-top: 10px; margin-bottom: 30px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <input type="hidden" id="update_todo_id" name="todo_id">
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="update_title" name="title"
+                                               placeholder="Update Task">
+                                        <span id="error_title_update" class="error"></span>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="border-radius: 7px;">Update</button>
+                                <button id="cancel_update" class="btn btn-secondary" style="border-radius: 7px; margin-left: 10px;">
+                                    Cancel
+                                </button>
+                                <br><span id="todo_err_update" class="error"></span>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,548 @@
+{% extends 'Admin/base.html' %}
+{% block 'admin_content' %}
+{% load static %}
+{% load custom_filters %}
+<!-- Include DataTables CSS and JS from CDN -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.user-list-table').DataTable(); // Initialize DataTable
+    });
+</script>
+
+<!-- Add these CDN links after existing script tags -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+    .user-list-table {
+        min-width: 950px;
+        margin-bottom: 20px;
+        margin-top: 20px;
+
+    }
+
+    .user-list-table th, .user-list-table td {
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+
+    .user-list-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    .export-button-container {
+        margin-bottom: 20px;
+        text-align: right;
+    }
+
+    .export-button {
+        padding: 10px 15px;
+        border: 1px solid #007bff;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .export-button:hover {
+        background-color: #0056b3;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        margin-left :-80px;
+    }
+
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #f1f1f1;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropdown:hover .export-button {
+        background-color: #0056b3;
+    }
+
+    .year-filter {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin: 20px 0;
+        width: 980px;
+        margin-left: -15px;
+    }
+
+    #filterForm {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-group label {
+        font-weight: 500;
+        color: #344767;
+        font-size: 0.9rem;
+        min-width: max-content;
+    }
+
+    .filter-group select {
+        padding: 8px 32px 8px 12px;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        background: #f8f9fa;
+        color: #495057;
+        font-size: 0.9rem;
+        min-width: 160px;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23495057' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: calc(100% - 12px) center;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .clear-filters-btn {
+        background-color: #edf2f7;
+        color: #4a5568;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        margin-left: auto;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">Projects</h3>
+</div><br>
+
+<div class="export-button-container">
+    <div class="dropdown">
+        <button class="export-button">Export</button>
+        <div class="dropdown-content">
+            <a href="#" onclick="exportToExcel(); return false;">Export as Excel</a>
+            <a href="#" onclick="exportToPDF(); return false;">Export as PDF</a>
+        </div>
+    </div>
+</div>
+
+<div class="year-filter">
+    <h4 class="filter-heading" style="color:#ff0057;">Filter by</h4><br>
+    <form method="GET" id="filterForm">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="year">Year:</label>
+                <select name="year" id="year" onchange="this.form.submit()">
+                    {% for year in 2023|to:current_year %}
+                    <option value="{{ year }}" {% if request.GET.year == year|stringformat:"i" or not request.GET.year and year == 2024 %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="start_month">From:</label>
+                <select name="start_month" id="start_month" onchange="validateMonths()">
+                    <option value="">Month</option>
+                    {% for i in '1,2,3,4,5,6,7,8,9,10,11,12'|split:',' %}
+                    <option value="{{ i }}" {% if request.GET.start_month == i %}selected{% endif %}>
+                        {{ i|month_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="end_month">To:</label>
+                <select name="end_month" id="end_month" onchange="validateMonths()" disabled>
+                    <option value="">Month</option>
+                    {% for i in '1,2,3,4,5,6,7,8,9,10,11,12'|split:',' %}
+                    <option value="{{ i }}" {% if request.GET.end_month == i %}selected{% endif %}>
+                        {{ i|month_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="button" onclick="clearFilters()" class="clear-filters-btn">
+                Clear
+            </button>
+        </div>
+    </form>
+</div>
+<br><br>
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;margin-top:-25px;">
+    <br>
+<table class="user-list-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Client</th>
+            <th>Project Title</th>
+            <th>Category</th>
+            <th>Budget(@18% gst)</th>
+            <th>Status</th>
+            <th>Created Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if projects|length == 0 %}
+            <tr>
+                <td colspan="7" style="text-align:center;">No projects found for the selected filters.</td>
+            </tr>
+        {% else %}
+            {% for project in projects %}
+                {% with project_month=project.project.created_at|date:'n'|stringformat:"s" %}
+                {% with start_month=request.GET.start_month|default:'' %}
+                {% with end_month=request.GET.end_month|default:'' %}
+                {% with month_range=start_month|add:':'|add:end_month %}
+                    {% if request.GET.year|default:'' == project.project.created_at|date:'Y' or not request.GET.year %}
+                        {% if not start_month or not end_month or project_month|between:month_range %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td><img src="{{ project.client_info.profile_picture.url }}" alt="Profile Picture" width="50" style="padding-right:20px;">  {{ project.client_info.name }}</td>
+                                <td>{{ project.project.title }}</td>
+                                <td>{{ project.project.category }}</td>
+                                <td>{{ project.project.total_including_gst }}</td>
+                                <td class="font-weight-medium">
+                                    <div class="badge {% if project.project.project_status == 'Not Started' %}badge-danger{% elif project.project.project_status == 'In Progress' %}badge-warning{% elif project.project.project_status == 'Completed' %}badge-success{% else %}badge-secondary{% endif %}">
+                                        {{ project.project.project_status }}
+                                    </div>
+                                </td>
+                                <td>{{ project.project.created_at|date:"d M Y" }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                {% endwith %}
+                {% endwith %}
+                {% endwith %}
+                {% endwith %}
+            {% endfor %}
+        {% endif %}
+    </tbody>
+</table>
+</div>
+
+<script>
+    // Configure toastr options
+    toastr.options = {
+        "closeButton": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "timeOut": "3000"
+    };
+
+    // Enable/disable end month based on start month selection
+    document.getElementById('start_month').addEventListener('change', function() {
+        const endMonth = document.getElementById('end_month');
+        if (this.value) {
+            endMonth.disabled = false;
+        } else {
+            endMonth.disabled = true;
+            endMonth.value = '';
+        }
+    });
+
+    // Initialize end month state on page load
+    window.addEventListener('load', function() {
+        const startMonth = document.getElementById('start_month');
+        const endMonth = document.getElementById('end_month');
+        endMonth.disabled = !startMonth.value;
+    });
+
+    function validateMonths() {
+        const startMonth = document.getElementById('start_month');
+        const endMonth = document.getElementById('end_month');
+        
+        if (!startMonth.value && endMonth.value) {
+            toastr.warning('Please select start month first');
+            endMonth.value = '';
+            return;
+        }
+
+        if (startMonth.value && endMonth.value) {
+            const start = parseInt(startMonth.value);
+            const end = parseInt(endMonth.value);
+            
+            if (end < start) {
+                toastr.error('End month must be after or equal to start month');
+                endMonth.value = '';
+                return;
+            }
+        }
+        
+        document.getElementById('filterForm').submit();
+    }
+
+    function clearFilters() {
+        document.getElementById('year').value = '2024';
+        document.getElementById('start_month').value = '';
+        document.getElementById('end_month').value = '';
+        
+        const url = new URL(window.location.href);
+        url.searchParams.delete('year');
+        url.searchParams.delete('start_month');
+        url.searchParams.delete('end_month');
+        
+        window.location.href = url.pathname;
+        return false;
+    }
+
+    function exportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Add logo
+        const logoImg = new Image();
+        logoImg.src = '{% static "img/logo.png" %}';
+        
+        logoImg.onload = function() {
+            // Calculate center position for logo
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const logoWidth = 40; // Adjust logo size as needed
+            const logoHeight = (logoWidth * logoImg.height) / logoImg.width;
+            const logoX = (pageWidth - logoWidth) / 2;
+            
+            // Add logo
+            doc.addImage(logoImg, 'PNG', logoX, 10, logoWidth, logoHeight);
+
+            // Add title and date
+            doc.setFontSize(15);
+            doc.setTextColor(255, 0, 87); // #FF0057
+            doc.text('Projects Report', pageWidth/2, logoHeight + 25, { align: 'center' });
+            
+            // Add generated date
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100); // Gray color
+            const today = new Date().toLocaleDateString('en-US', { 
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            doc.text(`Generated on: ${today}`, pageWidth - 15, logoHeight + 35, { align: 'right' });
+
+            // Get the table data
+            const table = document.querySelector('.user-list-table');
+            const rows = Array.from(table.querySelectorAll('tr'));
+            
+            const tableData = rows.map(row => {
+                return Array.from(row.querySelectorAll('th, td')).map(cell => {
+                    if (cell.querySelector('img')) {
+                        return cell.textContent.trim();
+                    }
+                    return cell.textContent.trim();
+                });
+            });
+
+            // PDF table styling
+            doc.autoTable({
+                head: [tableData[0]],
+                body: tableData.slice(1),
+                startY: logoHeight + 45,
+                margin: { left: 10, right: 10 }, // Adjusted margins
+                theme: 'grid',
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 3,
+                    lineColor: [200, 200, 200],
+                    lineWidth: 0.1,
+                },
+                headStyles: {
+                    fillColor: [0, 32, 96], // Dark blue
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    halign: 'left' // Align header text to left
+                },
+                columnStyles: {
+                    0: {cellWidth: 10}, // Reduced SL No width
+                    1: {cellWidth: 35}, // Client
+                    2: {cellWidth: 35}, // Project Title
+                    3: {cellWidth: 25}, // Category
+                    4: {cellWidth: 25}, // Budget
+                    5: {cellWidth: 25}, // Status
+                    6: {cellWidth: 25}, // Created Date
+                },
+                didDrawPage: function(data) {
+                    // Add logo and title on each new page
+                    if (data.pageCount > 1) {
+                        doc.addImage(logoImg, 'PNG', logoX, 10, logoWidth, logoHeight);
+                        doc.setFontSize(15);
+                        doc.setTextColor(255, 0, 87);
+                        doc.text('Projects Report', pageWidth/2, logoHeight + 25, { align: 'center' });
+                        doc.setFontSize(10);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text(`Generated on: ${today}`, pageWidth - 15, logoHeight + 35, { align: 'right' });
+                    }
+                    // Update startY for table on new pages
+                    data.settings.startY = logoHeight + 45;
+                }
+            });
+
+            doc.save('projects_report.pdf');
+        };
+
+        logoImg.onerror = function() {
+            console.warn('Logo failed to load, generating PDF without logo');
+            generatePDFWithoutLogo();
+        };
+    }
+
+    function generatePDFWithoutLogo() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Add title and date without logo
+        doc.setFontSize(15);
+        doc.setTextColor(255, 0, 87);
+        doc.text('Projects Report', pageWidth/2, 20, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        const today = new Date().toLocaleDateString('en-US', { 
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+        doc.text(`Generated on: ${today}`, pageWidth - 15, 30, { align: 'right' });
+
+        // Get the table data
+        const table = document.querySelector('.user-list-table');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        const tableData = rows.map(row => {
+            return Array.from(row.querySelectorAll('th, td')).map(cell => {
+                if (cell.querySelector('img')) {
+                    return cell.textContent.trim();
+                }
+                return cell.textContent.trim();
+            });
+        });
+
+        // PDF table styling
+        doc.autoTable({
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            startY: 40,
+            margin: { left: 10, right: 10 }, // Adjusted margins
+            theme: 'grid',
+            styles: {
+                fontSize: 8,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.1,
+            },
+            headStyles: {
+                fillColor: [0, 32, 96], // Dark blue
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'left' // Align header text to left
+            },
+            columnStyles: {
+                0: {cellWidth: 10}, // Reduced SL No width
+                1: {cellWidth: 35}, // Client
+                2: {cellWidth: 35}, // Project Title
+                3: {cellWidth: 25}, // Category
+                4: {cellWidth: 25}, // Budget
+                5: {cellWidth: 25}, // Status
+                6: {cellWidth: 25}, // Created Date
+            }
+        });
+
+        doc.save('projects_report.pdf');
+    }
+
+    function exportToExcel() {
+        const table = document.querySelector('.user-list-table');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        const data = rows.map((row, index) => {
+            const cells = Array.from(row.querySelectorAll('th, td'));
+            return cells.map((cell, cellIndex) => {
+                // For the first column (SL No.), use the index + 1
+                if (cellIndex === 0 && index > 0) {
+                    return index;
+                }
+                // Skip the image in client column
+                if (cell.querySelector('img')) {
+                    return cell.textContent.trim();
+                }
+                return cell.textContent.trim();
+            });
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+
+        // Style the header row
+        const headerRange = XLSX.utils.decode_range(ws['!ref']);
+        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+            const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+            if (!ws[cellRef]) continue;
+            
+            ws[cellRef].s = {
+                fill: { fgColor: { rgb: "FF0057" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true },
+                alignment: { horizontal: "center" }
+            };
+        }
+
+        // Set column widths
+        const colWidths = [
+            { wch: 5 },  // SL No
+            { wch: 25 }, // Client
+            { wch: 30 }, // Project Title
+            { wch: 15 }, // Category
+            { wch: 15 }, // Budget
+            { wch: 15 }, // Status
+            { wch: 15 }  // Created Date
+        ];
+        ws['!cols'] = colWidths;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Projects");
+        XLSX.writeFile(wb, 'projects_report.xlsx');
+    }
+</script>
+{% endblock %}

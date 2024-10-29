@@ -1,0 +1,469 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script>
+        $(document).ready(function () {
+            $("#fname").keyup(function () {
+                check_name();
+            })
+            $("#lname").keyup(function () {
+                check_lname();
+            })
+            $("#phone").keyup(function () {
+                check_phone();
+            })
+            $("#linkedin").keyup(function () {
+                check_url("#linkedin", "#error_linkedin");
+            })
+            $("#instagram").keyup(function () {
+                check_url("#instagram", "#error_instagram");
+            })
+            $("#twitter").keyup(function () {
+                check_url("#twitter", "#error_twitter");
+            })
+            $("#bio_description").keyup(function () {
+                check_bio();
+            })
+            $("#profile_picture").change(function () {
+                check_image();
+            })
+            $("#location").keyup(function () {
+                check_location();
+            })
+            $("#aadhar").change(function () {
+                check_aadhar();
+            })
+            $("#company_name").keyup(function () {
+                check_company_name();
+            })
+            $("#license_number").keyup(function () {
+                check_license_number();
+            })
+            $("#company_website").keyup(function () {
+                check_company_website();
+            })
+
+            var fname_error = false;
+            var lname_error = false;
+            var phone_error = false;
+            var url_error = false;
+            var bio_error = false;
+            var image_error = false;
+            var location_error = false;
+            var aadhar_error = false;
+            var company_name_error = false;
+            var license_number_error = false;
+
+            var company_website_error = false;
+
+            function check_name() {
+                var pattern = /^[a-zA-Z ]*$/;
+                var name = $("#fname").val();
+                if (pattern.test(name) && name !== "") {
+                    $("#error_fname").hide();
+                    $("#fname").css("border", "2px solid green");
+                } else {
+                    $("#error_fname").html("Should contain only letters").show();
+                    $("#fname").css("border", "2px solid red");
+                    fname_error = true;
+                }
+            }
+
+            function check_lname() {
+                var pattern = /^[a-zA-Z]*$/;
+                var name = $("#lname").val();
+                if (pattern.test(name) && name !== "") {
+                    $("#error_lname").hide();
+                    $("#lname").css("border", "2px solid green");
+                } else {
+                    $("#error_lname").html("Should contain only letters").show();
+                    $("#lname").css("border", "2px solid red");
+                    lname_error = true;
+                }
+            }
+
+            function check_phone() {
+                var pattern = /^[7-9]\d{9}$/;
+                var phone = $("#phone").val();
+                if (pattern.test(phone) && phone !== "") {
+                    $("#error_phone").hide();
+                    $("#phone").css("border", "2px solid green");
+                } else {
+                    $("#error_phone").html("Invalid phone number").show();
+                    $("#phone").css("border", "2px solid red");
+                    phone_error = true;
+                }
+            }
+
+            function check_url(field_id, error_id) {
+                var pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+                var url = $(field_id).val();
+                if (pattern.test(url) && url !== "") {
+                    $(error_id).hide();
+                    $(field_id).css("border", "2px solid green");
+                    url_error = false;
+                } else {
+                    $(error_id).html("Invalid URL").show();
+                    $(field_id).css("border", "2px solid red");
+                    url_error = true;
+                }
+            }
+
+            function check_bio() {
+                var pattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 .,!?\n]*$/;
+                var bio = $("#bio_description").val();
+                if (pattern.test(bio) && bio !== "") {
+                    $("#error_bio").hide();
+                    $("#bio_description").css("border", "2px solid green");
+                    bio_error = false;
+                } else {
+                    $("#error_bio").html("Invalid characters in bio").show();
+                    $("#bio_description").css("border", "2px solid red");
+                    bio_error = true;
+                }
+            }
+
+            function check_image() {
+                var file = $("#profile_picture")[0].files[0];
+                var allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+                if (file && allowedExtensions.exec(file.name)) {
+                    $("#error_image").hide();
+                    $("#profile_picture").css("border", "2px solid green");
+                    image_error = false;
+                } else {
+                    $("#error_image").html("Invalid Image File").show();
+                    $("#profile_picture").css("border", "2px solid red");
+                    image_error = true;
+                }
+            }
+
+            function check_location() {
+                var pattern = /^[a-zA-Z\s,.'-]{3,}$/;
+                var location = $("#location").val();
+                if (pattern.test(location) && location !== "") {
+                    $("#error_location").hide();
+                    $("#location").css("border", "2px solid green");
+                } else {
+                    $("#error_location").html("Invalid location format").show();
+                    $("#location").css("border", "2px solid red");
+                    location_error = true;
+                }
+            }
+
+            function check_aadhar() {
+                var file = $("#aadhar")[0].files[0];
+                var allowedExtensions = /(\.pdf)$/i;
+                if (file && allowedExtensions.exec(file.name)) {
+                    $("#error_aadhar").hide();
+                    $("#aadhar").css("border", "2px solid green");
+                    aadhar_error = false;
+                } else {
+                    $("#error_aadhar").html("Invalid Aadhaar Card File.Only .pdf is allowed").show();
+                    $("#aadhar").css("border", "2px solid red");
+                    aadhar_error = true;
+                }
+            }
+
+            function check_company_name() {
+                var pattern = /^[a-zA-Z\s]+$/;
+                var name = $("#company_name").val();
+                if (pattern.test(name) && name !== "") {
+                    $("#error_company_name").hide();
+                    $("#company_name").css("border", "2px solid green");
+                    company_name_error = false;
+                } else {
+                    $("#error_company_name").html("Should contain only letters").show();
+                    $("#company_name").css("border", "2px solid red");
+                    company_name_error = true;
+                }
+            }
+
+            function check_license_number() {
+                var pattern = /^[A-Z]{1}[0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$/;
+                var license = $("#license_number").val();
+                if (pattern.test(license) && license !== "") {
+                    $("#error_license_number").hide();
+                    $("#license_number").css("border", "2px solid green");
+                    license_number_error = false;
+                } else {
+                    $("#error_license_number").html("should be 21 in length,contain uppercase letters only(eg:'L12345MH2007PLC012345')").show();
+                    $("#license_number").css("border", "2px solid red");
+                    license_number_error = true;
+                }
+            }
+
+            function check_company_website() {
+                var pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+                var url = $("#company_website").val();
+                if (pattern.test(url) && url !== "") {
+                    $("#error_company_website").hide();
+                    $("#company_website").css("border", "2px solid green");
+                    company_website_error = false;
+                } else {
+                    $("#error_company_website").html("Invalid URL").show();
+                    $("#company_website").css("border", "2px solid red");
+                    company_website_error = true;
+                }
+            }
+            $("#profile_form").submit(function () {
+                fname_error = false;
+                lname_error = false;
+                phone_error = false;
+                url_error = false;
+                bio_error = false;
+                image_error = false;
+                location_error = false;
+                aadhar_error = false;
+                company_name_error = false;
+                license_number_error = false;
+                company_website_error = false;
+
+                check_name();
+                check_lname();
+                check_phone();
+                check_url("#linkedin", "#error_linkedin");
+                check_url("#instagram", "#error_instagram");
+                check_url("#twitter", "#error_twitter");
+                check_bio();
+                check_image();
+                check_location();
+                check_aadhar();
+                check_company_name();
+                check_company_website();
+                check_license_number();
+
+                let client_type = $('#client_type').val();
+                if ((client_type === 'Individual' && fname_error === false && lname_error === false && aadhar_error === false) ||
+                    (client_type === 'Company' && company_name_error === false && license_number_error === false && company_website_error === false)) {
+                    if (phone_error === false && url_error === false && bio_error === false && image_error === false && location_error === false) {
+                        $("#profile_err").hide();
+                        this.submit();
+                    } else {
+                        $("#profile_err").html("Please fill the form correctly.").show();
+                    }
+                } else {
+                    $("#profile_err").html("Please fill the form correctly.").show();
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .error {
+            color: red;
+            font-family: Comic Sans MS;
+            font-weight: bold;
+            font-size: 12px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <section class="bg-light p-3 p-md-4 p-xl-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-xxl-11">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-5 text-center">
+                                <a href="#!">
+                                    <img src="{% static 'img/logo.png' %}" style="margin-top:-20px;margin-bottom:20px;"
+                                        alt="BootstrapBrain Logo" width="175" height="53">
+                                </a>
+                                <h2 class="h4">User Profile</h2>
+                                <h3 class="fs-6 fw-normal text-secondary m-0">Complete your profile details below</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'client:add_profile_client' uid %}" enctype="multipart/form-data"
+                        id="profile_form">
+                        {% csrf_token %}
+                        <div class="row gy-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="role" class="form-control" id="role" name="role" placeholder="Role"
+                                        value="{{ profile1.role }}" disabled>
+                                    <label for="role" class="form-label">Role</label>
+                                </div>
+                            </div>
+                            <!-- Client Type Selection -->
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-control" id="client_type" name="client_type" required>
+                                        <option value="">Select Client Type</option>
+                                        <option value="Individual">Individual</option>
+                                        <option value="Company">Company</option>
+                                    </select>
+                                    <label for="client_type" class="form-label">Client Type</label>
+                                </div>
+                            </div>
+
+                            <!-- Specific Fields for Individual -->
+                            <div class="individual-fields">
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="fname" name="fname"
+                                            placeholder="First Name" value="{{ profile2.first_name|default:'' }}">
+                                        <label for="fname" class="form-label">First Name</label>
+                                        <span id="error_fname" class="error"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="lname" name="lname"
+                                            placeholder="Last Name" value="{{ profile2.last_name|default:'' }}">
+                                        <label for="lname" class="form-label">Last Name</label>
+                                        <span id="error_lname" class="error"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="file" class="form-control" id="aadhar" name="aadhar"
+                                            placeholder="Aadhaar Card">
+                                        <label for="aadhar" class="form-label">Aadhaar Card</label>
+                                        <span id="error_aadhar" class="error"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Specific Fields for Company -->
+                            <div class="company-fields">
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="company_name" name="company_name"
+                                            placeholder="Company Name">
+                                        <label for="company_name" class="form-label">Company Name</label>
+                                        <span id="error_company_name" class="error"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="license_number"
+                                            name="license_number" placeholder="License Number">
+                                        <label for="license_number" class="form-label">Company CIN Number</label>
+                                        <span id="error_license_number" class="error"></span>
+                                    </div>
+                                </div>
+                                <!-- Company Website Field -->
+                                <div class="col-12 col-md-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="url" class="form-control" id="company_website"
+                                            name="company_website" placeholder="Company Website">
+                                        <label for="company_website" class="form-label">Company Website</label>
+                                        <span id="error_company_website" class="error"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Common Fields -->
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Email"
+                                        value="{{ profile1.email }}" disabled>
+                                    <label for="email" class="form-label">Email</label>
+                                    <span id="error_email" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="phone" name="phone_number"
+                                        placeholder="Phone Number" required>
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <span id="error_phone" class="error"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="bio_description" name="bio_description"
+                                        placeholder="Bio Description" style="height: 100px;"></textarea>
+                                    <label for="bio_description" class="form-label">Bio Description</label>
+                                    <span id="error_bio" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="location" name="location"
+                                        placeholder="Location" required>
+                                    <label for="location" class="form-label">Location</label>
+                                    <span id="error_location" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="linkedin" name="linkedin"
+                                        placeholder="LinkedIn">
+                                    <label for="linkedin" class="form-label">LinkedIn Link</label>
+                                    <span id="error_linkedin" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="instagram" name="instagram"
+                                        placeholder="Instagram">
+                                    <label for="instagram" class="form-label">Instagram Link</label>
+                                    <span id="error_instagram" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="twitter" name="twitter"
+                                        placeholder="Twitter">
+                                    <label for="twitter" class="form-label">Twitter Link</label>
+                                    <span id="error_twitter" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="profile_picture" class="form-label">Profile Picture</label>
+                                    {% if profile2.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
+                                        class="img-fluid rounded mb-2" width="150">
+                                    {% endif %}
+                                    <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+                                    <span id="error_image" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-dark btn-lg">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                        <span id="profile_err" class="error"></span>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.individual-fields').hide();
+            $('.company-fields').hide();
+
+            $('#client_type').change(function () {
+                if ($(this).val() == 'Individual') {
+                    $('.individual-fields').show();
+                    $('.company-fields').hide();
+                } else if ($(this).val() == 'Company') {
+                    $('.company-fields').show();
+                    $('.individual-fields').hide();
+                } else {
+                    $('.individual-fields').hide();
+                    $('.company-fields').hide();
+                }
+            });
+        });
+    </script>

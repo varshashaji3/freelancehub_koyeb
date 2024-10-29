@@ -1,0 +1,175 @@
+{% extends 'Admin/base.html' %}
+{% block 'admin_content' %}
+{% load static %}
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script>
+  $(document).ready(function () {
+    var file_error = false;
+    var image_error = false;
+    var title_error = false;
+
+    // Validate Template File
+    function validateTemplateFile() {
+        var template_file = $("#template_file").val();
+        var extension = template_file.split('.').pop().toLowerCase();
+
+        if (template_file === "") {
+            $("#error_template_file").html("Template file is required.");
+            file_error = true;
+            $("#submit_btn").prop("disabled", true);
+        } else if (extension !== "html") {
+            $("#error_template_file").html("Only .html files are allowed.");
+            file_error = true;
+            $("#submit_btn").prop("disabled", true);
+        } else {
+            $("#error_template_file").html("");
+            file_error = false;
+        }
+    }
+
+    // Validate Cover Image File
+    function validateCoverImage() {
+        var cover_image = $("#cover_image").val();
+        var extension = cover_image.split('.').pop().toLowerCase();
+        var valid_extensions = ["jpg", "jpeg", "png"];
+
+        if (cover_image === "") {
+            $("#error_cover_image").html("Cover image is required.");
+            image_error = true;
+            $("#submit_btn").prop("disabled", true);
+        } else if ($.inArray(extension, valid_extensions) == -1) {
+            $("#error_cover_image").html("Only .png, .jpg, .jpeg files are allowed.");
+            image_error = true;
+            $("#submit_btn").prop("disabled", true);
+        } else {
+            $("#error_cover_image").html("");
+            image_error = false;
+        }
+    }
+
+    // Validate Title
+    function validateTitle() {
+        var title = $("#title").val().trim();
+        var titlePattern = /^(?!.*\d{2})(?!\s)[a-zA-Z0-9-_]+(?:\s[a-zA-Z0-9-_]+)*$/;
+
+        if (title === "") {
+            $("#error_title").html("Title is required.");
+            title_error = true;
+            $("#submit_btn").prop("disabled", true);
+        } else if (!titlePattern.test(title)) {
+            $("#error_title").html(
+                "Title can contain letters, numbers, hyphens, underscores. No two consecutive numbers or leading/trailing spaces. Only one space between words."
+            );
+            title_error = true;
+            $("#submit_btn").prop("disabled", true);
+        } else {
+            $("#error_title").html("");
+            title_error = false;
+        }
+    }
+
+    // When inputs change, validate
+    $("#template_file").change(function () {
+        validateTemplateFile();
+        checkSubmit();
+    });
+
+    $("#cover_image").change(function () {
+        validateCoverImage();
+        checkSubmit();
+    });
+
+    $("#title").on("keyup", function () {
+        validateTitle();
+        checkSubmit();
+    });
+
+    // Disable submit if there's an error
+    function checkSubmit() {
+        if (!file_error && !image_error && !title_error) {
+            $("#submit_btn").prop("disabled", false);
+        } else {
+            $("#submit_btn").prop("disabled", true);
+        }
+    }
+
+    // On form submit, validate again
+    $("#project_form").submit(function (event) {
+        validateTemplateFile();
+        validateCoverImage();
+        validateTitle();
+
+        if (file_error || image_error || title_error) {
+            event.preventDefault();
+            $("#project_err").html("Please fix the errors before submitting.");
+        } else {
+            $("#project_err").html("");
+        }
+    });
+});
+
+</script>
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <div class="tab-content" id="myTabContent"
+      style="background-color:white;padding:30px;border-radius:10px;border:none;">
+  <h3 align="center">New Template</h3>
+      <br>
+      <div class="tab-pane active" id="update" role="tabpanel" aria-labelledby="update-tab">
+  
+        <div class="card">
+          <div class="card-body">
+            <form method="post" action="{% url 'administrator:add_template' %}" enctype="multipart/form-data" id="project_form">
+              {% csrf_token %}
+              <div class="row gy-3">
+                  <!-- Project Title -->
+                  <div class="col-12 col-md-12">
+                      <div class="form-floating mb-3">
+                          <input type="text" class="form-control" id="title" name="template_name" placeholder="Title" required>
+                          <label for="title" class="form-label">Template Title</label>
+                          <br><span id="error_title" class="error" style="color:red;"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Additional File Upload for Template -->
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                          <input type="file" class="form-control" accept=".html" id="template_file" name="template_file" required>
+                          <label for="template_file" class="form-label">Attach Template File</label>
+                          <br><span id="error_template_file" class="error" style="color:red;"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Additional File Upload for Cover Image -->
+                  <div class="col-12">
+                      <div class="form-floating mb-3">
+                          <input type="file" class="form-control" id="cover_image" name="cover_image" required>
+                          <label for="cover_image" class="form-label">Attach Cover Image</label>
+                          <br><span id="error_cover_image" class="error" style="color:red;"></span>
+                      </div>
+                  </div>
+          
+                  <!-- Submit Button -->
+                  <div class="col-12">
+                      <div class="d-grid">
+                          <button type="submit" class="btn btn-dark btn-lg" id="submit_btn">Add Template</button>
+                      </div>
+                  </div>
+              </div>
+              <span id="project_err" class="error" style="color:red;"></span>
+          </form>
+        
+          
+          
+          
+          </div>
+        </div>
+      </div>
+  
+      
+    </div>
+  </div>
+  
+  
+{% endblock %}

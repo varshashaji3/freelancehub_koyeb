@@ -1,0 +1,527 @@
+
+
+	{% load static%}
+	{% load socialaccount %}
+	{% providers_media_js %}
+	<!DOCTYPE html>
+	<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Login/Register Form</title>
+		<link rel="stylesheet" href="{% static 'css/login_style.css' %}">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+		<link rel="stylesheet" href="style.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+			integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+			crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+			<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": true,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    };
+</script>
+
+			<script>
+				$(document).ready(function () {
+					
+					$("#fname").keyup(function () {
+						check_name();
+					})
+					$("#lname").keyup(function () {
+						check_lname();
+					})
+					$("#email").keyup(function () {
+						check_email();
+					})
+					$("#pass").keyup(function () {
+						check_pass();
+					})
+					$("#repass").keyup(function () {
+						check_repass();
+					})
+					$("#mail").keyup(function () {
+						check_mail();
+					})
+					$("#pas").keyup(function () {
+						check_pswd();
+					})
+					var name_error = false;
+					var email_error = false;
+					var phone_error = false;
+					var pass_error = false;
+					var repass_error = false;
+					var usr_error = false;
+					var pas_error = false;
+					var pic_error = false;
+					var lna_error = false;
+					var email_error = false;
+					function check_name() {
+						var pattern =/^[a-zA-Z]+( [a-zA-Z]+)?$/;
+						var name = $("#fname").val();
+						if (pattern.test(name) == true && name != "") {
+							$("#error_fna").hide();
+							$("#fname").css("border", "2px solid green");
+							$("#subbtn").prop("disabled", false);
+						} else {
+							$("#error_fna").html("<br>Should contain only Characters").show();
+							$("#fname").css("border", "2px solid red");
+							name_error = true;
+							
+							$("#subbtn").prop("disabled", true);
+						}
+					}
+					function check_lname() {
+						var pattern =/^[a-zA-Z]+( [a-zA-Z]+)?$/;
+						var name = $("#lname").val();
+						if (pattern.test(name) == true && name != "") {
+							$("#error_lna").hide();
+							$("#lname").css("border", "2px solid green");
+							
+							$("#subbtn").prop("disabled", false);
+						} else {
+							$("#error_lna").html("<br>Should contain only Characters").show();
+							$("#lname").css("border", "2px solid red");
+							lna_error = true;
+							
+							$("#subbtn").prop("disabled", true);
+						}
+					}
+					function check_email() {
+						var reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+						var em = $("#email").val();
+						if (reg.test(em) == true && em != "") {
+							 $.ajax({
+            url: "{% url 'check_email' %}",  // URL of the view handling the email check
+            data: {
+                'email': em,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            type: "POST",
+            dataType: 'json',
+            success: function(response) {
+                if (response.is_taken) {
+                    $("#error_em").html("Email already exists").show();
+                    $("#email").css("border", "2px solid red");
+                    email_error = true;
+					
+					$("#subbtn").prop("disabled", true);
+                } else {
+                    $("#error_em").hide();
+                    $("#email").css("border", "2px solid green");
+                    email_error = false;
+					
+					$("#subbtn").prop("disabled", false);
+                }
+            }
+        });
+						} else {
+							$("#error_em").html("Invalid Email id").show();
+							$("#email").css("border", "2px solid red");
+							email_error = true;
+							
+							$("#subbtn").prop("disabled", true);
+						}
+
+					}
+
+					function check_phone() {
+						var pat = /^[6-9]\d{9}$/;
+						var ph = $("#phone").val();
+						if (pat.test(ph) == true && ph != "") {
+							$("#error_ph").hide();
+							$("#phone").css("border", "2px solid green");
+							
+							$("#subbtn").prop("disabled", false);
+						} else {
+							$("#error_ph").html("<br>Should start with7,8,9 and contain 10 numbers.").show();
+							$("#phone").css("border", "2px solid red");
+							phone_error = true;
+							
+							$("#subbtn").prop("disabled", true);
+						}
+					}
+
+					function check_pass() {
+						var pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,10}$/;
+						var pass = $("#pass").val();
+						if (pattern.test(pass) == true && pass != "") {
+							$("#error_pass").hide();
+							$("#pass").css("border", "2px solid green");
+							
+							$("#subbtn").prop("disabled", false);
+						} else {
+							$("#error_pass").html("<br>Minimum eight and maximum 10 characters, at least one uppercase letter, one lowercase letter, one number and one special character.").show();
+							$("#pass").css("border", "2px solid red");
+							pass_error = true;
+							
+							$("#subbtn").prop("disabled", true);
+						}
+					}
+					function check_repass() {
+						var pass = $("#pass").val();
+						var repas = $("#repass").val();
+						if (pass === repas && repas != "") {
+							$("#error_re").hide();
+							$("#repass").css("border", "2px solid green");
+							
+							$("#subbtn").prop("disabled", false);
+						} else {
+							$("#error_re").html("<br>Password doesn't matches.").show();
+							$("#repass").css("border", "2px solid red");
+							repass_error = true;
+							
+							$("#subbtn").prop("disabled", true);
+						}
+					}
+					$("#register").submit(function (event) {
+						// Reset error flags
+						name_error = false;
+						lna_error = false;
+						email_error = false;
+						pass_error = false;
+						repass_error = false;
+				
+						// Perform validations
+						check_name();
+						check_lname();
+						check_email();
+						check_pass();
+						check_repass();
+				
+						if (name_error || lna_error || email_error || pass_error || repass_error) {
+						
+							$("#reg_err").html("Please fill the form correctly.").show();
+						} else {
+							$("#reg_err").hide();
+							$("#subbtn").prop("disabled", false);
+						}
+					});
+				
+
+
+					function check_mail() {
+						var reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+						var em = $("#mail").val();
+						if (reg.test(em) == true && em != "") {
+							$("#error_ma").hide();
+							$("#mail").css("border", "2px solid green");
+							
+							$("#sub").prop("disabled", false);
+						} else {
+							$("#error_ma").html("Invalid Email id").show();
+							$("#mail").css("border", "2px solid red");
+							email_error = true;
+							
+							$("#sub").prop("disabled", true);
+						}
+					}
+
+					function check_pswd() {
+						var pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,10}$/;
+						var pass = $("#pas").val();
+						if (pattern.test(pass) == true && pass != "") {
+							$("#error_pswd").hide();
+							$("#pas").css("border", "2px solid green");
+							
+							$("#sub").prop("disabled", false);
+						} else {
+							$("#error_pswd").html("Invalid Password.").show();
+							$("#pas").css("border", "2px solid red");
+							pas_error = true;
+							
+							$("#sub").prop("disabled", true);
+						}
+					}
+
+					$("#login").submit(function () {
+						email_error = false;
+						pas_error = false;
+
+						check_mail();
+						check_pswd();
+						if (email_error === false && pas_error === false) {
+							$("#log_err").hide();
+							return true;
+						} else {
+							
+							$("#sub").prop("disabled", true);
+							$("#log_err").html("Please fill the form correctly.").show();
+							return false;
+						}
+					});
+				});
+			</script>
+		<script>
+			$(document).ready(function() {
+				{% if error_msg %}
+					toastr.error("{{ error_msg }}");
+				{% endif %}
+		
+				{% if success_msg %}
+					toastr.success("{{ success_msg }}");
+				{% endif %}
+			});
+		</script>
+		<style>
+			.error {
+				color: red;
+				font-family: Comic Sans MS;
+				font-weight: bold;
+				font-size: 12px;
+			}
+
+
+
+			.password {
+				width: 100%;
+				padding-right: 30px;
+				/* Adjust padding to make space for the icon */
+			}
+
+			.password-toggle-icon {
+				position: absolute;
+				right: 10px;
+				transform: translateY(-50%);
+				cursor: pointer;
+			}
+
+			.password-toggle-icon i {
+				margin-left: -40px;
+				padding-top: 50px;
+				font-size: 18px;
+				color: #333;
+			}
+
+			.home-link {
+				position: absolute;
+				top: 20px; /* Adjust top position as needed */
+				right: 20px; /* Adjust right position as needed */
+				font-size: 18px;
+				font-weight: bold;
+				color: white;
+				text-decoration: none;
+				z-index: 1000; 
+			}
+			
+		</style>
+	</head>
+
+	<body>
+
+		
+
+		<div id="container" class="container">
+			
+			<div class="row">
+				<a href="{% url 'index' %}" class="home-link">
+					Home
+				</a>
+				<!-- SIGN UP -->
+				<div class="col align-items-center flex-col sign-up">
+					<div class="form-wrapper align-items-center">
+						<div class="form sign-up">
+							<br>
+							<a href="{% provider_login_url 'google' %}" class="btn btn-google">Sign Up with Google</a>
+
+							<br>
+							<p>--------------------OR--------------------</p>
+							<form action="{%url 'register' %}" id="register" method="post">
+
+								{% csrf_token %}
+								<div class="input-group">
+									<i class='bx bxs-user'></i>
+									<input type="text" placeholder="First Name" id="fname" name="fname">
+									<br><span id="error_fna" class="error"></span>
+								</div>
+								<div class="input-group">
+									<i class='bx bxs-user'></i>
+									<input type="text" placeholder="Last Name" id="lname" name="lname">
+									<br><span id="error_lna" class="error"></span>
+								</div>
+								<div class="input-group">
+									<i class='bx bx-mail-send'></i>
+									<input type="email" placeholder="Email" id="email" name="email">
+									<br><span id="error_em" class="error"></span>
+								</div>
+								<div class="input-group">
+									<i class='bx bxs-lock-alt'></i>
+									<input type="password" placeholder="Password" id="pass" name="password"
+										class="password">
+									<span class="password-toggle-icon"><i class="fas fa-eye"></i></span>
+									<br>
+									<span id="error_pass" class="error"></span>
+								</div>
+
+								<div class="input-group">
+									<i class='bx bxs-lock-alt'></i>
+									<input type="password" placeholder="Confirm password" id="repass" class="password"
+										name="repassword"><span class="password-toggle-icon"><i
+											class="fas fa-eye"></i></span>
+									<br><span id="error_re" class="error"></span></td>
+								</div>
+
+								<button id="subbtn">
+									Sign up
+								</button>
+								<br><span id="reg_err" class="error"></span>
+							</form>
+
+							<p>
+								<span>
+									Already have an account?
+								</span>
+								<b onclick="toggle()" class="pointer">
+									Sign in here
+								</b>
+							</p>
+						</div>
+					</div>
+
+				</div>
+				<!-- END SIGN UP -->
+				<!-- SIGN IN -->
+				<div class="col align-items-center flex-col sign-in">
+					<div class="form-wrapper align-items-center">
+
+						<div class="form sign-in">
+							<br>
+							<a href="{% provider_login_url 'google' %}" class="btn btn-google">Sign In with Google</a>
+
+							<br>
+							<p>--------------------OR--------------------</p>
+							<form action="{%url 'login' %}" id="login" method="post">
+								{% csrf_token %}
+								<div class="input-group">
+									<i class='bx bxs-user'></i>
+									<input type="email" placeholder="Email" id="mail" name="mail">
+									<br><span id="error_ma" class="error"></span>
+								</div>
+								<div class="input-group">
+									<i class='bx bxs-lock-alt'></i>
+									<input type="password" placeholder="Password" id="pas" class="password" name="pass">
+									<span class="password-toggle-icon"><i class="fas fa-eye"></i></span>
+									<br><span id="error_pswd" class="error"></span>
+								</div>
+								<button name="submit" class="sub" id="sub">
+									Sign in
+								</button>
+								<br><span id="log_err" class="error"></span></td>
+							</form>
+							<p>
+								<b>
+									<a href="{% url 'send_forget_password_mail' %}" class="btn btn-primary">Forgot
+										password?</a>
+								</b>
+							</p>
+
+
+							<p>
+								<span>
+									Don't have an account?
+								</span>
+								<b onclick="toggle()" class="pointer">
+									Sign up here
+								</b>
+							</p>
+						</div>
+					</div>
+					<div class="form-wrapper">
+
+					</div>
+				</div>
+				<!-- END SIGN IN -->
+			</div>
+			<!-- END FORM SECTION -->
+			<!-- CONTENT SECTION -->
+			<div class="row content-row">
+				<!-- SIGN IN CONTENT -->
+				
+				<div class="col align-items-center flex-col">
+					<div class="text sign-in">
+						
+						<h2 style="margin-left:-90px;margin-top:-20px;">
+							Welcome Back!!
+						</h2>
+
+					</div>
+					<div class="img sign-in">
+
+					</div>
+				</div>
+				<!-- END SIGN IN CONTENT -->
+				<!-- SIGN UP CONTENT -->
+				<div class="col align-items-center flex-col">
+					<div class="img sign-up">
+
+					</div>
+					<div class="text sign-up">
+						<h2>
+							Join with us
+						</h2>
+
+					</div>
+				</div>
+				<!-- END SIGN UP CONTENT -->
+			</div>
+			<!-- END CONTENT SECTION -->
+		</div>
+
+		<script>
+			let container = document.getElementById('container')
+
+			toggle = () => {
+				container.classList.toggle('sign-in')
+				container.classList.toggle('sign-up')
+			}
+
+			setTimeout(() => {
+				container.classList.add('{{page}}')
+			}, 200)
+
+
+			document.addEventListener('DOMContentLoaded', function () {
+				// Function to toggle password visibility
+				function togglePassword() {
+					const passwordFields = document.querySelectorAll(".password");
+					const toggleIcons = document.querySelectorAll(".password-toggle-icon i");
+
+					toggleIcons.forEach((icon, index) => {
+						icon.addEventListener("click", function () {
+							const passwordField = passwordFields[index];
+							if (passwordField.type === "password") {
+								passwordField.type = "text";
+								icon.classList.remove("fa-eye");
+								icon.classList.add("fa-eye-slash");
+							} else {
+								passwordField.type = "password";
+								icon.classList.remove("fa-eye-slash");
+								icon.classList.add("fa-eye");
+							}
+						});
+					});
+				}
+
+				// Call the function to set up the event listeners
+				togglePassword();
+			});
+		</script>
+	

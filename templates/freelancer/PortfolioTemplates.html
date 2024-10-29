@@ -1,0 +1,322 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<style>
+    #template-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        margin-top:40px;
+    }
+
+    .card {
+        
+        height:180px;
+        width: 200px;/* Adjusted margin */
+        position: relative; /* Ensure positioning for overlay */
+        overflow: hidden; /* Hide overflow for the overlay */
+        border: none; /* Removed border */
+        border-radius: 15px; 
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+        text-align: center;
+        background-color: #ffffff; /* Changed background color */
+        transition: transform 0.3s, box-shadow 0.3s; /* Added transition for box-shadow */
+    }
+
+    .card-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0; /* Initially hidden */
+        transition: opacity 0.3s;
+    }
+
+    .card:hover .card-overlay {
+        opacity: 1; /* Show overlay on hover */
+    }
+
+    .card h3 {
+        font-size: 1em; /* Adjusted font size for better visibility */
+        color: #ffffff; /* Ensure text is white for contrast */
+        margin: 5px 0; /* Adjusted margin */
+        text-align: center; /* Center align text */
+        z-index: 1; /* Ensure text is above the overlay */
+    }
+
+    .icon-button {
+        background-color: #3498db; /* Button background color */
+        color: white; /* Button text color */
+        border: none; /* No border */
+        padding: 8px 12px; /* Padding for buttons */
+        cursor: pointer; /* Pointer cursor on hover */
+        border-radius: 4px; /* Rounded corners */
+        transition: background-color 0.3s; /* Transition for hover effect */
+        font-size: 0.9em; /* Font size for buttons */
+        margin: 5px; /* Margin for spacing */
+    }
+
+    .icon-button:hover {
+        background-color: #2980b9; /* Darker shade on hover */
+    }
+
+    .button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 5px;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .button:hover {
+        background-color: #0056b3;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Stylish modal content */
+    .modal-content {
+        background-color: #fff; /* Light background for contrast */
+        padding: 30px; /* Increased padding for spacious feel */
+        border-radius: 15px; /* More rounded corners */
+        width: 400px; /* Wider modal */
+        text-align: center;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); /* Stronger shadow for depth */
+        position: relative; /* Position relative for close button */
+        transition: transform 0.3s; /* Smooth transition */
+    }
+
+    .modal-content h4 {
+        margin-bottom: 20px; /* Space below the title */
+        color: #2c3e50; /* Darker color for better readability */
+        font-weight: bold; /* Bold title for emphasis */
+        font-size: 1.5em; /* Larger font size */
+    }
+
+    .modal-content img {
+        max-width: 100%; /* Responsive image */
+        height: auto; /* Maintain aspect ratio */
+        margin-bottom: 20px; /* Space below image */
+        
+    }
+
+    .modal-content input[type="file"] {
+        border: 1px solid #3498db; /* Blue border for file input */
+        border-radius: 5px; /* Rounded corners */
+        padding: 12px; /* Padding for better touch targets */
+        margin-bottom: 20px; /* Space below file input */
+        width: calc(100% - 24px); /* Full width minus padding */
+        font-size: 1em; /* Increased font size for better readability */
+        transition: border-color 0.3s; /* Transition for border color */
+    }
+
+    .modal-content input[type="file"]:focus {
+        border-color: #2980b9; /* Darker blue on focus */
+        outline: none; /* Remove outline */
+    }
+
+    .upload-button {
+        background-color: #3498db; /* Stylish blue background */
+        color: white; /* White text */
+        border: none; /* No border */
+        padding: 12px; /* Padding for button */
+        cursor: pointer; /* Pointer cursor on hover */
+        width: 100%; /* Full width */
+        border-radius: 5px; /* Rounded corners */
+        transition: background-color 0.3s, transform 0.2s; /* Transition for hover effect */
+        font-size: 1em; /* Font size for buttons */
+    }
+
+    .upload-button:hover {
+        background-color: #2980b9; /* Darker blue on hover */
+        transform: scale(1.05); /* Slightly enlarge on hover */
+    }
+
+    .close {
+        position: absolute; /* Position absolute for placement */
+        top: 10px; /* Distance from the top */
+        right: 15px; /* Distance from the right */
+        cursor: pointer; /* Pointer cursor on hover */
+        font-size: 20px; /* Font size for close button */
+        color: #2c3e50; /* Color for close button */
+    }
+    .card-image{
+        height:180px;
+        width: 200px;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+
+        $("#file").change(function () {
+            check_file();
+        });
+
+        var file_error = false;
+
+        function check_file() {
+            var file_input = $("#file").val();
+            var extension = file_input.split('.').pop().toLowerCase();
+
+            if (file_input === "") {
+                // If no file is selected, show an error and disable the submit button
+                $("#error_file").html("<br>Please select a file to upload.").show();
+                $("#file").css("border", "2px solid red");
+                file_error = true;
+                $("#subbtn").prop("disabled", true);
+            } else if (extension === "pdf") {
+                // If the file has a .pdf extension, allow submission
+                $("#error_file").hide();
+                $("#file").css("border", "2px solid green");
+                $("#subbtn").prop("disabled", false);
+                file_error = false;
+            } else {
+                // If the file is not a .pdf, show an error and disable the submit button
+                $("#error_file").html("<br>Only PDF files are allowed.").show();
+                $("#file").css("border", "2px solid red");
+                file_error = true;
+                $("#subbtn").prop("disabled", true);
+            }
+        }
+
+        $("#resumeform").submit(function (event) {
+            // Reset error flags
+            file_error = false;
+
+            // Perform validations
+            check_file();
+
+            if (file_error) {
+                $("#form_err").html("Please upload a valid PDF file.").show();
+                 // Prevent form submission if validation fails
+            } else {
+                $("#form_err").hide();
+                $("#subbtn").prop("disabled", false);
+            }
+        });
+    });
+</script>
+
+
+<div id="template-container">
+    {% for template in templates %}
+    <div class="card">
+        {% if template.cover_image %}
+        <img class="card-image" src="{{ template.cover_image.url }}" alt="{{ template.name }}">
+        {% else %}
+        <img class="card-image" src="" alt="{{ template.name }}">
+        {% endif %}
+        <div class="card-overlay">
+            <h3>{{ template.name }}</h3>
+            <button class="icon-button" onclick="previewTemplate('{{ template.id }}')">
+                <i class="fas fa-eye"></i> Preview
+            </button>
+            <button class="icon-button" onclick="openModal('{{ template.id }}')">
+                <i class="fas fa-check"></i> Use Template
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Include Font Awesome CDN in your head if not already included -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<style>
+    .download-link {
+        position: absolute; /* Position it absolutely */
+        top: 80px; /* Distance from the top */
+        right: 20px; /* Distance from the right */
+        background-color: #094e97; /* Button background color */
+        color: white; /* Button text color */
+        padding: 10px 15px; /* Padding for the button */
+        border-radius: 5px; /* Rounded corners */
+        text-decoration: none; /* Remove underline */
+        font-size: 1em; /* Font size */
+        display: flex; /* Flexbox for icon and text */
+        align-items: center; /* Center items vertically */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+        transition: background-color 0.3s, transform 0.2s; /* Transition for hover effect */
+    }
+
+    .download-link:hover {
+        background-color: white; /* Darker shade on hover */
+        transform: translateY(-2px); /* Slightly lift the button on hover */
+    }
+
+    .download-link i {
+        margin-right: 5px; /* Space between icon and text */
+        font-size: 1.2em; /* Increase icon size */
+    }
+</style>
+
+<!-- Link to download predefined resume format -->
+<a class="download-link" href="{% static 'img/Ava.pdf' %}" download>
+    <i class="fas fa-download"></i> Download Resume Format
+</a>
+
+<!-- Modal for Uploading Resume -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close" onclick="closeModal()">&times;</span>
+        <h4>Upload Your Resume</h4>
+
+        <!-- New image before the form -->
+        <img src="{% static 'img/resume.jpg' %}" alt="Stylish Image" style="max-width: 100%; height: auto;  margin-bottom: 20px; ">
+
+        <form action="{% url 'freelancer:upload_resume' %}" method="POST" enctype="multipart/form-data" id="resumeform">
+            {% csrf_token %}
+            <input type="file" name="resume"  id="file" required>
+            <br><span id="error_file" style="color: red;"></span>
+            <input type="hidden" name="template_id" id="template_id_input">
+            <button type="submit" class="upload-button" id="subbtn">Upload Resume</button>
+            <br><span id="form_err" style="color: red;"></span>
+        </form>
+    </div>
+</div>
+
+<script>
+    function previewTemplate(templateId) {
+        const url = "/freelancer/preview_template/" + templateId + "/";
+        window.open(url, '_blank'); // Opens the template preview in a new tab
+    }
+
+    function openModal(templateId) {
+        document.getElementById("uploadModal").style.display = "flex"; // Show modal
+        document.getElementById("template_id_input").value = templateId; // Set template ID in hidden input
+    }
+
+    function closeModal() {
+        document.getElementById("uploadModal").style.display = "none"; // Close modal
+    }
+
+    window.onclick = function(event) {
+        if (event.target === document.getElementById("uploadModal")) {
+            closeModal(); // Close modal if user clicks outside it
+        }
+    }
+</script>
+
+{% endblock %}

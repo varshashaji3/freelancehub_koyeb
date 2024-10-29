@@ -1,0 +1,206 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+    .container {
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+    }
+    
+    .form-heading {
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 500;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .btn-primary {
+        background-color: #0f5aab;
+        border: none;
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-bottom: 20px;
+    }
+    .btn-primary:hover {
+        background-color: #033c78;
+    }
+    .form-group.hidden {
+        display: none;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        var subjectRegex = /^(?! )[a-zA-Z0-9_\-]+(?: [a-zA-Z0-9_\-]+)*[a-zA-Z0-9_\-]$/;
+        var descriptionRegex = /^(?! )[^\s]+(?: [^\s]+)*[^\s]$/;
+
+        $("#complaint_type").change(function () {
+            check_complaint_type();
+            toggle_complainee(); 
+        });
+
+        $("#subject").keyup(function () {
+            check_subject();
+        });
+
+        $("#description").keyup(function () {
+            check_description();
+        });
+
+        $("#client").change(function () {
+            check_complainee();
+        });
+
+        var complaint_type_error = false;
+        var subject_error = false;
+        var description_error = false;
+        var complainee_error = false;
+
+        function check_complaint_type() {
+            var complaint_type = $("#complaint_type").val();
+            if (complaint_type) {
+                $("#complaintTypeError").hide();
+                $("#complaint_type").css("border", "2px solid green");
+                complaint_type_error = false;
+            } else {
+                $("#complaintTypeError").html("Please select a complaint type.").show();
+                $("#complaint_type").css("border", "2px solid red");
+                complaint_type_error = true;
+            }
+        }
+
+        function toggle_complainee() {
+            var complaint_type = $("#complaint_type").val();
+            if (complaint_type === "Client") {
+                $("#complainee-group").show();
+            } else {
+                $("#complainee-group").hide();
+                $("#complaineeError").hide();
+                $("#client").css("border", "none");
+                complainee_error = false;
+            }
+        }
+
+        function check_complainee() {
+            var complainee = $("#client").val();
+            if (complainee) {
+                $("#complaineeError").hide();
+                $("#client").css("border", "2px solid green");
+                complainee_error = false;
+            } else {
+                $("#complaineeError").html("Please select a client.").show();
+                $("#client").css("border", "2px solid red");
+                complainee_error = true;
+            }
+        }
+
+        function check_subject() {
+            var subject = $("#subject").val();
+            if (subjectRegex.test(subject)) {
+                $("#subjectError").hide();
+                $("#subject").css("border", "2px solid green");
+                subject_error = false;
+            } else {
+                $("#subjectError").html("Invalid subject format. Please check the requirements.").show();
+                $("#subject").css("border", "2px solid red");
+                subject_error = true;
+            }
+        }
+
+        function check_description() {
+            var description = $("#description").val();
+            if (description.length >= 10 && descriptionRegex.test(description)) {
+                $("#descriptionError").hide();
+                $("#description").css("border", "2px solid green");
+                description_error = false;
+            } else {
+                $("#descriptionError").html("Invalid description format (minimum 10 characters).").show();
+                $("#description").css("border", "2px solid red");
+                description_error = true;
+            }
+        }
+
+        $("#complaintForm").submit(function (event) {
+            complaint_type_error = false;
+            subject_error = false;
+            description_error = false;
+            complainee_error = false;
+
+            check_complaint_type();
+            check_subject();
+            check_description();
+
+            if ($("#complaint_type").val() === "Client") {
+                check_complainee();
+            }
+
+            if (complaint_type_error || subject_error || description_error || complainee_error) {
+                toastr.error("Please fill the form correctly.");
+                event.preventDefault();
+            } else {
+                toastr.success("Form submitted successfully.");
+            }
+        });
+    });
+</script>
+
+<div class="container">
+    <h2 class="form-heading">File a Complaint</h2>
+    <form id="complaintForm" method="post" action="{% url 'client:add_complaint' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="complaint_type">Complaint Type</label>
+            <select id="complaint_type" name="complaint_type" class="form-control" required>
+                <option value="">Select Complaint Type</option>
+                <option value="Client">Complaint about Freelancer</option>
+                <option value="Site Issue">Site Related Issue</option>
+            </select>
+            <span id="complaintTypeError" class="text-danger" style="display:none;">Please select a complaint type.</span>
+        </div>
+    
+        <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" class="form-control" placeholder="Enter the subject" required>
+            <span id="subjectError" class="text-danger" style="display:none;">Subject cannot be empty.</span>
+        </div>
+    
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-control" rows="5" placeholder="Enter a detailed description" required></textarea>
+            <span id="descriptionError" class="text-danger" style="display:none;">Description should be at least 10 characters long.</span>
+        </div>
+    
+        <div class="form-group" id="complainee-group" style="display:none;">
+            <label for="complainee">Complainee</label>
+            <select id="client" name="complainee" class="form-control">
+                <option value="">Select Freelancer</option>
+                {% for freelancer in freelancer_registers %}
+                    <option value="{{ freelancer.user_id }}">{{ freelancer.first_name }} {{ freelancer.last_name }}</option>
+                {% endfor %}
+            </select>
+            <span id="complaineeError" class="text-danger" style="display:none;">Please select a client.</span>
+        </div>
+    
+        <button type="submit" id="complaintSubmit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        img {
+            width: 450px;
+            height: auto;
+        }
+        p {
+            font-size: 1.2em;
+            color: #333;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        window.onload = function() {
+            const url = new URL(window.location.href);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            const emailVerificationIndex = pathParts.indexOf('email_verification');
+            const token = emailVerificationIndex !== -1 && emailVerificationIndex < pathParts.length - 1 
+                ? pathParts[emailVerificationIndex + 1] 
+                : null;
+            
+            if (token) {
+                console.log(`Token: ${token}`);
+                // Set the token value in the hidden input field
+                document.getElementById('tokenInput').value = token;
+            } else {
+                console.log('Token not found in URL');
+            }
+        };
+    </script>
+</head>
+<body>
+    {% if expired %}
+        <img src="{% static 'img/expired.svg' %}" alt="Expired" style="width: 450px; height: auto;">
+        <p>Link expired. Please request a new verification email.</p>
+        <form action="{% url 'resend_verification_email' %}" method="post" style="margin-top: 20px;">
+            {% csrf_token %}
+            <input type="hidden" name="token" id="tokenInput">
+            <button type="submit" style="
+                padding: 10px 20px;
+                background-color: #007BFF;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 1em;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            ">Resend Verification Email</button>
+        </form>
+    {% else %}
+        <img src="{% static 'img/Verified.gif' %}" alt="Verified">
+        <p>Your Gmail account has been verified successfully.<br>Welcome to our community! You can now enjoy all the features we offer.</p>
+        <a href="{% url 'login' %}">Login Now</a>
+    {% endif %}
+</body>
+</html>

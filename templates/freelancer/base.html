@@ -1,0 +1,899 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% load static %}
+  <title>FreelanceHub</title>
+  <!-- plugins:css -->
+  <link rel="stylesheet" href="{%  static 'vendors/feather/feather.css'  %}">
+  <link rel="stylesheet" href="{%  static 'vendors/ti-icons/css/themify-icons.css' %}">
+  <link rel="stylesheet" href="{%  static 'vendors/css/vendor.bundle.base.css' %}">
+  <!-- endinject -->
+  <!-- Plugin css for this page -->
+  <link rel="stylesheet" href="{%  static 'vendors/datatables.net-bs4/dataTables.bootstrap4.css' %}">
+  <link rel="stylesheet" href="{%  static 'vendors/ti-icons/css/themify-icons.css' %}">
+  <link rel="stylesheet" type="text/css" href="{%  static 'js/select.dataTables.min.css' %}">
+  <!-- End plugin css for this page -->
+  <!-- inject:css -->
+  <link rel="stylesheet" href="{%  static 'css/vertical-layout-light/style.css' %}">
+  <!-- endinject -->
+  <link rel="shortcut icon" href="{%  static 'images/favicon.png' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+  toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": true,
+    "positionClass": "toast-top-right",
+    "preventDuplicates": true,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+  };
+</script>
+<style>
+  
+
+  .modal {
+      
+    left: 0;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5); 
+    
+  }
+
+
+
+  .modal-content {
+    background-color: #fefefe; /* White background */
+    margin: 5% auto; /* Centered */
+    padding: 20px;
+    border: 1px solid #888; /* Light gray border */
+    width: 80%; /* Width of the modal */
+    max-width: 600px; /* Max width of the modal */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+   
+  }
+  
+  /* Close Button */
+  .close-button {
+    color: #aaa; /* Gray color */
+    float: right; /* Right-align */
+    font-size: 28px; /* Large font size */
+    font-weight: bold; /* Bold text */
+    cursor: pointer; /* Pointer cursor */
+  }
+  
+  .close-button:hover,
+  .close-button:focus {
+    color: black; /* Darker color on hover/focus */
+    text-decoration: none; /* No underline */
+  }
+  
+  /* Modal Header */
+  .modal-content h2 {
+    margin: 0 0 10px; /* Margin at bottom */
+    font-size: 24px; /* Font size */
+    color: #333; /* Dark gray color */
+    text-align: center; /* Center-align text */
+  }
+  
+  /* Modal Image */
+  .modal-image {
+    display: block; /* Block-level element */
+    max-width: 100%; /* Responsive width */
+    height: 200px; /* Maintain aspect ratio */
+    margin: 0 auto; /* Center the image */
+  }
+  
+  /* Form Styles */
+  #reviewForm {
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    gap: 15px; /* Space between elements */
+  }
+  
+  /* Textarea */
+  #reviewForm textarea {
+    width: 100%; /* Full width */
+    height: 100px; /* Height */
+    padding: 10px; /* Padding */
+    border: 1px solid #ccc; /* Light border */
+    border-radius: 4px; /* Rounded corners */
+    resize: vertical; /* Allow vertical resizing */
+  }
+  
+ 
+  
+
+  .star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.3s;
+    margin: 0 5px;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #ffca08;
+}
+
+.star-rating input[type="radio"]:checked ~ label {
+    color: #ffca08;
+}
+
+
+  
+  
+  /* Submit Button */
+  #reviewForm button {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    border: none; /* Remove border */
+    padding: 10px 20px; /* Padding */
+    text-align: center; /* Center text */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Inline-block */
+    font-size: 16px; /* Font size */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor */
+  }
+  
+  #reviewForm button:hover {
+    background-color: #45a049; /* Darker green on hover */
+  }
+</style>
+
+<script>
+  $(document).ready(function () {
+
+    $("#title").keyup(function () {
+      check_title();
+    })
+
+    var title_error = false;
+
+    function check_title() {
+      var pattern = /^[a-zA-Z ]*$/;
+      var title = $("#title").val();
+      if (pattern.test(title) && title !== "") {
+        $("#error_title").hide();
+        $("#title").css("border", "2px solid green");
+      } else {
+        $("#error_title").html("Should contain only letters").show();
+        $("#title").css("border", "2px solid red");
+        title_error = true;
+      }
+    }
+
+
+
+    $("#project_form").submit(function () {
+
+      title_error = false;
+      check_title();
+
+      if (title_error) {
+        $("#todo_err").html("Please fill the form correctly.").show();
+        return false;
+      } else {
+        $("#todo_err").hide();
+        return true;
+      }
+    });
+  });
+</script>
+
+<body>
+  <div class="container-scroller">
+    <!-- partial:partials/_navbar.html -->
+    <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
+        <a class="navbar-brand brand-logo mr-5" href="#"><img src="{% static 'img/logo.png' %}" class="mr-2"
+            alt="logo" /></a><a class="navbar-brand brand-logo-mini" href="#"><img src="{% static 'img/logo2.png' %}"
+            alt="logo" /></a>
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+        <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+          <span class="icon-menu"></span>
+        </button>
+        <ul class="navbar-nav mr-lg-2">
+
+        </ul>
+        <ul class="navbar-nav navbar-nav-right">
+
+          <li class="nav-item dropdown">
+            <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-toggle="dropdown">
+                <i class="icon-bell mx-0"></i>
+                <span style="margin-left:8px;color:white; font-size:10px;background-color:rgb(14, 14, 160);margin-top:-5px;height:16px;width:16px;" class="count">{{ unread_notifications.count }}</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
+                <p class="mb-0 font-weight-normal float-left dropdown-header">Notifications</p>
+                {% for notification in unread_notifications %}
+                <a class="dropdown-item preview-item">
+                    <div class="d-flex align-items-center">
+                        <div class="preview-thumbnail">
+                            <div class="preview-icon bg-success">
+                                <i class="ti-info-alt mx-0"></i>
+                            </div>
+                        </div>
+                        <div class="preview-item-content flex-grow-1">
+                            <h6 class="preview-subject font-weight-normal">{{ notification.message }}</h6>
+                            <p class="font-weight-light small-text mb-0 text-muted">
+                                {{ notification.created_at|timesince }} ago
+                            </p>
+                        </div>
+                        <form action="{% url 'freelancer:notification_mark_as_read' not_id=notification.id %}?next={{ request.path }}" method="post">
+
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-link">Mark as Read</button>
+                      </form>
+                      
+                    </div>
+                </a>
+                {% endfor %}
+                {% if not unread_notifications %}
+                <p class="font-weight-light small-text mb-0 text-muted">No unread notifications</p>
+                {% endif %}
+            </div>
+        </li>
+
+
+
+
+          <li class="nav-item nav-search d-none d-lg-block">
+            <p>Hi ,{{ profile2.first_name }}</p>
+          </li>
+          <li class="nav-item nav-profile dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
+              {% if profile2.profile_picture %}
+              <img src="{{ profile2.profile_picture.url }}" alt="profile" />
+              {% else %}
+              <img src="{% static 'path/to/default/image.jpg' %}" alt="profile" />
+              {% endif %}
+            </a>
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+              <a class="dropdown-item" href="{% url 'freelancer:account_settings' %}">
+                <i class="ti-user text-primary"></i>
+                Profile
+              </a>
+             
+              <a class="dropdown-item" href="{% url 'logout' %}">
+                <i class="ti-power-off text-primary"></i>
+                Logout
+              </a>
+
+            </div>
+          </li>
+          <li class="nav-item nav-settings d-none d-lg-flex">
+            <a class="nav-link" href="#">
+              <i class="icon-ellipsis"></i>
+            </a>
+          </li>
+          <!-- Add this new list item for the review button -->
+        
+        </ul>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
+          data-toggle="offcanvas">
+          <span class="icon-menu"></span>
+        </button>
+      </div>
+    </nav>
+    <!-- partial -->
+    <div class="container-fluid page-body-wrapper">
+
+      <div id="right-sidebar" class="settings-panel">
+        <i class="settings-close ti-close"></i>
+        <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="todo-tab" data-toggle="tab" href="#todo-section" role="tab"
+              aria-controls="todo-section" aria-expanded="true">TO DO LIST</a>
+          </li>
+          <!-- <li class="nav-item">
+            <a class="nav-link" id="chats-tab" data-toggle="tab" href="#chats-section" role="tab" aria-controls="chats-section">CHATS</a>
+          </li> -->
+        </ul>
+        <div class="tab-content" id="setting-content">
+          <div class="tab-pane fade show active scroll-wrapper" id="todo-section" role="tabpanel"
+            aria-labelledby="todo-section">
+            <div class="add-items d-flex px-3 mb-0">
+              <form class="form w-100" method="post" action="{% url 'freelancer:add_todo' %}"
+                id="todo_form">
+                {% csrf_token %}
+                <div class="form-group d-flex">
+                  <input type="hidden" name="next" value="{{ request.path }}">
+                  <input type="text" class="form-control todo-list-input" name="title" id="title"
+                    placeholder="Add To-do">
+                  <br><span id="error_title" class="error"></span>
+
+                  <button type="submit" class="add btn btn-primary" id="add-task">Add</button>
+                  <br><span id="todo_err" class="error"></span>
+                </div>
+              </form>
+            </div>
+            <div class="list-wrapper px-3">
+              <ul class="d-flex flex-column-reverse todo-list">
+                {% for todo in todos %}
+                <li>
+                  <div class="form-check">
+                    <label class="form-check-label">
+                      <input class="checkbox" type="checkbox">
+                      {{todo.title}}
+                    </label>
+                  </div>
+                  <form action="{% url 'freelancer:delete_todo' todo.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" style=" border:none;outline:none;background-color: #fff;padding-left:130px">
+                      <i class="remove ti-trash"></i>
+                    </button>
+                  </form>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+
+          </div>
+          <!-- To do section tab ends -->
+
+        </div>
+      </div>
+      <!-- partial -->
+      <!-- partial:partials/_sidebar.html -->
+      <nav class="sidebar sidebar-offcanvas" id="sidebar" style="margin-left:-13px;">
+        <ul class="nav">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:freelancer_view' %}">
+              <i class="fas fa-tachometer-alt menu-icon"></i> <!-- Dashboard Icon -->
+              <span class="menu-title">Dashboard</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:account_settings' %}">
+              <i class="fas fa-user menu-icon"></i> <!-- Account Icon -->
+              <span class="menu-title">Account</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#project" aria-expanded="false" aria-controls="ui-basic">
+              <i class="fas fa-tasks menu-icon"></i> <!-- Project Icon -->
+              <span class="menu-title">Project</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="project">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'freelancer:view_project' %}">View Project</a>
+                </li>
+              </ul>
+            </div>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#proposal" aria-expanded="false" aria-controls="ui-basic">
+              <i class="fas fa-file-alt menu-icon"></i> <!-- Proposal Icon -->
+              <span class="menu-title">Project Proposals</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="proposal">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'freelancer:view_created_proposals' %}">Submitted Proposals</a>
+                </li>
+              </ul>
+            </div>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#repos" aria-expanded="false" aria-controls="ui-basic">
+              <i class="fas fa-code-branch menu-icon"></i> <!-- Repositories Icon -->
+              <span class="menu-title">Repositories</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="repos">
+              <ul class="nav flex-column sub-menu">
+                {% for repo in repositories %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'freelancer:view_repository' repo.id %}">{{ repo.name }}</a>
+                </li>
+                {% empty %}
+                <li class="nav-item">No repositories found.</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:tasks_list' %}">
+              <i class="fas fa-tasks menu-icon"></i> <!-- Tasks Icon -->
+              <span class="menu-title">Tasks</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:client_list' %}">
+              <i class="fas fa-users menu-icon"></i> <!-- Clients Icon -->
+              <span class="menu-title">Clients</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:todo' %}">
+              <i class="fas fa-clipboard-list menu-icon"></i> <!-- Todo Icon -->
+              <span class="menu-title">Todo</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:calendar' %}">
+              <i class="far fa-calendar-alt menu-icon"></i> <!-- Calendar Icon -->
+              <span class="menu-title">Calendar</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#portfolio" aria-expanded="false" aria-controls="ui-basic">
+              <i class="fas fa-briefcase menu-icon"></i> <!-- Complaints Icon -->
+              <span class="menu-title">Portfolio</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="portfolio">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:my_portfolios' %}">My Portfolio</a></li>
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:template_list' %}">Create Portfolio</a>
+                </li>
+              </ul>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:payments' %}">
+                <i class="fas fa-calculator menu-icon"></i> <!-- Payment Icon -->
+                <span class="menu-title">Payments</span>
+            </a>
+        </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:chat_view' %}">
+              <i class="fas fa-comments menu-icon"></i> <!-- Chat Icon -->
+              <span class="menu-title">Chat</span>
+            </a>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#complaints" aria-expanded="false" aria-controls="ui-basic">
+              <i class="fas fa-exclamation-circle menu-icon"></i> <!-- Complaints Icon -->
+              <span class="menu-title">Complaints</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="complaints">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:add_complaint' %}">Add Complaint</a>
+                  
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:view_complaints' %}">Submitted</a></li>
+                
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:view_complaints_recieved' %}">Received</a></li>
+                </li>
+              </ul>
+            </div>
+          </li>
+      
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout'%}">
+              <i class="fas fa-sign-out-alt menu-icon"></i> <!-- Logout Icon -->
+              <span class="menu-title">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      
+      <!-- partial -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          
+          {% block 'freelancer_content' %}
+          
+
+          {% endblock %}
+        </div>
+      </div>
+      <!-- main-panel ends -->
+    </div>
+    <!-- page-body-wrapper ends -->
+  </div>
+  <!-- container-scroller -->
+
+
+
+
+
+  <div id="siteReviewModal" class="modal">
+    <div class="modal-content">
+        <h2>We Value Your Feedback</h2>
+        <img src="{% static 'img/review.png' %}" alt="Feedback Image" class="modal-image">
+        <form id="SiteReviewForm" method="post" action="{% url 'site_review' %}?next={{ request.path }}">
+            {% csrf_token %}
+            <textarea name="review_text" placeholder="Your review" required></textarea>
+            <span id="siteReviewError" class="error"></span>
+            <p>Please rate your experience with FreelanceHub on a scale from 1 to 5</p>
+            <div class="star-rating">
+              <input type="radio" id="star5" name="rating" value="5">
+              <label for="star5" title="5 stars">&#9733;</label>
+              <input type="radio" id="star4" name="rating" value="4">
+              <label for="star4" title="4 stars">&#9733;</label>
+              <input type="radio" id="star3" name="rating" value="3">
+              <label for="star3" title="3 stars">&#9733;</label>
+              <input type="radio" id="star2" name="rating" value="2">
+              <label for="star2" title="2 stars">&#9733;</label>
+              <input type="radio" id="star1" name="rating" value="1">
+              <label for="star1" title="1 star">&#9733;</label>
+            </div>
+            <span id="siteRatingError" class="error"></span>
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+  </div>
+  
+  
+  
+  <script>
+    $(document).ready(function () {
+      const reviewDue = "{{ review_due }}";
+      const modal = document.getElementById('siteReviewModal');
+      const closeButton = document.getElementById('.close-button');
+    
+  
+      if (reviewDue === 'True') {
+        modal.style.display = 'block';
+      }
+    
+      closeButton.addEventListener('click', function () {
+        modal.style.display = 'none';
+      });
+    
+      window.addEventListener('click', function (event) {
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+  });
+  
+  </script>
+
+
+
+
+
+
+
+
+
+    <script>
+      $(document).ready(function () {
+        {% if project_status.status == 'Completed' and not project_status.freelancer_review_given %}
+          // Log the project status data to console
+          console.log('Project Status Data:');
+          console.log('Freelancer Name:', '{{ project_status.freelancer_name }}');
+          console.log('Client Name:', '{{ project_status.client_name }}');
+          console.log('Project ID:', '{{ project_status.project_id }}');
+          console.log('Freelancer ID:', '{{ project_status.freelancer_id }}');
+          console.log('Project Title:', '{{ project_status.project_title }}');
+          console.log('Client ID:', '{{ project_status.client_id }}');
+
+          // Set the values in the modal
+          $('#freelancerName').text('{{ project_status.freelancer_name }}');
+          $('#clientName').text('{{ project_status.client_name }}');
+          $('#projectId').val('{{ project_status.project_id }}');
+          $('#freelancerId').val('{{ project_status.freelancer_id }}');
+          $('#title').text('{{ project_status.project_title }}');
+          $('#clientId').val('{{ project_status.client_id }}');
+
+          // Show the modal
+          $('#reviewModal').modal('show');
+        {% else %}
+          console.log('No project status data available or review already given.');
+        {% endif %}
+      });
+      </script>
+      <script>
+        $(document).ready(function() {
+          $("#reviewForm").submit(function(event) {
+              var isValid = validateForm();
+              if (!isValid) {
+                  event.preventDefault(); // Prevent form submission if validation fails
+              }
+          });
+      
+          // Real-time validation
+          $("#overallRating").change(validateRating);
+          $("#review").keyup(validateReview);
+      
+          function validateForm() {
+              var isValidRating = validateRating();
+              var isValidReview = validateReview();
+              return isValidRating && isValidReview;
+          }
+      
+          function validateRating() {
+              var overallRating = $("#overallRating").val();
+              if (overallRating == "0") {
+                  $("#overallRatingError").html("Please select a rating").show();
+                  $("#overallRating").css("border", "2px solid red");
+                  return false;
+              } else {
+                  $("#overallRatingError").hide();
+                  $("#overallRating").css("border", "2px solid green");
+                  return true;
+              }
+          }
+      
+          function validateReview() {
+              var review = $("#review").val();
+              var reviewRegex = /^(?!\s)(?!.*\s{2})(?!.*\d{3})(?!.*\s$)[A-Za-z\d\s.,!?]{10,}$/;
+              
+              if (review.trim() === "") {
+                  $("#reviewError").html("Please enter a review").show();
+                  $("#review").css("border", "2px solid red");
+                  return false;
+              } else if (!reviewRegex.test(review)) {
+                  $("#reviewError").html("Review format is invalid. Please check the guidelines.").show();
+                  $("#review").css("border", "2px solid red");
+                  return false;
+              } else {
+                  $("#reviewError").hide();
+                  $("#review").css("border", "2px solid green");
+                  return true;
+              }
+          }
+      
+          // Validate on button click
+          $("button[type='submit']").click(function(event) {
+              if (!validateForm()) {
+                  event.preventDefault();
+              }
+          });
+      });
+      </script>
+
+      <div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="reviewModalLabel">Submit Review for Client: <span id="clientName"></span></h5>
+              <br>
+              <p>Freelancer: <span id="freelancerName"></span></p><br>
+              <p>Project Title: <span id="title"></span></p>
+              
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <form id="reviewForm" action="{% url 'freelancer:submit_user_review' %}" method="POST">
+              {% csrf_token %}
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="overallRating">Overall Rating:</label>
+                  <select name="overall_rating" class="form-control" id="overallRating" required>
+                    <option value="0">Select Rating</option>
+                    <option value="1">1 - Poor</option>
+                    <option value="2">2 - Fair</option>
+                    <option value="3">3 - Good</option>
+                    <option value="4">4 - Very Good</option>
+                    <option value="5">5 - Excellent</option>
+                </select>
+                <span id="overallRatingError" class="error"></span>
+              </div>
+                <div class="form-group">
+                  <label for="review">Review:</label>
+                  <textarea class="form-control" id="review" name="review" rows="3" required></textarea>
+                  <span id="reviewError" class="error"></span>
+                </div>
+                <input type="hidden" id="projectId" name="project_id" value="">
+                <input type="hidden" id="freelancerId" name="freelancer_id" value="">
+                <input type="hidden" id="clientId" name="client_id" value="">
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+
+
+
+
+      {% if has_refund_payment %}
+      <div id="paymentDetailsModal" class="modal" tabindex="-1" role="dialog" style="display: none;" data-backdrop="static" data-keyboard="false">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title">Payment Details</h5>
+                      <!-- Remove the close button from the header -->
+                  </div>
+                  <div class="modal-body">
+                      <p>Total Paid: {{ refund_payment.total_paid }}</p>
+                      <p>Amount Due: {{ refund_payment.amount }}</p>
+                      <p>Compensation Amount: {{ refund_payment.compensation_amount }}</p>
+                      <p>Refund Payment To: {{ refund_payment.pay_to }}</p>
+                  </div>
+                  <div class="modal-footer">
+                      <button id="payButton" type="button" class="btn btn-primary" onclick="makePayment({{ refund_payment.amount }}, '{{ refund_payment.pay_to.id }}')">Pay Now</button>
+                      <!-- Remove the close button from the footer -->
+                  </div>
+              </div>
+          </div>
+      </div>
+  {% endif %}
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      {% if has_refund_payment and not refund_payment.is_paid %}
+          $('#paymentDetailsModal').modal({
+              backdrop: 'static',
+              keyboard: false
+          });
+      {% endif %}
+  
+      document.getElementById("payButton").addEventListener("click", function() {
+          console.log("Pay button clicked, initiating Razorpay payment.");
+  
+          var options = {
+              "key": "{{ razorpay_key }}",
+              "amount": "{{ amount_in_paisa }}",
+              "currency": "INR",
+              "name": "Refund Payment",
+              "description": "Refund Payment to {{ refund_payment.pay_to }}",
+              "order_id": "{{ razorpay_order_id }}",
+              "handler": function (response) {
+                  console.log("Payment successful, sending AJAX request.");
+                  
+                  $.ajax({
+                      url: "{% url 'payment_success' %}",
+                      method: "POST",
+                      data: {
+                          payment_id: response.razorpay_payment_id,
+                          order_id: response.razorpay_order_id,
+                          signature: response.razorpay_signature,
+                          refund_payment_id: "{{ refund_payment.id }}",
+                          csrfmiddlewaretoken: '{{ csrf_token }}'
+                      },
+                      success: function(data) {
+                        $('#paymentDetailsModal').modal('hide');
+                        
+                          console.log("Payment success AJAX response:", data);
+                          
+                          // Create a confetti canvas with a high z-index
+                          const confettiCanvas = document.createElement('canvas');
+                          confettiCanvas.style.position = 'fixed';
+                          confettiCanvas.style.top = '0';
+                          confettiCanvas.style.left = '0';
+                          confettiCanvas.style.width = '100%';
+                          confettiCanvas.style.height = '100%';
+                          confettiCanvas.style.zIndex = '9999'; // Ensure it's on top
+                          document.body.appendChild(confettiCanvas);
+  
+                          const myConfetti = confetti.create(confettiCanvas, {
+                              resize: true,
+                              useWorker: true
+                          });
+  
+                          myConfetti({
+                              particleCount: 1000,
+                              spread: 160,
+                              startVelocity: 60,
+                              origin: { y: 0.6 }
+                          });
+  
+                          // Remove the confetti canvas after 3 seconds
+                          setTimeout(() => {
+                              document.body.removeChild(confettiCanvas);
+                          }, 3000);
+  
+                          Swal.fire({
+                              title: 'Payment Successful!',
+                              text: 'Thank you for your payment.',
+                              icon: 'success',
+                              confirmButtonText: 'OK'
+                          }).then(() => {
+                              location.reload(); // Reload the page
+                          });
+                      },
+                      error: function(err) {
+                          console.error("Payment verification failed", err);
+                          alert('Payment verification failed');
+                      }
+                  });
+              },
+              "prefill": {
+                  "name": "{{ request.user.name }}",
+                  "email": "{{ request.user.email }}",
+                  "contact": ""  // Add contact if available
+              },
+              "theme": {
+                  "color": "#41436A"
+              }
+          };
+  
+          var rzp1 = new Razorpay(options);
+          rzp1.open();
+      });
+      
+  });
+  </script>
+
+
+
+
+
+
+
+  <!-- plugins:js -->
+  <script src="{%  static 'vendors/js/vendor.bundle.base.js' %}"></script>
+  <!-- endinject -->
+  <!-- Plugin js for this page -->
+  <script src="{%  static 'vendors/chart.js/Chart.min.js' %}"></script>
+  <script src="{%  static 'vendors/datatables.net/jquery.dataTables.js' %}"></script>
+  <script src="{%  static 'vendors/datatables.net-bs4/dataTables.bootstrap4.js' %}"></script>
+  <script src="{%  static 'js/dataTables.select.min.js' %}"></script>
+
+  <!-- End plugin js for this page -->
+  <!-- inject:js -->
+  <script src="{%  static 'js/off-canvas.js' %}"></script>
+  <script src="{%  static 'js/hoverable-collapse.js' %}"></script>
+  <script src="{%  static 'js/template.js' %}"></script>
+  <script src="{%  static 'js/settings.js' %}"></script>
+  <script src="{%  static 'js/todolist.js' %}"></script>
+  <!-- endinject -->
+  <!-- Custom js for this page-->
+  <script src="{%  static 'js/dashboard.js' %}"></script>
+  <script src="{%  static 'js/Chart.roundedBarCharts.js' %} "></script>
+  <!-- End custom js for this page-->
+
+</body>
+
+</html>
+
+
+
+
+
+

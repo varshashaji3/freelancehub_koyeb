@@ -1,0 +1,829 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script>
+        $(document).ready(function () {
+            $("#fname").keyup(function () {
+                check_name();
+            })
+            $("#lname").keyup(function () {
+                check_lname();
+            })
+
+            $("#phone").keyup(function () {
+                check_phone();
+            })
+
+            $("#linkedin").keyup(function () {
+                check_url("#linkedin", "#error_linkedin");
+            })
+            $("#instagram").keyup(function () {
+                check_url("#instagram", "#error_instagram");
+            })
+            $("#twitter").keyup(function () {
+                check_url("#twitter", "#error_twitter");
+            })
+            $("#bio_description").keyup(function () {
+                check_bio();
+            })
+            $("#profile_picture").change(function () {
+                check_image();
+            })
+            $("#location").keyup(function () {
+                check_location();
+            })
+
+
+                check_professional_title();
+            $("input[name='professional_titles']").on('change', check_professional_title);
+
+                check_skills();
+            $("input[name='skills']").on('change', check_professional_title);
+            $("#experience_level").change(function () {
+                check_experience_level();
+            });
+            $("#portfolio_link").keyup(function () {
+                check_url("#portfolio_link", "#error_portfolio_link");
+            });
+            $("#education").keyup(function () {
+                check_education();
+            });
+            $("#resume").change(function () {
+                check_resume();
+            });
+
+            $("#adhar").change(function () {
+                check_aadhaar();
+            });
+            $("input[name='work_type']").on('change', check_work_type);
+
+            var professional_title_error = false;
+            var skills_error = false;
+            var experience_level_error = false;
+            var portfolio_link_error = false;
+            var education_error = false;
+            var resume_error = false;
+            var aadhaar_error = false;
+            var status_error = false;
+
+
+            var fname_error = false;
+            var lname_error = false;
+            var phone_error = false;
+            var pass_error = false;
+            var repass_error = false;
+            var url_error = false;
+            var bio_error = false;
+            var image_error = false;
+            var work_type_error = false;
+
+            function check_name() {
+                var pattern = /^[a-zA-Z ]*$/;
+                var name = $("#fname").val();
+                if (pattern.test(name) && name !== "") {
+                    $("#error_fname").hide();
+                    $("#fname").css("border", "2px solid green");
+                } else {
+                    $("#error_fname").html("Should contain only letters").show();
+                    $("#fname").css("border", "2px solid red");
+                    fname_error = true;
+                }
+            }
+
+            function check_lname() {
+                var pattern = /^[a-zA-Z ]*$/;
+                var name = $("#lname").val();
+                if (pattern.test(name) && name !== "") {
+                    $("#error_lname").hide();
+                    $("#lname").css("border", "2px solid green");
+                } else {
+                    $("#error_lname").html("Should contain only letters").show();
+                    $("#lname").css("border", "2px solid red");
+                    lname_error = true;
+                }
+            }
+
+
+            function check_phone() {
+                var pattern = /^[7-9]\d{9}$/;
+                var phone = $("#phone").val();
+                if (pattern.test(phone) && phone !== "") {
+                    $("#error_phone").hide();
+                    $("#phone").css("border", "2px solid green");
+                } else {
+                    $("#error_phone").html("Invalid phone number").show();
+                    $("#phone").css("border", "2px solid red");
+                    phone_error = true;
+                }
+            }
+
+
+            function check_url(field_id, error_id) {
+                var pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+                var url = $(field_id).val();
+                if (pattern.test(url) && url !== "") {
+                    $(error_id).hide();
+                    $(field_id).css("border", "2px solid green");
+                    url_error = false;
+                } else {
+                    $(error_id).html("Invalid URL").show();
+                    $(field_id).css("border", "2px solid red");
+                    url_error = true;
+                }
+            }
+
+            function check_bio() {
+                var pattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 .,!?\n/'-]*$/;
+                var bio = $("#bio_description").val();
+                if (pattern.test(bio) && bio !== "") {
+                    $("#error_bio").hide();
+                    $("#bio_description").css("border", "2px solid green");
+                    bio_error = false;
+                } else {
+                    $("#error_bio").html("Invalid characters in bio").show();
+                    $("#bio_description").css("border", "2px solid red");
+                    bio_error = true;
+                }
+            }
+
+            function check_image() {
+                var file = $("#profile_picture")[0].files[0];
+                var allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+                if (file && allowedExtensions.exec(file.name)) {
+                    $("#error_image").hide();
+                    $("#profile_picture").css("border", "2px solid green");
+                    image_error = false;
+                } else {
+                    $("#error_image").html("Invalid Image File").show();
+                    $("#profile_picture").css("border", "2px solid red");
+                    image_error = true;
+                }
+            }
+
+            function check_location() {
+                var pattern = /^[a-zA-Z\s,.'-]{3,}$/;
+                var location = $("#location").val();
+                if (pattern.test(location) && location !== "") {
+                    $("#error_location").hide();
+                    $("#location").css("border", "2px solid green");
+                } else {
+                    $("#error_location").html("Invalid location format").show();
+                    $("#location").css("border", "2px solid red");
+                    location_error = true;
+                }
+            }
+
+
+
+
+
+            function check_education() {
+                var pattern = /^[a-zA-Z .\s]*$/;
+                var education = $("#education").val();
+                if (pattern.test(education) && education !== "") {
+                    $("#error_education").hide();
+                    $("#education").css("border", "2px solid green");
+                    education_error = false;
+                } else {
+                    $("#error_education").html("This field is required and must contain only letters").show();
+                    $("#education").css("border", "2px solid red");
+                    education_error = true;
+                }
+            }
+
+
+            function check_resume() {
+                var file = $("#resume")[0].files[0];
+                var allowedExtensions = /(\.pdf)$/i;
+                if (file && allowedExtensions.exec(file.name)) {
+                    $("#error_resume").hide();
+                    $("#resume").css("border", "2px solid green");
+                    resume_error = false;
+                } else {
+                    $("#error_resume").html("Invalid file type. Only .pdf are allowed.").show();
+                    $("#resume").css("border", "2px solid red");
+                    resume_error = true;
+                }
+            }
+
+            function check_aadhaar() {
+                var file = $("#adhar")[0].files[0];
+                var allowedExtensions = /(\.pdf)$/i;
+                if (file && allowedExtensions.exec(file.name)) {
+                    $("#error_adhar").hide();
+                    $("#adhar").css("border", "2px solid green");
+                    aadhaar_error = false;
+                } else {
+                    $("#error_adhar").html("Invalid file type. Only .pdf files are allowed.").show();
+                    $("#adhar").css("border", "2px solid red");
+                    aadhaar_error = true;
+                }
+            }
+            function check_experience_level() {
+                var level = $("#experience_level").val();
+                if (level !== "") {
+                    $("#error_experience_level").hide();
+                    $("#experience_level").css("border", "2px solid green");
+                    experience_level_error = false;
+                } else {
+                    $("#error_experience_level").html("This field is required").show();
+                    $("#experience_level").css("border", "2px solid red");
+                    experience_level_error = true;
+                }
+            }
+
+
+            function check_skills() {
+                var isChecked = $("input[name='skills']:checked").length > 0;
+                if (isChecked) {
+                    $("#error_skills").hide();
+                    skills_error = false;
+                } else {
+                    $("#error_skills").html("At least one skill must be selected").show();
+                    skills_error = true;
+                }
+            }
+
+
+
+            function check_professional_title() {
+                var isChecked = $("input[name='professional_titles']:checked").length > 0;
+                if (isChecked) {
+                    $("#error_professional_title").hide();
+                    professional_title_error = false;
+                } else {
+                    $("#error_professional_title").html("At least one professional title must be selected").show();
+                    professional_title_error = true;
+                }
+            }
+
+            function check_work_type() {
+                var isChecked = $("input[name='work_type']:checked").length > 0;
+                if (isChecked) {
+                    $("#error_work_type").hide();
+                    work_type_error = false;
+                } else {
+                    $("#error_work_type").html("At least one work type must be selected").show();
+                    work_type_error = true;
+                }
+            }
+
+            $("#profile_form").submit(function () {
+                fname_error = false;
+                lname_error = false;
+                email_error = false;
+                phone_error = false;
+                url_error = false;
+                bio_error = false;
+                image_error = false;
+                location_error = false;
+                work_type_error=false;
+                check_name();
+                check_lname();
+                check_email();
+                check_phone();
+                check_pass();
+                check_repass();
+                check_url("#linkedin", "#error_linkedin");
+                check_url("#instagram", "#error_instagram");
+                check_url("#twitter", "#error_twitter");
+                check_bio();
+                check_image();
+                check_location();
+
+
+                professional_title_error = false;
+                skills_error = false;
+                experience_level_error = false;
+                portfolio_link_error = false;
+                education_error = false;
+                resume_error = false;
+
+                aadhaar_error = false;
+                status_error = false;
+                check_professional_title();
+                check_skills();
+                check_experience_level();
+                check_url("#portfolio_link", "#error_portfolio_link");
+                check_education();
+                check_resume();
+                check_aadhaar();
+                check_work_type(); // Add this line
+    
+    if (fname_error === false && lname_error === false && phone_error === false && url_error === false && bio_error === false && image_error === false && location_error === false &&
+        professional_title_error === false && skills_error === false && experience_level_error === false && portfolio_link_error === false && education_error === false && resume_error === false && aadhaar_error === false && work_type_error === false) {
+        $("#profile_err").hide();
+        return true;
+    } else {
+        $("#profile_err").html("Please fill the form correctly.").show();
+        return false;
+    }
+            });
+        });
+    </script>
+    <style>
+        .error {
+            color: red;
+            font-family: Comic Sans MS;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem; /* Adjust the space between checkboxes as needed */
+        }
+        
+        .form-check {
+            flex:  auto;
+            min-width: 200px; /* Adjust as needed */
+        }
+    </style>
+
+</head>
+
+<body>
+    <section class="bg-light p-3 p-md-4 p-xl-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-xxl-11">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-5 text-center">
+                                <a href="#!">
+                                    <img src="{% static 'img/logo.png' %}" style="margin-top:-20px;margin-bottom:20px;"
+                                        alt="BootstrapBrain Logo" width="175" height="53">
+                                </a>
+                                <h2 class="h4">User Profile</h2>
+                                <h3 class="fs-6 fw-normal text-secondary m-0">Complete your profile details below</h3>
+                            </div>
+
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'freelancer:add_profile_freelancer' uid %}"
+                        enctype="multipart/form-data" id="profile_form">
+                        {% csrf_token %}
+                        <div class="row gy-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="fname" name="fname"
+                                        placeholder="First Name" value="{{ profile2.first_name|default:'' }}" required>
+                                    <label for=" fname" class="form-label">First Name</label>
+                                    <span id="error_fname" class="error"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="lname" name="lname"
+                                        placeholder="Last Name" value="{{ profile2.last_name|default:'' }}" required>
+                                    <label for="lname" class="form-label">Last Name</label>
+                                    <span id="error_lname" class="error"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Email"
+                                        value="{{ profile1.email }}" disabled>
+                                    <label for="email" class="form-label">Email</label>
+                                    <span id="error_email" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="phone" name="phone_number"
+                                        placeholder="Phone Number" required>
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <span id="error_phone" class="error"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="bio_description" name="bio_description"
+                                        placeholder="Bio Description" style="height: 100px;"></textarea>
+                                    <label for="bio_description" class="form-label">Bio Description</label>
+                                    <span id="error_bio" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="location" name="location"
+                                        placeholder="Location" required>
+                                    <label for="location" class="form-label">Location</label>
+                                    <span id="error_location" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="linkedin" name="linkedin"
+                                        placeholder="LinkedIn">
+                                    <label for="linkedin" class="form-label">LinkedIn Link</label>
+                                    <span id="error_linkedin" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="instagram" name="instagram"
+                                        placeholder="Instagram">
+                                    <label for="instagram" class="form-label">Instagram Link</label>
+                                    <span id="error_instagram" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="twitter" name="twitter"
+                                        placeholder="Twitter">
+                                    <label for="twitter" class="form-label">Twitter Link</label>
+                                    <span id="error_twitter" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="profile_picture" class="form-label">Profile Picture</label>
+                                    {% if profile2.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
+                                        class="img-fluid rounded mb-2" width="150">
+                                    {% endif %}
+                                    <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+                                    <span id="error_image" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="role" name="role" placeholder="Role"
+                                        value="{{ profile1.role }}" disabled>
+                                    <label for="role" class="form-label">Role</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="experience_level" name="experience_level" required>
+                                        <option value="" selected>Select your experience level</option>
+                                        <option value="Fresher">Fresher</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5+">5+</option>
+                                    </select>
+                                    <label for="experience_level" class="form-label">Experience Level</label>
+                                    <span id="error_experience_level" class="error"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="portfolio_link" name="portfolio_link"
+                                        placeholder="Portfolio Link">
+                                    <label for="portfolio_link" class="form-label">Portfolio Link</label>
+                                    <span id="error_portfolio_link" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="education" name="education">
+                                    <label for="education" class="form-label">Education</label>
+                                    <span id="error_education" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="resume" class="form-label">Resume</label>
+                                    <input type="file" class="form-control" id="resume" name="resume">
+                                    <span id="error_resume" class="error"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="adhar" class="form-label">Aadhaar</label>
+                                    <input type="file" class="form-control" id="adhar" name="aadhaar">
+                                    <span id="error_adhar" class="error"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="work_type" name="work_type" required>
+                                        <option value="" selected>Select your work type</option>
+                                        <option value="Full-time">Full-time</option>
+                                        <option value="Part-time">Part-time</option>
+                                    </select>
+                                    <label for="work_type" class="form-label">Work Type</label>
+                                    <span id="error_work_type" class="error"></span>
+                                </div>
+                            </div>
+                    
+                            <div class="col-12 col-md-12">
+                                <div class="form-floating mb-3">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Professional Titles</label>
+                                        <div id="error_professional_title" class="error"></div>
+                            
+                                        <div class="checkbox-container">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Web Developer">
+                                                <label class="form-check-label" for="professional_title">Web Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Front-End Developer">
+                                                <label class="form-check-label" for="professional_title">Front-End Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Back-End Developer">
+                                                <label class="form-check-label" for="professional_title">Back-End Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Full-Stack Developer">
+                                                <label class="form-check-label" for="professional_title">Full-Stack Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Mobile App Developer">
+                                                <label class="form-check-label" for="professional_title">Mobile App Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Android Developer">
+                                                <label class="form-check-label" for="professional_title">Android Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="iOS Developer">
+                                                <label class="form-check-label" for="professional_title">iOS Developer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="UI/UX Designer">
+                                                <label class="form-check-label" for="professional_title">UI/UX Designer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Graphic Designer">
+                                                <label class="form-check-label" for="professional_title">Graphic Designer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Logo Designer">
+                                                <label class="form-check-label" for="professional_title">Logo Designer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Poster Designer">
+                                                <label class="form-check-label" for="professional_title">Poster Designer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Machine Learning Engineer">
+                                                <label class="form-check-label" for="professional_title">Machine Learning Engineer</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Artificial Intelligence Specialist">
+                                                <label class="form-check-label" for="professional_title">Artificial Intelligence Specialist</label>
+                                            </div>
+                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="professional_title" name="professional_titles" value="Software Developer">
+                                                <label class="form-check-label" for="professional_title">Software Developer</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <span id="error_professional_title" class="error"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+
+                            <div class="col-12 col-md-12">
+                                <div class="form-floating mb-3">
+                                    <label class="form-label">Skills</label>
+                                    <br><br>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="java">
+                                            <label class="form-check-label" for="skills">java</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="c++">
+                                            <label class="form-check-label" for="skills">c++</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="python">
+                                            <label class="form-check-label" for="skills">python</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="eclipse">
+                                            <label class="form-check-label" for="skills">eclipse</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="visual studio">
+                                            <label class="form-check-label" for="skills">visual studio</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="html/css">
+                                            <label class="form-check-label" for="skills">html/css</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="javascript">
+                                            <label class="form-check-label" for="skills">javascript</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="bootstrap">
+                                            <label class="form-check-label" for="skills">bootstrap</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="sass">
+                                            <label class="form-check-label" for="skills">sass</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="swift">
+                                            <label class="form-check-label" for="skills">swift</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="xcode">
+                                            <label class="form-check-label" for="skills">xcode</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="kotlin">
+                                            <label class="form-check-label" for="skills">kotlin</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="android studio">
+                                            <label class="form-check-label" for="skills">android studio</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="flutter">
+                                            <label class="form-check-label" for="skills">flutter</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="react native">
+                                            <label class="form-check-label" for="skills">react native</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="r">
+                                            <label class="form-check-label" for="skills">r</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="jupyter">
+                                            <label class="form-check-label" for="skills">jupyter</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="pandas">
+                                            <label class="form-check-label" for="skills">pandas</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="numpy">
+                                            <label class="form-check-label" for="skills">numpy</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="tensorflow">
+                                            <label class="form-check-label" for="skills">tensorflow</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="pytorch">
+                                            <label class="form-check-label" for="skills">pytorch</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="keras">
+                                            <label class="form-check-label" for="skills">keras</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="scikit-learn">
+                                            <label class="form-check-label" for="skills">scikit-learn</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="adobe xd">
+                                            <label class="form-check-label" for="skills">adobe xd</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="sketch">
+                                            <label class="form-check-label" for="skills">sketch</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="figma">
+                                            <label class="form-check-label" for="skills">figma</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="invision">
+                                            <label class="form-check-label" for="skills">invision</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="react">
+                                            <label class="form-check-label" for="skills">react</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="angular">
+                                            <label class="form-check-label" for="skills">angular</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="vue.js">
+                                            <label class="form-check-label" for="skills">vue.js</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="webpack">
+                                            <label class="form-check-label" for="skills">webpack</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="node.js">
+                                            <label class="form-check-label" for="skills">node.js</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="django">
+                                            <label class="form-check-label" for="skills">django</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="ruby on rails">
+                                            <label class="form-check-label" for="skills">ruby on rails</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="spring boot">
+                                            <label class="form-check-label" for="skills">spring boot</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="mongodb">
+                                            <label class="form-check-label" for="skills">mongodb</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="express.js">
+                                            <label class="form-check-label" for="skills">express.js</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="php (lamp stack)">
+                                            <label class="form-check-label" for="skills">php (lamp stack)</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="angular (mean stack)">
+                                            <label class="form-check-label" for="skills">angular (mean stack)</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="adobe illustrator">
+                                            <label class="form-check-label" for="skills">adobe illustrator</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="coreldraw">
+                                            <label class="form-check-label" for="skills">coreldraw</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="affinity designer">
+                                            <label class="form-check-label" for="skills">affinity designer</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="adobe photoshop">
+                                            <label class="form-check-label" for="skills">adobe photoshop</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="adobe indesign">
+                                            <label class="form-check-label" for="skills">adobe indesign</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="canva">
+                                            <label class="form-check-label" for="skills">canva</label>
+                                        </div>
+                                        <div class="form-check" style="display: flex; align-items: center; min-width: 200px;">
+                                            <input class="form-check-input" type="checkbox" id="skills" name="skills" value="opencv">
+                                            <label class="form-check-label" for="skills">opencv</label>
+                                        </div>
+                                    </div>
+                                    <span id="error_skills" class="error"></span>
+                                </div>
+                            </div>
+                            
+
+
+
+                            <div class="col-12">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-dark btn-lg">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                        <span id="profile_err" class="error"></span>
+                    </form>
+
+
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

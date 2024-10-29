@@ -1,0 +1,152 @@
+
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const filterTypeSelect = document.getElementById('filter_type');
+    const statusFilter = document.getElementById('statusFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+
+    filterTypeSelect.addEventListener('change', function() {
+        if (this.value === 'status') {
+            statusFilter.style.display = 'block';
+            categoryFilter.style.display = 'none';
+        } else if (this.value === 'category') {
+            statusFilter.style.display = 'none';
+            categoryFilter.style.display = 'block';
+        } else {
+            statusFilter.style.display = 'none';
+            categoryFilter.style.display = 'none';
+        }
+    });
+});
+
+function handleFilterChange() {
+  var filterType = document.getElementById('filter_type').value;
+  document.getElementById('statusFilter').style.display = (filterType === 'status') ? 'block' : 'none';
+  document.getElementById('categoryFilter').style.display = (filterType === 'category') ? 'block' : 'none';
+}
+</script>
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">Projects</h3>
+</div><br><br>
+
+<div class="row justify-content-center">
+  <div class="col-md-4">
+      <form method="GET" id="searchForm" class="form-inline">
+          <input type="text" name="search" id="searchInput" placeholder="Search by title or category..." class="form-control search-input" value="{{ request.GET.search }}">
+      </form>
+  </div>
+  <div class="col-md-8">
+      <form method="GET" id="filterForm" class="form-inline">
+          <select name="filter_type" id="filter_type" class="form-control filter-select" onchange="updateFilters()">
+              <option value="">Choose filter type</option>
+              <option value="status" {% if request.GET.filter_type == "status" %}selected{% endif %}>Status</option>
+              <option value="category" {% if request.GET.filter_type == "category" %}selected{% endif %}>Category</option>
+          </select>
+          <div id="statusFilter" class="filter-section" style="{% if request.GET.filter_type == 'status' %}display:block{% else %}display:none{% endif %}">
+              <select name="status" id="status" class="form-control filter-select">
+                  <option value="">Filter by status</option>
+                  <option value="Open" {% if request.GET.status == "Open" %}selected{% endif %}>Open</option>
+                  <option value="Closed" {% if request.GET.status == "Closed" %}selected{% endif %}>Closed</option>
+              </select>
+          </div>
+          <div id="categoryFilter" class="filter-section" style="{% if request.GET.filter_type == 'category' %}display:block{% else %}display:none{% endif %}">
+              <select name="category" id="category" class="form-control filter-select">
+                  <option value="">Filter by category</option>
+                  {% for cat in categories %}
+                      <option value="{{ cat }}" {% if request.GET.category == cat %}selected{% endif %}>{{ cat }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Apply Filters</button>
+          <a href="{% url 'freelancer:view_project' %}" class="btn btn-secondary ml-2">Clear Filters</a>
+      </form>
+  </div>
+</div>
+
+<style>
+    @media screen and (max-width: 567px) {
+        .card-text {
+          margin-bottom: 0.5em;
+        }
+    }
+    
+    .card {
+        flex-direction: row;
+        margin-top: 25px;
+        margin-left: -15px;
+        height: 180px;
+        width: 1070px;
+    }
+    .card-body {
+        padding: 0.5em 1em;
+    }
+    .card1.card img {
+        max-width: 170px;
+        height: 100%;
+        border-bottom-left-radius: calc(0.25rem - 1px);
+        border-top-left-radius: calc(0.25rem - 1px);
+    }
+    
+    .card-container {
+        width: 1070px;
+        
+    }
+
+    .form-inline {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+  }
+  .form-inline .form-control {
+      margin-right: 10px;
+      margin-bottom: 10px;
+  }
+  .filter-section {
+      margin-right: 10px;
+  }
+  .btn-secondary {
+      background-color: #6c757d;
+      border: none;
+  }
+  .ml-2 {
+      margin-left: 10px;
+  }
+</style>
+
+<div class="card-container">
+    {% for detail in project_details %}
+    <div class="card1 card align-items-center" style="max-width: 1020px;">
+        <img src="{{ detail.client_register.profile_picture.url }}" alt="...">
+        <div class="card-body">
+            <h5 class="card-title" style="color:red;padding-top:20px;">{{ detail.project.title|default:'' }}</h5>
+            <p class="card-text">{{ detail.project.description|truncatechars:100|default:'' }}</p>
+            <p class="budget"><strong style="color:red;">Budget:</strong> {{ detail.project.budget|default:'' }}</p>
+            <p class="budget"><strong style="color:red;">Category:</strong> {{ detail.project.category|default:'' }}</p>
+            <p><strong style="color:blueviolet;">Proposal End Date:</strong> {{ detail.project.end_date|default:'' }}</p><br>
+        </div>
+        {% if detail.has_proposal %}
+            <!-- Link when a proposal has been submitted (styled differently) -->
+            <a href="{% url 'freelancer:single_project_view' detail.project.id %}" style="margin-right:30px;color:red;">
+                Proposal Submitted
+            </a>
+        {% else %}
+            <!-- 'View More' button when no proposal has been submitted -->
+            <a href="{% url 'freelancer:single_project_view' detail.project.id %}" class="btn btn-primary" style="margin-right:30px;">
+                View More
+            </a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

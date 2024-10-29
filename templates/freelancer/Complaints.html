@@ -1,0 +1,188 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+    }
+    .container {
+        margin-top: 20px;
+    }
+    .btn-add {
+        margin-bottom: 15px;
+        float: right;
+    }
+    table.dataTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    table.dataTable thead th {
+        background-color: #4B49AC;
+        color: white;
+        text-align: center;
+    }
+    table.dataTable tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    table.dataTable tbody td {
+        text-align: center;
+    }
+    table.dataTable tbody td, table.dataTable thead th {
+        padding: 12px;
+        border: 1px solid #ddd;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 5px ;
+        margin: 0 2px;
+        border-radius: 3px;
+    }
+    .btn-add{
+        background-color: #4B49AC;
+    }
+</style>
+<div class="row" style="margin-right:-30px;background-color:white;">
+    
+<div class="container">
+    <h2 class="text-center mb-4">Submitted Complaints</h2>
+    
+    <!-- Button to add new complaint -->
+    <a href="{% url 'freelancer:add_complaint' %}" class="btn btn-primary btn-add">Add New Complaint</a>
+    <br><br><br>
+    <!-- DataTable for displaying complaints -->
+    <table id="complaintsTable" class="display table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Subject</th>
+                <th>Description</th>
+                <th>Date Created</th>
+                <th>Status</th> <!-- Updated to include Status column -->
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for complaint in complaints %}
+            <tr {% if complaint.status == 'Resolved' %}style="background-color: #d4edda;"{% elif complaint.status == 'Pending' %}style="background-color: #fff3cd;"{% elif complaint.status == 'Unresolved' %}style="background-color: #f8d7da;"{% endif %}>
+                <td>{{ forloop.counter }}</td>
+                {% if complaint.complaint_type == 'Client' %}
+                <td>Complaint About Client</td>
+                {% else %}
+                <td>{{ complaint.complaint_type }}</td>
+                {% endif %}
+                <td>{{ complaint.subject }}</td>
+                <td>{{ complaint.description }}</td>
+                <td>{{ complaint.date_filed|date:"Y-m-d" }}</td>  <!-- Updated to show date only -->
+                <td>
+                    <span style="padding: 5px; border-radius: 5px; background-color: {% if complaint.status == 'Resolved' %}#9ee1ae{% elif complaint.status == 'Pending' %}#e8ca68{% elif complaint.status == 'Rejected' %}#d56872{% else %}#ffffff{% endif %};">
+                        {{ complaint.status }}
+                    </span>   <!-- Display Status with background color and rounded edges -->
+                </td>
+                <td>
+                    <button class="btn btn-info" data-toggle="modal" data-target="#complaintModal{{ forloop.counter }}">View</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+<!-- Include DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+<!-- Modal Structure -->
+{% for complaint in complaints %}
+<div class="modal fade" id="complaintModal{{ forloop.counter }}" tabindex="-1" role="dialog" aria-labelledby="complaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="complaintModalLabel">Complaint Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Subject:</strong> {{ complaint.subject }}</p>
+                <p><strong>Description:</strong> {{ complaint.description }}</p>
+                <p><strong>Solution:</strong> {{ complaint.resolution }}</p>
+                {% if complaint.status == 'Pending'%}
+                <form id="satisfactionForm{{ forloop.counter }}" {% if complaint.status == 'Resolved' %}style="display:none;"{% endif %}>
+                    <label>Are you satisfied with the solution?</label><br> <br>
+
+                    <button type="button" class="btn btn-success satisfaction-btn" data-value="Satisfactory" data-complaint-id="{{ complaint.id }}">Yes</button>
+                    <button type="button" class="btn btn-danger satisfaction-btn" data-value="Unsatisfactory" data-complaint-id="{{ complaint.id }}">No</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+    $('.satisfaction-btn').on('click', function() {
+        const satisfaction = $(this).data('value');
+        const complaintId = $(this).data('complaint-id'); // Get the complaint ID from the button
+
+        $.ajax({
+            type: 'POST',
+            url: '{% url "freelancer:update_complaint_status" %}',
+            data: {
+                'complaint_id': complaintId,
+                'satisfaction_status': satisfaction,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'  // Include CSRF token for security
+            },
+            success: function(response) {
+                if (response.success) {
+                    console.log('Status updated successfully.');
+                    window.location.href = '{% url "freelancer:view_complaints" %}'; // Close the modal
+                } else {
+                    console.error('Error updating status:', response.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', error);
+            }
+        });
+    });
+</script>
+<style>
+    .hidden-radio {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none; /* Prevents interaction */
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        $('#complaintsTable').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "pageLength": 10, // Number of records per page
+            "language": {
+                "search": "Filter records:"
+            }
+        });
+    });
+
+
+</script>
+
+{% endblock %}

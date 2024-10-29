@@ -1,0 +1,555 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+{% load custom_filters %}
+
+<style>
+    .error {
+        color: red;
+        font-family: Comic Sans MS;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+</style>
+<div class="container mt-4" >
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="text-center" style="color:#ff0057">Projects</h3>
+        </div>
+    </div>
+
+    
+    <div class="row" style="margin-right:-60px;background-color:white;">
+        <div class="row mb-3" style="margin-left:700px;margin-top:30px;">
+            <div class="col-12 d-flex justify-content-between">
+                <a href="{% url 'client:add_new_project' %}" class="btn btn-primary add-project-btn" style="margin-right:10px;">Add New Project</a>
+                <!-- New Export Dropdown -->
+                <div class="btn-group" style="margin-right:10px;">
+                    <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Export
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#">Export to PDF</a>
+                        <a class="dropdown-item" href="#">Export to Excel</a>
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+        <div class="col-12" style="margin-top:10px;">
+            
+            <div class="table-responsive" style="margin-top:-10px;">
+                <form method="GET" id="filterForm" class="form-row align-items-center" style="margin-right:10px;width:350px;margin-left:790px;">
+                    <div class="col-md-6 mb-2">
+                        <input type="text" name="search" id="searchInput" placeholder="Search by title..." class="form-control" value="{{ request.GET.search }}">
+                    </div>
+                    
+                </form>
+                <table id="projectTable" class="table table-hover table-bordered table-responsive-sm" >
+                    
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Budget</th>
+                            <th>Status</th>
+                            <th>Assigned To (Freelancer)</th>
+                            <th class="actions-column text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>{{ project.title|default:'' }}</td>
+                            <td>{{ project.description|default:''|truncatechars:50 }}</td>
+                            <td>{{ project.budget|default:'' }}</td>
+                            <td>
+                                <form action="{% url 'client:toggle_project_status' project.id %}" method="post" class="status-toggle-form">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-sm {% if project.status == 'open' %}btn-success{% else %}btn-danger{% endif %} toggle-status-btn" 
+                                        data-toggle="tooltip" 
+                                        data-status="{{ project.status }}"
+                                        title="{% if project.status == 'open' %}Click to close{% else %}Click to open{% endif %}">
+                                        {% if project.status == 'open' %}Open{% else %}Closed{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                {% if project.id in freelancer_names %}
+                                    {{ freelancer_names|get_item:project.id }}
+                                {% else %}
+                                    <span class="text-muted">No freelancer assigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions-column text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'client:single_project_view' project.id %}" class="btn btn-sm btn-secondary" title="View Project"><i class="fa-solid fa-eye"></i></a>
+                                    <a href="{% url 'client:edit_project' project.id %}" class="btn btn-sm btn-primary" title="Edit Project"><i class="fa-solid fa-edit"></i></a>
+                                    {% if project_repos|get_item:project.id %}
+                                    <a href="{% url 'client:view_repository' project_repos|get_item:project.id %}" title="View Repository" class="btn btn-sm btn-info view-repo-btn" data-project-id="{{ project.id }}" data-repo-id="{{ project_repos|get_item:project.id }}">
+                                        <i class="fa-solid fa-folder-open"></i>
+                                    </a>
+                                    {% elif project.freelancer %}
+                                    <a href="#" class="btn btn-sm btn-info github-icon" title="Create Repository" data-project-id="{{ project.id }}">
+                                        <i class="fa-brands fa-github"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-sm btn-info" title="Assign a freelancer to create repository" disabled>
+                                        <i class="fa-brands fa-github"></i>
+                                    </button>
+                                {% endif %}
+                                    
+                                
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="githubModal" tabindex="-1" role="dialog" aria-labelledby="githubModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="githubModalLabel">Create New Repository</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'client:create_repository' %}" id="repoform">
+                {% csrf_token %}
+                <input type="hidden" id="projectId" name="project_id" value="">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="repoName">Repository Name:</label>
+                        <input type="text" class="form-control" id="repoName" placeholder="Enter repository name" name="repoName">
+                        <br><span id="error_repoName" class="error"></span>
+                    </div>
+                    <!-- Add your GitHub repository content here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+                <span id="repo_err" class="error"></span>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="statusConfirmModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <h5 class="modal-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirm Project Closure
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> This action is irreversible!
+                </div>
+                <p>Closing this project will:</p>
+                <ul>
+                    <li>Stop accepting new proposals</li>
+                    <li>Not be shown to freelancers anymore</li>
+                    <li>Move to closed projects list</li>
+                </ul>
+                <p class="mb-0">Are you sure you want to proceed with closing this project?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmStatusChange">
+                    <i class="fas fa-check me-1"></i> Yes, Close Project
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        $("#repoName").keyup(function () {
+            check_repoName();
+        });
+    
+        var repoName_error = false;
+    
+        function check_repoName() {
+            var pattern = /^[a-zA-Z0-9_-]+( [a-zA-Z0-9_-]+)*$/;
+
+            var repoName = $("#repoName").val();
+            if (pattern.test(repoName) && repoName !== "") {
+                $("#error_repoName").hide();
+                $("#repoName").css("border", "2px solid green");
+                repoName_error = false;
+            } else {
+                $("#error_repoName").html("Repository Name should contain only letters, numbers, and spaces").show();
+                $("#repoName").css("border", "2px solid red");
+                repoName_error = true;
+            }
+        }
+    
+        $("#repoform").submit(function () {
+            repoName_error = false; // Reset error flag
+    
+            check_repoName(); // Validate repository name
+    
+            if (repoName_error) {
+                $("#repo_err").html("Please fill the form correctly.").show();
+                return false; 
+            } else {
+                $("#repo_err").hide(); 
+                return true; 
+                        }
+        });
+    
+    });
+    
+</script>
+
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.js"></script>
+
+<script>
+$(document).ready(function () {
+    // Add custom sorting for status column
+    $.fn.dataTable.ext.type.order['status-pre'] = function(data) {
+        return data.includes('Open') ? 1 : 0; // Open projects get higher priority
+    };
+
+    $('#projectTable').DataTable({
+        "paging": true,
+        "searching": false,
+        "info": true,
+        "responsive": true,
+        "autoWidth": false,
+        "order": [[3, 'desc']], // Sort by status column in descending order
+        "columnDefs": [
+            { "width": "15%", "targets": 5 }, // Set width for Actions column
+            { 
+                "targets": 3, // Target the status column
+                "type": 'status'
+            }
+        ]
+    });
+
+    // Enable tooltips
+    $('[title]').tooltip();
+
+    // GitHub icon click event
+    $('.github-icon').click(function(e) {
+        e.preventDefault();
+        $('#githubModal').modal('show');
+        $('#projectId').val($(this).data('project-id'));
+    });
+
+    // Save repository button click event
+    $('#saveRepo').click(function() {
+        var repoName = $('#repoName').val();
+        // Add your logic to save the repository name
+        console.log("Repository name:", repoName);
+        $('#githubModal').modal('hide');
+    });
+
+    let currentForm = null;
+
+    $('.toggle-status-btn').click(function(e) {
+        e.preventDefault();
+        currentForm = $(this).closest('form');
+        
+        // Only show confirmation when changing from open to closed
+        if ($(this).data('status') === 'open') {
+            $('#statusConfirmModal').modal('show');
+        } else {
+            // If status is closed, submit directly without confirmation
+            currentForm.submit();
+        }
+    });
+
+    $('#confirmStatusChange').click(function() {
+        if (currentForm) {
+            currentForm.submit();
+        }
+        $('#statusConfirmModal').modal('hide');
+    });
+});
+</script>
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+    #projectTable {
+        width: 100%;
+        table-layout: auto;
+        background-color: white;
+    }
+    #projectTable th,
+    #projectTable td {
+        white-space: normal;
+        word-wrap: break-word;
+        max-width: none;
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin-right: 2px;
+    }
+    .github-icon {
+        color: #ffffff;
+    }
+    .action-buttons {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    .action-buttons .btn {
+        margin-right: 5px;
+    }
+</style>
+
+<!-- Add this CSS to your existing styles -->
+<style>
+    /* Modal Styles */
+    #statusConfirmModal .modal-content {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    #statusConfirmModal .modal-header {
+        border-bottom: none;
+        padding: 1.5rem;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    #statusConfirmModal .modal-title {
+        font-weight: 600;
+    }
+
+    #statusConfirmModal .modal-body {
+        padding: 1.5rem;
+    }
+
+    #statusConfirmModal .alert {
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #statusConfirmModal ul {
+        padding-left: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #statusConfirmModal li {
+        margin-bottom: 0.5rem;
+    }
+
+    #statusConfirmModal .modal-footer {
+        border-top: 1px solid #dee2e6;
+        padding: 1rem 1.5rem;
+    }
+
+    #statusConfirmModal .btn {
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+    }
+
+    #statusConfirmModal .btn i {
+        margin-right: 0.5rem;
+    }
+
+    #statusConfirmModal .close {
+        color: #856404;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    #statusConfirmModal .close:hover {
+        opacity: 1;
+    }
+</style>
+
+<!-- Add or update these styles -->
+<style>
+    #statusConfirmModal .modal-header {
+        border-bottom: none;
+        padding: 1.5rem;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    #statusConfirmModal .modal-title {
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+
+    #statusConfirmModal .close {
+        padding: 0;
+        margin: 0;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+</style>
+
+<script>
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Add logo
+    const logoImg = new Image();
+    logoImg.src = '{% static "img/logo.png" %}';
+    
+    logoImg.onload = function() {
+        // Calculate center position for logo
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const logoWidth = 40;
+        const logoHeight = (logoWidth * logoImg.height) / logoImg.width;
+        const logoX = (pageWidth - logoWidth) / 2;
+        
+        // Add logo
+        doc.addImage(logoImg, 'PNG', logoX, 10, logoWidth, logoHeight);
+
+        // Add title and date
+        doc.setFontSize(15);
+        doc.setTextColor(255, 0, 87); // #FF0057
+        doc.text('Projects Report', pageWidth/2, logoHeight + 25, { align: 'center' });
+        
+        // Add generated date
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        const today = new Date().toLocaleDateString();
+        doc.text(`Generated on: ${today}`, pageWidth - 15, logoHeight + 35, { align: 'right' });
+
+        // Get table data
+        const table = document.getElementById('projectTable');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        const tableData = rows.map(row => {
+            return Array.from(row.querySelectorAll('th, td')).map(cell => {
+                // Skip the Actions column
+                if (cell.classList.contains('actions-column')) return null;
+                return cell.textContent.trim();
+            }).filter(cell => cell !== null);
+        });
+
+        // PDF table configuration
+        doc.autoTable({
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            startY: logoHeight + 45,
+            theme: 'grid',
+            styles: {
+                fontSize: 8,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.1,
+            },
+            headStyles: {
+                fillColor: [255, 0, 87], // #FF0057
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+            },
+            didDrawPage: function(data) {
+                // Repeat header on new pages
+                if (data.pageCount > 1) {
+                    doc.addImage(logoImg, 'PNG', logoX, 10, logoWidth, logoHeight);
+                    doc.setFontSize(15);
+                    doc.setTextColor(255, 0, 87);
+                    doc.text('Projects Report', pageWidth/2, logoHeight + 25, { align: 'center' });
+                    doc.setFontSize(10);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Generated on: ${today}`, pageWidth - 15, logoHeight + 35, { align: 'right' });
+                }
+                data.settings.startY = logoHeight + 45;
+            }
+        });
+
+        doc.save('projects_report.pdf');
+    };
+
+    logoImg.onerror = function() {
+        console.error('Logo failed to load');
+        // Generate PDF without logo
+        generatePDFWithoutLogo();
+    };
+}
+
+function exportToExcel() {
+    const table = document.getElementById('projectTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+    
+    const data = rows.map(row => {
+        return Array.from(row.querySelectorAll('th, td')).map(cell => {
+            // Skip the Actions column
+            if (cell.classList.contains('actions-column')) return null;
+            return cell.textContent.trim();
+        }).filter(cell => cell !== null);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Projects");
+
+    // Add styling
+    ws['!cols'] = [
+        { width: 20 }, // Title
+        { width: 30 }, // Description
+        { width: 15 }, // Budget
+        { width: 10 }, // Status
+        { width: 20 }, // Assigned To
+    ];
+
+    XLSX.writeFile(wb, 'projects_report.xlsx');
+}
+
+// Update click handlers for export buttons
+$(document).ready(function() {
+    // ... existing ready function code ...
+
+    $('.dropdown-item').click(function(e) {
+        e.preventDefault();
+        const action = $(this).attr('href').includes('pdf') ? 'pdf' : 'excel';
+        if (action === 'pdf') {
+            exportToPDF();
+        } else {
+            exportToExcel();
+        }
+    });
+});
+</script>
+
+<!-- Add required libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+{% endblock %}
+
+

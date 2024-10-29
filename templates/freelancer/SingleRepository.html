@@ -1,0 +1,1449 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- Add this line in the <head> section of your base template or at the top of this file -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+    $(document).ready(function() {
+        var table = $('#tasksTable').DataTable({
+            responsive: true,
+            autoWidth: false,
+            pagingType: "simple_numbers",
+            lengthMenu: [5, 10, 25, 50],
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search tasks..."
+            },
+            order: [[2, 'desc']], // Sort by the 'Due Date' column (index 2) in descending order
+            columnDefs: [
+                { type: 'date', targets: 2 } // Specify that column 2 (Due Date) contains date values
+            ]
+        });
+
+        // Add click event for filter buttons
+        $('.filter-btn').on('click', function() {
+            var filterValue = $(this).data('filter');
+            
+            // Remove 'active' class from all buttons and add to clicked button
+            $('.filter-btn').removeClass('active');
+            $(this).addClass('active');
+
+            if (filterValue === 'all') {
+                table.column(3).search('').draw(); // Clear any existing filter
+            } else if (filterValue === 'Pending') {
+                table.column(3).search('^((?!In Progress|Completed).)*$', true, false).draw();
+            } else {
+                table.column(3).search(filterValue).draw();
+            }
+        });
+    });
+</script>
+
+<style>
+    body {
+        background-color: #f0f2f5;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .container {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        margin-top: 40px;
+    }
+
+    h1, h2, h3 {
+        color: #333;
+        margin-bottom: 25px;
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .action-buttons .btn {
+        font-size: 1rem;
+        padding: 12px 25px;
+        border-radius: 50px;
+        color: white;
+        transition: all 0.3s ease;
+        margin: 0 10px;
+        font-weight: 500;
+    }
+
+    .action-buttons .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-add-url {
+        background-color: #4285F4;
+        border-color: #4285F4;
+    }
+
+    .btn-add-url:hover {
+        background-color: #3367D6;
+    }
+
+    .btn-add-note {
+        background-color: #34A853;
+        border-color: #34A853;
+    }
+
+    .btn-add-note:hover {
+        background-color: #2E8B57;
+    }
+
+    .btn-add-files {
+        background-color: #FBBC05;
+        border-color: #FBBC05;
+    }
+
+    .btn-add-files:hover {
+        background-color: #F9A825;
+    }
+
+    .btn-github {
+        background-color: white;
+        border-color: #333;
+    }
+
+    .btn-github:hover {
+        background-color: #444;
+    }
+
+    .recent-activity {
+        display: flex; /* Flexbox for horizontal alignment */
+        flex-direction: column; /* Stack the items vertically */
+        gap: 20px; /* Space between the cards */
+        padding: 0;
+        list-style-type: none; /* Remove bullet points */
+        width: 100%; /* Full width for the container */
+      }
+    
+      .activity-item {
+        display: flex; /* Flexbox for horizontal content alignment */
+        background-color: #fff; /* Background color for the cards */
+        border: 1px solid #e0e0e0; /* Border for each card */
+        border-radius: 8px; /* Rounded corners */
+        padding: 16px; /* Padding inside each card */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+        align-items: center; /* Center-align content vertically */
+        transition: transform 0.2s; /* Smooth hover effect */
+        width: 100%; /* Full width for each card */
+      }
+    
+      .activity-item:hover {
+        transform: scale(1.02); /* Slight zoom on hover */
+      }
+    
+      .user-logo {
+        margin-right: 20px; /* Spacing between the logo and the content */
+        flex-shrink: 0; /* Prevent the logo from shrinking */
+      }
+    
+      .user-logo img {
+        width: 60px; /* Fixed size for logo */
+        height: 60px;
+        border-radius: 50%; /* Make it circular */
+        object-fit: cover; /* Ensure the image covers the area */
+      }
+    
+      .activity-content {
+        display: flex; /* Flexbox for vertical alignment within the content */
+        flex-direction: column; /* Stack elements vertically */
+        flex-grow: 1; /* Allow the content to grow and fill the space */
+      }
+    
+      .activity-header {
+        font-weight: bold; /* Bold for headers */
+        margin-bottom: 8px; /* Spacing below the header */
+      }
+    
+      .activity-meta {
+        font-size: 12px; /* Smaller font for metadata */
+        color: #757575; /* Lighter color for meta information */
+        margin-bottom: 12px; /* Spacing below the meta info */
+      }
+    
+      .activity-description {
+        font-size: 14px; /* Normal font size for description */
+        color: #333; /* Darker color for main text */
+      }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 20px;
+    }
+
+    .modal-title {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        padding: 12px;
+    }
+
+    .form-control:focus {
+        border-color: #4285F4;
+        box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
+    }
+
+    .btn-primary {
+        background-color: #4285F4;
+        border-color: #4285F4;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background-color: #3367D6;
+        border-color: #3367D6;
+    }
+
+    /* Toggle buttons */
+    .toggle-buttons {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .toggle-buttons .btn {
+        margin: 0 10px;
+    }
+
+
+    .note-item, .task-item {
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .note-item:hover, .task-item:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-3px);
+    }
+
+    .note-content, .task-content {
+        flex: 1;
+    }
+
+    .note-header, .task-header {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+
+    .note-meta, .task-meta {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .note-description, .task-description {
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .note-textarea, .task-textarea {
+        border-radius: 8px;
+        padding: 12px;
+        width: 100%;
+        height: 150px;
+        margin-bottom: 20px;
+        resize: vertical;
+    }
+
+    .note-actions, .task-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+
+    table.dataTable thead th {
+        background-color: #234171;
+        color: white;
+    }
+
+    table.dataTable tbody tr {
+        transition: background-color 0.3s;
+    }
+
+    table.dataTable tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    table.dataTable tfoot th {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+
+    
+    .progress {
+        background-color: #e9ecef; /* Light grey background */
+        border-radius: 5px;
+        overflow: hidden;
+        height: 1px;
+    }
+    
+    .progress-bar-low {
+        background-color: #dc3545; /* Red */
+    }
+    
+    .progress-bar-medium {
+        background-color: #ffc107; /* Yellow */
+    }
+    
+    .progress-bar-high {
+        background-color: #28a745; /* Green */
+    }
+    
+    /* Input styling */
+    .progress-input {
+        width: 60px;
+        height: 25px;
+        margin-right: 5px;
+        padding: 3px;
+        font-size: 0.8rem;
+    }
+    
+    /* Button styling */
+    .btn-sm {
+        padding: 3px 8px;
+        font-size: 0.8rem;
+    }
+
+th,td{
+    font-size: 14px;
+}
+
+
+.btn-icon {
+    background-color: transparent;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    opacity: 0.8;
+}
+
+
+.edit-icon {
+    color: #ba7307;
+}
+.view-icon {
+    color: #4a17b8;
+}
+.btn-icon:focus {
+    outline: none;
+}
+.error {
+		
+color: red;
+font-family: Comic Sans MS;
+font-weight: bold;
+font-size: 12px;
+}
+.text-danger {
+    color: red;
+}
+
+
+
+/* Add these styles to your existing CSS */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 200px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 10px;
+}
+
+.card-body h3 {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    font-family: "Bebas Neue", cursive;
+    color: #28666e;
+}
+
+.card-body a {
+    display: inline-block;
+    margin-top: 10px;
+    color: #28666e;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.card-body a:hover {
+    text-decoration: underline;
+}
+
+
+.icon-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    margin-left:50px;
+}
+
+.icon-view i {
+    color: #28666e;
+    font-size: 24px;
+    transition: color 0.3s;
+}
+
+.icon-view i:hover {
+    color: #204e53;
+}
+
+.icon-download i {
+    color: #4CAF50;
+    font-size: 24px;
+    transition: color 0.3s;
+}
+
+.icon-download i:hover {
+    color: #45a049;
+}
+
+
+
+/* Add this to your existing styles */
+.task-filter-buttons {
+    margin-bottom: 20px;
+}
+
+.task-filter-buttons .btn {
+    margin-right: 10px;
+}
+
+.task-filter-buttons .btn.active {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Add this to your existing styles */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+#project-summary-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+#project-summary-toggle:hover {
+    background-color: #e9ecef;
+}
+
+    /* Add this to your existing styles */
+    #project-summary-container {
+        position: fixed;
+        top: 0;
+        right: -350px; /* Adjust based on your desired width */
+        width: 350px; /* Adjust as needed */
+        height: 100vh;
+        background-color: #ffffff;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease-in-out;
+        z-index: 1000;
+    }
+
+    #project-summary-container.expanded {
+        right: 0;
+    }
+
+    #project-summary-toggle {
+        position: absolute;
+        top: 50%;
+        left: -40px; /* Adjust based on the toggle button width */
+        transform: translateY(-50%);
+        cursor: pointer;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px 0 0 5px;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    #project-summary-content {
+        height: 100%;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    #project-summary-toggle:hover {
+        background-color: #e9ecef;
+    }
+    .btn-outline-primary:hover{
+        background-color: #4B49AC;
+    }
+
+    .project-details-card {
+        border: none;
+        box-shadow: none;
+        background-color: transparent;
+    }
+
+    .project-details-card .card-body {
+        padding: 0;
+    }
+
+    .pdf-icon-background {
+        width: 48px;
+        height: 48px;
+        background-color: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pdf-icon-background i {
+        font-size: 24px;
+        color: #dc3545;
+    }
+</style>
+
+
+<script>
+    $(document).ready(function () {
+
+        $("#description").keyup(function () {
+            check_description();
+        });
+    
+        $("#url").keyup(function () {
+            check_url("#url", "#error_url");
+        });
+    
+        function check_url(field_id, error_id) {
+            var pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+            var url = $(field_id).val();
+            if (url.trim() === "") {
+                $(error_id).html("The URL field cannot be empty. Please provide a URL.").show();
+                $(field_id).css("border", "2px solid red");
+                url_error = true;
+            } else if (!pattern.test(url)) {
+                $(error_id).html("Invalid URL. Please enter a valid URL.").show();
+                $(field_id).css("border", "2px solid red");
+                url_error = true;
+            } else {
+                $(error_id).hide();
+                $(field_id).css("border", "2px solid green");
+                url_error = false;
+            }
+        }
+    
+        function check_description() {
+            var pattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 .,!?\n]*$/;
+            var bio = $("#description").val();
+            if (pattern.test(bio) && bio !== "") {
+                $("#error_des").hide();
+                $("#description").css("border", "2px solid green");
+                bio_error = false;
+            } else {
+                $("#error_des").html("Invalid characters in bio").show();
+                $("#description").css("border", "2px solid red");
+                bio_error = true;
+            }
+        }
+    
+        $("#addUrlForm").submit(function () {
+            url_error = false;
+            bio_error = false;
+            check_description();
+            check_url("#url", "#error_url");
+            if (url_error === false && bio_error === false) {
+                $("#url_form_err").hide();
+                return true;
+            } else {
+                $("#url_form_err").html("Please fill the form correctly.").show();
+                return false;
+            }
+        });
+    });
+   
+</script>
+
+
+<script>
+    $(document).ready(function () {
+        // Error state variables
+        var files_error = false;
+        var description_error = false;
+
+        // File validation function
+        function check_files() {
+            var allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+            var files = $('#fileUpload')[0].files;
+            var isValid = true;
+
+            if (files.length === 0) {
+                $('#error_files').html("Please choose at least one file.").show();
+                $('#fileUpload').css("border", "2px solid red");
+                files_error = true;
+            } else {
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var fileExtension = file.name.split('.').pop().toLowerCase();
+                    if (!allowedExtensions.includes(fileExtension)) {
+                        $('#error_files').html("Invalid file type. Please upload files with extensions: .jpg, .jpeg, .png, .pdf").show();
+                        $('#fileUpload').css("border", "2px solid red");
+                        isValid = false;
+                        files_error = true;
+                        break;
+                    }
+                }
+                if (isValid) {
+                    $('#error_files').hide();
+                    $('#fileUpload').css("border", "2px solid green");
+                    files_error = false;
+                }
+            }
+        }
+
+        function check_description() {
+            var description = $('#fileDescription').val();
+            // Define your regex pattern here
+            var pattern = /^[a-zA-Z0-9\s.,!?]*$/; // Example pattern: allows letters, numbers, spaces, and some punctuation
+        
+            if (description.trim() === "") {
+                $('#error_file_description').html("Description cannot be empty.").show();
+                $('#fileDescription').css("border", "2px solid red");
+                description_error = true;
+            } else if (!pattern.test(description)) {
+                $('#error_file_description').html("Description contains invalid characters.").show();
+                $('#fileDescription').css("border", "2px solid red");
+                description_error = true;
+            } else {
+                $('#error_file_description').hide();
+                $('#fileDescription').css("border", "2px solid green");
+                description_error = false;
+            }
+        }
+
+        // On file input change
+        $('#fileUpload').change(function () {
+            check_files();
+        });
+
+        // On description input change
+        $('#fileDescription').keyup(function () {
+            check_description();
+        });
+
+        // On form submit
+        $('#addFilesForm').submit(function () {
+            check_files();
+            check_description();
+            if (files_error || description_error) {
+                $('#file_form_err').html("Please fill the form correctly.").show();
+                return false;
+            } else {
+                $('#file_form_err').hide();
+                return true;
+            }
+        });
+    });
+</script>
+{% if project.project_status != 'Completed' and not cancellation_details %}
+<div class="row" style="
+    background-color: #fff; 
+    padding: 20px; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+    text-align: center;
+">
+  <p style="
+        font-size: 18px; 
+        color: #333;
+        margin-bottom: 10px;
+    ">
+    Hi <strong>{{ profile2.first_name }} {{ profile2.last_name }}, are you sure you want to cancel this project?
+  </p>
+
+  <p style="
+        font-size: 16px; 
+        color: #666; 
+        margin-bottom: 20px;
+    ">
+    This action is irreversible. Once canceled, all project-related data will remain inactive and will not be available for work. You will no longer be able to access this project.
+  </p>
+  
+  <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelProjectModal">
+      Request Cancel
+  </button>
+
+  <br>
+</div>
+<br>
+
+<!-- Modal for cancellation reason -->
+<div class="modal fade" id="cancelProjectModal" tabindex="-1" aria-labelledby="cancelProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelProjectModalLabel">Cancel Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelProjectForm" method="post" action="{% url 'request_cancellation' project.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="cancellationReason" class="form-label">Reason for Cancellation</label>
+                        <textarea class="form-control" id="cancellationReason" name="cancellation_reason" rows="3" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger">Submit Cancellation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif cancellation_details %}
+<div class="alert alert-info mt-4" style="border-radius: 10px; padding: 15px;">
+    <strong>Status:</strong> {{ cancellation_details.status }}<br>
+    {% if request.user == cancellation_details.requested_by %}
+        <strong>Reason:</strong> {{ cancellation_details.reason }}<br>
+        <strong>Requested Date:</strong> {{ cancellation_details.requested_date|date:"F j, Y" }}<br>
+        <button class="btn btn-primary" style="margin-top: 10px;">Request {{cancellation_details.status}}</button>
+    {% elif request.user == cancellation_details.approver %}
+        <strong>Requested By:</strong> {{ cancellation_details.requested_by }}<br>
+        <strong>Requested Date:</strong> {{ cancellation_details.requested_date|date:"F j, Y" }}<br>
+        <strong>Reason:</strong> {{ cancellation_details.reason }}<br>
+        {% if cancellation_details.status == 'Pending' %}
+        <form class="cancellation-form" data-id="{{ cancellation_details.id }}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="Approved">
+            <button type="submit" class="btn btn-success" style="margin-top: 10px;">Accept</button>
+        </form>
+        <form class="cancellation-form" data-id="{{ cancellation_details.id }}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="Rejected">
+            <button type="submit" class="btn btn-danger" style="margin-top: 10px;">Reject</button>
+        </form>
+        {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+
+
+<div class="container-fluid row" style="width: 1000px;">
+    <div id="project-details-container" style="width: 930px; margin-left: -2px;">
+        <div id="project-details-toggle" class="cursor-pointer" style="width: 800px;color: #ff0057;margin-left: 300px;background-color: transparent;font-size: 20px;padding-bottom: 10px;">
+            Project Details <i class="fas fa-chevron-down"></i>
+        </div>
+        <div id="project-details-content">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="card mt-3 project-details-card" style="width: 600px;">
+                        <div class="card-body text-left">
+                            <h5 class="card-title" style="color: #4136b3;">{{ project.title }}</h5>
+                            <p class="card-text"><strong style="color: #800080;">Description:</strong> {{ project.description }}</p>
+                            <p class="card-text"><strong style="color: #ff0057;">Category:</strong> {{ project.category }}</p>
+                            <p class="card-text"><strong style="color: #800080;">Client:</strong> {{ client_name}}</p>
+                            <p class="card-text"><strong style="color: #ff0057;">Budget:</strong> ₹ {{ project.budget }}</p>
+                            <p class="card-text"><strong style="color: #800080;">Status:</strong> {{ project.project_status }}</p>
+                            <p class="card-text"><strong style="color: #ff0057;">Start Date:</strong> {{ project.start_date|date:"F j, Y" }}</p>
+                            <p class="card-text"><strong style="color: #800080;">End Date:</strong> {{ project.project_end_date|date:"F j, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="mt-3" style="font-family: 'Raleway', sans-serif; font-weight: 600;">Uploaded File</h6>
+                    {% if project.file_upload %}
+                        <div class="card mb-3 file-card">
+                            <div class="card-body">
+                                <div class="pdf-container">
+                                    <div class="pdf-background">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <div class="file-actions-overlay">
+                                        <a href="{{ project.file_upload.url }}" target="_blank" class="btn-file-action btn-view">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ project.file_upload.url }}" download class="btn-file-action btn-download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p style="font-family: 'Assistant', sans-serif; color: #7f8c8d;">No files uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left column (existing content) -->
+        <div class="col-md-12">
+            <div class="container">
+                <div class="toggle-buttons">
+                    <button class="btn btn-outline-secondary" id="toggle-tasks">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </button>
+                    <button class="btn btn-outline-secondary" id="toggle-activities">
+                        <i class="fas fa-bell"></i> Activities
+                    </button>
+                    <button class="btn btn-outline-secondary" id="toggle-notes">
+                        <i class="fas fa-sticky-note"></i> Meeting Notes
+                    </button>
+                    <button class="btn btn-outline-secondary" id="toggle-docs">
+                        <i class="fas fa-document"></i> Documents
+                    </button>
+                    {% if project.git_repo_link %}
+                    <a href="{{ project.git_repo_link }}" target="_blank" class="btn btn-outline-secondary">
+                        <i class="fab fa-github"></i> GitHub Repository
+                    </a>
+                    {% else %}
+                    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addGitHubLinkModal">
+                        <i class="fab fa-github"></i> Add GitHub Repository
+                    </button>
+                    {% endif %}
+                </div>
+
+                <div id="tasks-section">
+                    <h2>Project Tasks</h2>
+                    <br>
+                    <!-- Add these buttons above the table -->
+                    <div class="task-filter-buttons mb-3">
+                        <button class="btn btn-outline-primary filter-btn active" data-filter="all">All Tasks</button>
+                        <button class="btn btn-outline-primary filter-btn" data-filter="In Progress">In Progress</button>
+                        <button class="btn btn-outline-primary filter-btn" data-filter="Completed">Completed</button>
+                        <button class="btn btn-outline-primary filter-btn" data-filter="Pending">Pending</button>
+                    </div>
+                    <br>
+                    <div id="task-container">
+                        <table id="tasksTable" class="display" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Task Title</th>
+                                    <th>Description</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>{{ task.title }}</td>
+                                    <td>{{ task.description }}</td>
+                                    <td>{{ task.due_date|date:"Y-m-d" }}</td>
+                                    <td style="color: {% if task.status == 'Completed' %}green{% elif task.status == 'In Progress' %}blue{% elif task.status == 'On Hold' %}orange{% else %}red{% endif %};">
+                                        {{ task.status }}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                                            <div class="progress" style="flex-grow: 1; margin-left: 10px; height: 10px;">
+                                                <div class="progress-bar 
+                                                    {% if task.progress_percentage <= 33 %}
+                                                        progress-bar-low
+                                                    {% elif task.progress_percentage <= 66 %}
+                                                        progress-bar-medium
+                                                    {% else %}
+                                                        progress-bar-high
+                                                    {% endif %}"
+                                                    role="progressbar"
+                                                    style="width: {{ task.progress_percentage }}%"
+                                                    aria-valuenow="{{ task.progress_percentage }}"
+                                                    aria-valuemin="0"
+                                                    aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ task.progress_percentage }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#viewTaskModal-{{ task.id }}">
+                                            <i class="fas fa-eye view-icon"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+
+
+
+                                
+    <div class="modal fade" id="viewTaskModal-{{ task.id }}" tabindex="-1" aria-labelledby="viewTaskModalLabel-{{ task.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewTaskModalLabel-{{ task.id }}">Task Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Title:</strong> {{ task.title }}</p><p><strong>Description:</strong> {{ task.description|truncatechars:10 }}</p>
+
+                    <p><strong>Start Date:</strong> {{ task.start_date|date:"Y-m-d" }}</p>
+                    <p><strong>Due Date:</strong> {{ task.due_date|date:"Y-m-d" }}</p>
+                    <p><strong>Status:</strong> {{ task.status }}</p>
+                    <p><strong>Progress:</strong> {{ task.progress_percentage }}%</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4">No tasks found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            
+                        </table>
+                    
+                    </div>
+                </div>
+
+                <div id="activity-section" style="display: none;">
+                    <div class="action-buttons mb-4">
+                        <a href="#" class="btn btn-add-url me-2" data-bs-toggle="modal" data-bs-target="#addUrlModal">
+                            <i class="fas fa-link"></i> Add URL
+                        </a>
+                        <a href="#" class="btn btn-add-files" data-bs-toggle="modal" data-bs-target="#addFilesModal">
+                            <i class="fas fa-file-upload"></i> Add Files
+                        </a>
+                    </div>
+    <br>
+                    <h2>Recent Activity</h2>
+    <ul class="recent-activity">
+      {% for item in items %}
+      {% if item.type == 'file' %}
+      <li class="activity-item {% if item.uploaded_by == user.id %}logged-in-user{% else %}freelancer{% endif %}">
+        <div class="user-logo">
+          <img src="{% if item.uploaded_by == user.id %}{{ profile2.profile_picture.url }}{% else %}{{ client_profile_picture.url }}{% endif %}" alt="{{ item.user_name }}'s logo">
+        </div>
+        <div class="activity-content">
+          <div class="activity-header">
+            <strong>File:</strong> 
+            <a href="{{ item.url }}" target="_blank">{{ item.path }}</a>
+          </div>
+          <p class="activity-description">{{ item.description }}</p>
+          <div class="activity-meta">
+            Uploaded by {% if item.uploaded_by == user.id %}you{% else %}{{ freelancer_name }}{% endif %} on {{ item.date|date:"F j, Y, g:i a" }}
+          </div>
+        </div>
+      </li>
+
+
+
+      {% elif item.type == 'url' %}
+      <li class="activity-item {% if item.shared_by == user.id %}logged-in-user{% else %}freelancer{% endif %}">
+        <div class="user-logo">
+          <img src="{% if item.shared_by == user.id %}{{ profile2.profile_picture.url }}{% else %}{{ client_profile_picture.url }}{% endif %}" alt="{{ item.user_name }}'s logo">
+        </div>
+        <div class="activity-content">
+          <div class="activity-header">
+            <strong>URL:</strong> <a href="{{ item.path }}" target="_blank">{{ item.path }}</a>
+          </div>
+          
+          <p class="activity-description">{{ item.description }}</p>
+          <div class="activity-meta">
+            Shared by {% if item.shared_by == user.id %}you{% else %}{{ freelancer_name }}{% endif %} on {{ item.date|date:"F j, Y, g:i a" }}
+          </div>
+        </div>
+      </li>
+      {% endif %}
+      {% empty %}
+      <li>No activity found.</li>
+      {% endfor %}
+    </ul>
+                </div>
+
+                <div id="notes-section" style="display: none;">
+                    <h2>Meeting Notes</h2>
+                   
+                    <div id="note-container"></div>
+
+                    
+                    <ul class="recent-notes">
+                        {% for note in notes %}
+                            <br><li class="note-item">
+                                <div class="note-content">
+                                    <div class="note-header">{{ note.note }}</div>
+                                    <div class="note-meta">Added by you on {{ note.added_at|date:"F j, Y, g:i a" }}</div>
+                                    <p class="note-description">{{ note.content }}</p>
+                                </div>
+                            </li>
+                        {% empty %}
+                        <li>No notes found.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                
+                <div id="docs-section" style="display: none;">
+                    <h2>Documents</h2>
+                
+                    <section class="card-container">
+                        {% if proposals %}
+                            {% for proposal in proposals %}
+                                <article class="card">
+                                    <img src="{% static 'img/proposal.png' %}" alt="Proposal Image">
+                                    <div class="card-body">
+                                        <h3>Proposal</h3>
+                                        <div class="icon-group">
+                                            <a href="{{ proposal.proposal_file.url }}" target="_blank" class="icon-view" title="View Proposal">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ proposal.proposal_file.url }}" download title="Download Proposal">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        {% else %}
+                            <p>No proposals available for this project.</p>
+                        {% endif %}
+                
+                        {% if contracts %}
+                            {% for contract in contracts %}
+                            {% if contract.pdf_version %}
+                                <article class="card">
+                                    <div class="pdf-background">
+                                        <i class="fas fa-file-pdf fa-3x"></i>
+                                    </div>
+                                    <div class="card-body">
+                                        <h3>Document</h3>
+                                        <div class="icon-group">
+                                            <a href="{{ contract.pdf_version.url }}" target="_blank" class="icon-view" title="View Document">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ contract.pdf_version.url }}" download title="Download Document">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p>No contracts available for this project.</p>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+<!-- Add URL Modal -->
+<div class="modal fade" id="addUrlModal" tabindex="-1" aria-labelledby="addUrlModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUrlModalLabel">Add URL</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUrlForm" method="post" action="{% url 'freelancer:add_url' repository.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="url" class="form-label">URL</label>
+                        <input type="url" class="form-control" id="url" placeholder="Enter URL" name="url">
+<span id="error_url" class="text-danger" style="display:none;"></span>
+
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3" placeholder="Enter description" name="description"></textarea>
+                        <span id="error_des" class="text-danger" style="display:none;"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <span id="url_form_err" class="text-danger" style="display:none;"></span>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Add Files Modal -->
+<div class="modal fade" id="addFilesModal" tabindex="-1" aria-labelledby="addFilesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFilesModalLabel">Add Files</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addFilesForm" method="post" enctype="multipart/form-data" action="{% url 'freelancer:add_file' repository.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="fileUpload" class="form-label">Choose files</label>
+                        <input type="file" class="form-control" id="fileUpload" name="files" multiple>
+                        <span id="error_files" class="text-danger" style="display:none;"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fileDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="fileDescription" rows="3" placeholder="Enter description" name="description"></textarea>
+                        <span id="error_file_description" class="text-danger" style="display:none;"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    $(document).ready(function() {
+        $('#toggle-tasks').click(function() {
+            $('#tasks-section').show();
+            $('#activity-section').hide();
+            $('#notes-section').hide();
+            
+            $('#docs-section').hide();
+        });
+
+        $('#toggle-activities').click(function() {
+            $('#tasks-section').hide();
+            $('#activity-section').show();
+            $('#notes-section').hide();
+            $('#docs-section').hide();
+        });
+
+        $('#toggle-notes').click(function() {
+            $('#tasks-section').hide();
+            $('#activity-section').hide();
+            $('#notes-section').show();
+            
+            $('#docs-section').hide();
+        });
+        $('#toggle-docs').click(function() {
+            $('#tasks-section').hide();
+            $('#activity-section').hide();
+            $('#notes-section').hide();
+            $('#docs-section').show();
+        });
+
+        $('#addNoteButton').click(function() {
+            $('#note-entry').toggle();
+        });
+
+        
+
+        $('#clearNoteButton').click(function() {
+            $('#noteTextArea').val('');
+        });
+
+        // Project Summary toggle
+        $('#project-summary-toggle').click(function() {
+            $('#project-summary-container').toggleClass('expanded');
+            $(this).find('i').toggleClass('fa-chevron-left fa-chevron-right');
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        // Get cancellation ID from Django template
+        var cancellationId = "{{ cancellation_details.id|default:'' }}";
+
+        $('.cancellation-form').submit(function(e) {
+            e.preventDefault(); // Prevent default form submission
+            var form = $(this);
+            var status = form.find('input[name="status"]').val();
+
+            // Check if cancellation ID is null or empty
+            if (!cancellationId) {
+                alert('Cancellation ID is not found. Form will not be submitted.'); // Alert if ID is not present
+                return; // Exit the function, preventing form submission
+            }
+
+            // Proceed with AJAX submission if cancellation ID is valid
+            $.ajax({
+                url: "{% url 'update_cancellation_status' '0' %}".replace('0', cancellationId), // Use the actual cancellation ID
+                type: 'POST',
+                data: form.serialize(), // Serialize form data
+                success: function(response) {
+                    // Handle success (e.g., show a success message or update the UI)
+                    alert('Cancellation status updated successfully!');
+                    window.location.reload(); // Reload the page after successful update
+                },
+                error: function(xhr) {
+                    // Handle error (e.g., show an error message)
+                    alert('Error updating cancellation status: ' + xhr.responseText);
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        // Existing code...
+
+        // Project Details toggle
+        $('#project-details-toggle').click(function() {
+            $('#project-details-container').toggleClass('expanded');
+            $(this).find('i').toggleClass('fa-chevron-down fa-chevron-up');
+        });
+    });
+</script>
+
+<style>
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&family=Assistant:wght@400;600&display=swap');
+
+    /* Add this to your existing styles */
+    #project-details-container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out;
+        max-height: 50px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #project-details-container.expanded {
+        max-height: none;
+    }
+
+    #project-details-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background-color: #f0f4f8;
+        cursor: pointer;
+        border-radius: 8px 8px 0 0;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    #project-details-content {
+        padding: 20px;
+    }
+
+    .project-details-card {
+        border: none;
+        box-shadow: none;
+    }
+
+    .project-details-card .card-title {
+        font-family: 'Raleway', sans-serif;
+        font-weight: 700;
+        color: #3498db;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    .project-details-card .card-text {
+        font-family: 'Assistant', sans-serif;
+        margin-bottom: 10px;
+        color: #34495e;
+    }
+
+    .project-details-card .card-text strong {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .file-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+    }
+
+    .file-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .file-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-file-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-view {
+        background-color: #f8f9fa;
+        color: #4a5568;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-view:hover {
+        background-color: #e2e8f0;
+        color: #2d3748;
+    }
+
+    .btn-download {
+        background-color: #4299e1;
+        color: white;
+        border: 1px solid #4299e1;
+    }
+
+    .btn-download:hover {
+        background-color: #3182ce;
+        border-color: #3182ce;
+        color: white;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .card-title {
+        color: #2d3748;
+        font-size: 0.95rem;
+        font-weight: 500;
+        line-height: 1.2;
+    }
+
+    /* Animation for icons */
+    .btn-file-action i {
+        transition: transform 0.2s ease;
+    }
+
+    .btn-file-action:hover i {
+        transform: scale(1.1);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .file-actions {
+            flex-direction: row;
+            gap: 10px;
+        }
+
+        .btn-file-action {
+            flex: 1;
+            font-size: 13px;
+            padding: 6px 12px;
+        }
+    }
+
+    .pdf-background {
+        background-color: #f8f9fa;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .pdf-background i {
+        font-size: 48px;
+        color: #dc3545;
+        transition: transform 0.3s ease;
+    }
+
+    .file-card:hover .pdf-background i {
+        transform: scale(1.1);
+    }
+</style>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+

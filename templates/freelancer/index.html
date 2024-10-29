@@ -1,0 +1,541 @@
+{% extends 'freelancer/base.html'%}
+{% block 'freelancer_content' %}
+{% load static %}
+<style>
+  .info-card {
+    position: relative;
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+    color: black;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .info-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .info-card h5 {
+    margin-bottom: 10px;
+  }
+
+  .info-card img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
+  }
+
+  .info-card a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .info-card .count {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: black;
+    border-radius: 50%;
+    padding: 1px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+</style>
+<div class="row" style="margin-bottom: 20px;">
+  <div class="col-md-8">
+    <div class="row" style="background-color:white;padding:30px;border-radius:10px; position: relative; overflow: hidden;width: 620px;height: 150px;margin-left:2px;">
+      <div class="confetti-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('{% static 'img/confetti.gif' %}'); background-repeat: repeat; opacity: 0.6; pointer-events: none;"></div>
+      <div class="col-md-12 grid-margin">
+        <div class="row">
+          <div class="col-9 col-xl-8 mb-4 mb-xl-0">
+            <h3 class="font-weight-bold" style="color: #00008B;">Welcome {{profile2.first_name}} 🎉</h3>
+            <h6 class="font-weight-normal mb-0">Ready to tackle new projects? You have <span class="text-primary">{{ unread_notifications_count }} unread notification{{ unread_notifications_count|pluralize }}</span>.</h6>
+          </div>
+          <div class="col-3 col-xl-4 mb-4 mb-xl-0">
+            <img src="{% static 'img/dashboard_image.png' %}" alt="Welcome Image" class="img-fluid rounded" >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="row">
+     
+
+      <a href="{% url 'freelancer:view_project' %}" class="col-md-6 info-card">
+        <img src="{% static 'img/project.png' %}" alt="Projects">
+        <h5 class="card-title">View Projects</h5>
+       
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<br>
+<div class="row">
+  <div class="col-md-8 grid-margin stretch-card">
+    <div class="card position-relative">
+      <div class="card-body">
+        <div id="detailedReports" class="carousel slide detailed-report-carousel position-static pt-2"
+          data-ride="carousel">
+          <div class="carousel-inner">
+
+            <!-- Notifications Section -->
+            <div class="carousel-item active">
+              <div class="row">
+                <div class="col-md-12 col-xl-4 d-flex flex-column justify-content-start">
+                  <div class="ml-xl-8 mt-3">
+                    <h3 class="text-primary"><strong>Notifications</strong></h3>
+                  </div>
+                </div>
+
+                <div class="col-md-12 border-right">
+                  <div class="table-responsive mb-3 mb-md-0 mt-3">
+                    <table class="table table-borderless report-table">
+                      <thead>
+                        <tr>
+                          <th>Status</th>
+                          <th
+                            style="width: 20%; max-width: 20%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            Message</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- Replace with dynamic notification data -->
+                        {% for notification in notifications %}
+                        <tr class="{% if not notification.is_read %}table-warning{% else %}table-light{% endif %}">
+                          <td>
+                            {% if notification.is_read %}
+                            <span class="badge badge-success">Read</span>
+                            {% else %}
+                            <span class="badge badge-danger">Unread</span>
+                            {% endif %}
+                          </td>
+                          <td
+                            style="width: 20%; max-width: 20%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {{ notification.message }}</td>
+                          <td>
+                            {% if not notification.is_read %}
+                            <form action="{% url 'freelancer:notification_mark_as_read' notification.id %}"
+                              method="post">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-success btn-sm">Mark as Read</button>
+                            </form>
+                            {% endif %}
+                          </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                          <td colspan="2">No notifications available.</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Events Section -->
+            <div class="carousel-item">
+              <div class="row">
+                <div class="col-md-12 col-xl-3 d-flex flex-column justify-content-start">
+                  <div class="ml-xl-8 mt-3">
+                    <h3 class="text-primary"><strong>Upcoming Events</strong></h3>
+                  </div>
+                </div>
+
+                <div class="col-md-12 border-right">
+                  <div class="table-responsive mb-3 mb-md-0 mt-3">
+                    <table class="table table-borderless report-table">
+                      <thead>
+                        <tr>
+                          <th style="color:rgb(45, 19, 132);font-size:20px;">Date</th>
+                          <th style="color:rgb(45, 19, 132);font-size:20px;">Event</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for event in events %}
+                        <tr>
+                          <td>
+                            {% if event.start_time.date == event.end_time.date %}
+                            {{ event.start_time.date }}
+                            {% else %}
+                            {{ event.start_time.date }} - {{ event.end_time.date }}
+                            {% endif %}
+                          </td>
+                          <td>{{ event.title }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                          <td colspan="2">No events scheduled for the upcoming week.</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <a class="carousel-control-prev" href="#detailedReports" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+          </a>
+          <a class="carousel-control-next" href="#detailedReports" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card position-relative">
+      <div class="card-body">
+        <h4 class="card-title">Project Status</h4>
+        <p class="card-description">
+          This chart displays the distribution of projects assigned to you.
+          It shows how many projects are completed versus not completed.
+        </p>
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>Assigned:</strong> {{ total_projects }} |
+            <strong>Completed:</strong> {{ completed_projects }} |<br>
+            <strong>Not Completed:</strong> {{ not_completed_projects }}
+          </div>
+
+        </div>
+        <canvas id="projectStatusChart" height="100px" width="100px"></canvas>
+      </div>
+    </div>
+  </div>
+
+
+
+  
+</div>
+
+
+<br>
+<div class="row">
+  <div class="col-md-5 grid-margin stretch-card">
+    <div class="card position-relative">
+      <div class="card-body">
+        <h4 class="card-title">Earnings Chart</h4>
+        <div class="justify-content-end d-flex">
+          
+      
+        </div> <br>
+        <canvas id="earningsLineChart" width="400" height="400"></canvas>
+      </div>
+    </div>
+  </div>
+
+  
+
+
+  <div class="col-md-7 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-0">Projects</p><br>
+        <div class="table-responsive">
+          <table class="table table-striped table-borderless">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Budget</th>
+                <th>Status</th>
+                <th>Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for project_data in project_progress_data %}
+              <tr>
+                <td>{{ project_data.project.title }}</td>
+                <td>{{ project_data.client_name}}</td>
+
+                <td class="font-weight-bold">{{ project_data.project.budget }}</td>
+
+                <td class="font-weight-medium">
+                  <div class="badge 
+                  {% if project_data.project.project_status == 'Not Started' %}
+                      badge-danger
+                  {% elif project_data.project.project_status == 'In Progress' %}
+                      badge-warning
+                  {% elif project_data.project.project_status == 'Completed' %}
+                      badge-success
+                  {% else %}
+                      badge-secondary
+                  {% endif %}
+              ">
+                    {{ project_data.project.project_status }}
+                  </div>
+                </td>
+                <td>
+                  {{ project_data.progress_percentage|floatformat:2 }}% ({{ project_data.completed_tasks }}/{{
+                  project_data.total_tasks }} tasks completed)
+                  <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ project_data.progress_percentage }}%"
+                      aria-valuenow="{{ project_data.progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                  </div>
+                </td>
+
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+
+    
+
+  </div>
+</div>
+
+
+
+<div class="row">
+
+<div class="col-md-5 grid-margin stretch-card">
+    <div class="card position-relative">
+      <div class="card-body">
+        <h4 class="card-title">Top Clients by Revenue</h4>
+        <div class="justify-content-end d-flex">
+          
+      
+        </div> <br>
+        <canvas id="topClientsChart" width="400" height="400"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add this where you want the chart to appear -->
+
+
+<!-- Add this to your JavaScript section -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var topClientsData = JSON.parse('{{ top_clients_data|safe }}');
+  
+  var ctx = document.getElementById('topClientsChart').getContext('2d');
+  new Chart(ctx, {
+      type: 'bar',
+      data: {
+          labels: topClientsData.clients,
+          datasets: [{
+              label: 'Revenue',
+              data: topClientsData.revenues,
+              backgroundColor: 'rgba(0, 0, 139, 0.6)', // Dark blue with opacity
+              borderColor: 'rgba(0, 0, 139, 1)', // Solid dark blue
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              y: {
+                  beginAtZero: true,
+                  title: {
+                      display: true,
+                      text: 'Revenue',
+                      color: '#00008B' // Dark blue
+                  },
+                  ticks: {
+                      color: '#00008B' // Dark blue
+                  }
+              },
+              x: {
+                  title: {
+                      display: true,
+                      text: 'Clients',
+                      color: '#00008B' // Dark blue
+                  },
+                  ticks: {
+                      color: '#00008B' // Dark blue
+                  }
+              }
+          },
+          plugins: {
+              legend: {
+                  display: false
+              },
+              title: {
+                  display: true,
+                  text: 'Top Clients by Revenue',
+                  color: '#00008B' // Dark blue
+              }
+          }
+      }
+  });
+});
+</script>
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/decimal.js"></script> <!-- Ensure this is included if using decimal.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  $(document).ready(function() {
+    const ctx = document.getElementById('earningsLineChart').getContext('2d');
+    const earningsData = {{ earnings_data|safe }};
+
+    if (earningsData && earningsData.months && earningsData.earnings) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: earningsData.months,
+          datasets: [{
+            label: 'Monthly Earnings',
+            data: earningsData.earnings,
+            borderColor: '#8C3061', // Updated line color
+            backgroundColor: 'transparent', // No shading under the line
+            borderWidth: 2,
+            tension: 0.4 // Smooth curves
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          }
+        }
+      });
+    } else {
+      console.error('Earnings data is not available or is in an incorrect format.');
+    }
+  });
+</script>
+
+
+
+<script>
+  var ctx = document.getElementById('projectStatusChart').getContext('2d');
+  var projectStatusChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Completed', 'Not Completed'],
+      datasets: [{
+        label: 'Project Status',
+        data: [{{ completed_projects }}, {{ not_completed_projects }}],
+    backgroundColor: [
+      '#8C3061',  // Color for Completed
+      '#522258'   // Color for Not Completed
+    ],
+    borderColor: [
+      '#8C3061',  // Border color for Completed
+      '#522258'   // Border color for Not Completed
+    ],
+    borderWidth: 1
+  }]
+    },
+  options: {
+    responsive: true,
+      plugins: {
+      legend: {
+        position: 'top',
+        },
+    }
+  }
+  });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var topClientsData = JSON.parse('{{ top_clients_data|safe }}');
+    
+    var ctx = document.getElementById('topClientsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topClientsData.clients,
+            datasets: [{
+                label: 'Revenue',
+                data: topClientsData.revenues,
+                backgroundColor: 'rgba(0, 0, 139)', // Dark blue with opacity
+                borderColor: 'rgba(0, 0, 139, 1)', // Solid dark blue
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Revenue',
+                        color: '#00008B' // Dark blue
+                    },
+                    ticks: {
+                        color: '#00008B' // Dark blue
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Clients',
+                        color: '#00008B' // Dark blue
+                    },
+                    ticks: {
+                        color: '#00008B' // Dark blue
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Top Clients by Revenue'
+                }
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,165 @@
+{% extends 'freelancer/base.html'%}
+{% block 'freelancer_content' %}
+{% load static %}
+
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f4f5f7;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin: 20px auto;
+        max-width: 1200px;
+    }
+
+    .column {
+        width: 32%;
+        margin-bottom: 20px;
+    }
+
+    .column h4 {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #333;
+        font-weight: 600;
+        border-bottom: 2px solid #ff0057;
+        padding-bottom: 10px;
+    }
+
+    .card {
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h5 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .card p {
+        font-size: 14px;
+        color: #777;
+        margin-bottom: 15px;
+    }
+
+    .progress-bar {
+        background-color: #f0f0f0;
+        border-radius: 20px;
+        overflow: hidden;
+        height: 5px;
+        margin-bottom: 15px;
+    }
+
+    .progress-bar div {
+        height: 10px;
+        border-radius: 20px;
+    }
+
+    .progress-low {
+        background-color: #f44336;
+    }
+
+    .progress-medium {
+        background-color: #ffcc00;
+    }
+
+    .progress-high {
+        background-color: #4caf50;
+    }
+
+
+    .due {
+        font-size: 14px;
+        color: #ff0057;
+    }
+    .due i {
+        font-size: 14px;
+        padding-left:10px;
+        padding-right: 10px;
+    }
+</style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;">
+    <h3 align="center" style="margin:1% auto;color:#ff0057">Tasks</h3>
+</div><br>
+
+<div class="container">
+    <div class="column">
+        <h4 style="color: #ffcc00;">In Progress</h4>
+        {% for task in tasks %}
+            {% if task.status == "In Progress" %}
+                <div class="card">
+                    <h5>{{ task.title }}</h5>
+                    <p>{{ task.description }}</p>
+                    <div class="progress-bar">
+                        <div class="
+                            {% if task.progress_percentage < 50 %}
+                                progress-low
+                            {% elif task.progress_percentage < 80 %}
+                                progress-medium
+                            {% else %}
+                                progress-high
+                            {% endif %}
+                            " style="width: {{ task.progress_percentage }}%;">
+                        </div>
+                    </div>
+                    <span  class="due">Due Date :<i class="fa fa-calendar"></i> {{ task.due_date|date:"d M" }}</span>
+                    
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="column">
+        <h4 style="color: #f44336;">Not Started</h4>
+        {% for task in tasks %}
+            {% if task.status == "Pending" %}
+                <div class="card">
+                    <h5>{{ task.title }}</h5>
+                    <p>{{ task.description }}</p>
+                    <div class="progress-bar">
+                        <div class="progress-low" style="width: 0%;"></div>
+                    </div>
+                        <span  class="due">Due Date :<i class="fa fa-calendar"></i>{{ task.due_date|date:"d M" }}</span>
+                    
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="column">
+        <h4 style="color:#4caf50">Completed</h4>
+        {% for task in tasks %}
+            {% if task.status == "Completed" %}
+                <div class="card">
+                    <h5>{{ task.title }}</h5>
+                    <p>{{ task.description }}</p>
+                    <div class="progress-bar">
+                        <div class="progress-high" style="width: 100%;"></div>
+                    </div>
+                    <span  class="due">Due Date :<i class="fa fa-calendar"></i>{{ task.due_date|date:"d M" }}</span>
+                    
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

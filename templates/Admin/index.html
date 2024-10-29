@@ -1,0 +1,359 @@
+{% extends 'Admin/base.html'%}
+{% block 'admin_content' %}
+{% load static %}
+<style>
+  .info-card {
+    position: relative;
+    background: white;
+    padding: 10px;
+    border-radius: 15px;
+    text-align: center;
+    color: black;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .info-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .info-card h5 {
+    margin-bottom: 10px;
+  }
+
+  .info-card img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
+  }
+
+  .info-card a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .info-card .count {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: black;
+    border-radius: 50%;
+    padding: 1px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  console.log("Chart.js loaded:", typeof Chart !== 'undefined');
+</script>
+<div class="row" style="background-color:white;padding:30px;border-radius:10px;display:flex;align-items:center;max-height: 150px;">
+  <div class="col-md-12 grid-margin">
+    <div class="row">
+      <div class="col-6 col-xl-8 mb-4 mb-xl-0">
+        <h3 class="font-weight-bold">Welcome Admin</h3>
+        <h6 class="font-weight-normal mb-0">All systems are running smoothly! You have <span class="text-primary">3
+            unread alerts!</span></h6>
+      </div>
+      <div class="col-6 col-xl-4">
+        <img src="{% static 'img/admin.png' %}" alt="Admin" style="max-width: 100%; max-height: 150px;margin-top: -30px;">
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<br><br>
+
+<div class="row"
+  style="display: flex; justify-content: space-between; align-items: stretch; gap: 20px; flex-wrap: wrap;">
+
+  <!-- Total Users Card -->
+  <a href="{% url 'administrator:allusers' %}" class="col-md-3 info-card" style="flex: 1;">
+    <img src="{% static 'img/group.png' %}" alt="Users">
+    <h5 class="card-title">Total Users</h5>
+    <div class="count">{{ user_count }}</div>
+  </a>
+
+  <!-- Total Projects Card -->
+  <a href="{% url 'administrator:projects' %}" class="col-md-3 info-card" style="flex: 1;">
+    <img src="{% static 'img/project.png' %}" alt="Projects">
+    <h5 class="card-title">Total Projects</h5>
+    <div class="count">{{ posted_count }}</div>
+  </a>
+
+  <!-- Complaints Card -->
+  <a href="{% url 'administrator:complaints' %}" class="col-md-3 info-card" style="flex: 1;">
+    <img src="{% static 'img/paper.png' %}" alt="Complaints">
+    <h5 class="card-title">Complaints</h5>
+    <div class="count">{{ total_complaint }}</div>
+  </a>
+
+  <!-- Messages Card -->
+  <a href="{% url 'administrator:reviews' %}" class="col-md-3 info-card" style="flex: 1;">
+    <img src="{% static 'img/web1.png' %}" alt="Messages">
+    <h5 class="card-title">Reviews</h5>
+    <div class="count">{{ total_reviews }}</div>
+  </a>
+
+</div>
+
+<br><br>
+
+
+<div class="row">
+  <div class="col-md-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title">Project Overview</p>
+        <p class="font-weight-500">This chart shows the number of projects based on their status: Posted, Completed, and
+          In Progress.
+        </p>
+        <div class="d-flex flex-wrap mb-5">
+          <div class="mr-5 mt-3">
+            <p class="text-muted">Posted</p>
+            <h3 class="text-primary fs-30 font-weight-medium">{{ posted_count }}</h3>
+          </div>
+
+
+          <div class="mr-5 mt-3">
+            <p class="text-muted">Completed</p>
+            <h3 class="text-primary fs-30 font-weight-medium">{{ completed_count }}</h3>
+          </div>
+          <div class="mr-5 mt-3">
+            <p class="text-muted">In Progress</p>
+            <h5 class="text-primary fs-30 font-weight-medium">{{ in_progress_count }}</h5>
+          </div>
+
+        </div>
+        <canvas id="projectChart" style="width: 100%; height: 240px;"></canvas>
+
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 grid-margin stretch-card" style="width: 100px; height: 500px;">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <p class="card-title">Monthly User Registrations</p> <!-- Updated heading -->
+        </div>
+        <p class="font-weight-500">
+          This chart shows the number of new user registrations each month. It provides an overview of user growth over
+          time, helping to identify trends and patterns in registration activity.
+        </p><br>
+        <canvas id="userChart" style="width: 100px; height: 70px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+<div class="row" style="display: flex; gap: 5px;">
+  <div class="col-md-6 grid-margin stretch-card" style="flex: 1;">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title">Average Rating per Month</p>
+        <p class="font-weight-500">This chart shows the average rating of the site for each month.</p>
+        <canvas id="averageRatingChart" width="400" height="200" style="margin-top: 20px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 grid-margin stretch-card" style="flex: 1;">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title">Top Project Categories</p>
+        <p class="font-weight-500">This chart shows the distribution of top project categories.</p>
+        <canvas id="topCategoriesChart" width="400" height="200" style="width: 100%; height: 200px;margin-left: 10px;margin-top: -40px;"></canvas>
+   
+      </div>
+       </div>
+  </div>
+</div>
+
+
+
+<script>
+  const ctx = document.getElementById('userChart').getContext('2d');
+  const userChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ months| safe }},
+  datasets: [
+    {
+      label: 'Clients',
+      data: {{ client_counts| safe }},
+    backgroundColor: '#f09398',
+    borderColor: 'white',
+    borderWidth: 1,
+    barThickness: 40
+                    },
+    {
+      label: 'Freelancers',
+      data: {{ freelancer_counts| safe }},
+    backgroundColor: '#5252a9',
+    borderColor: 'white',
+    borderWidth: 1,
+    barThickness: 40
+                    }
+  ]
+            },
+  options: {
+    scales: {
+      y: {
+        beginAtZero: true,
+                        
+                    }
+    }
+  }
+        });
+</script>
+
+
+
+<script>
+
+  const ctxProject = document.getElementById('projectChart').getContext('2d');
+  const projectChart = new Chart(ctxProject, {
+    type: 'bar',
+    data: {
+      labels: ['Posted', 'Completed', 'In Progress'],
+      datasets: [{
+        label: 'Projects',
+        data: [
+          {{ posted_count|default:0 }},
+          {{ completed_count|default:0 }},
+          {{ in_progress_count|default:0 }}
+        ],
+        backgroundColor: ['#f09398', '#52a9a9', '#f0c94a'],
+        borderColor: 'white',
+        borderWidth: 1,
+        barThickness: 40
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+</script>
+
+<script>
+  const ctxRate = document.getElementById('averageRatingChart').getContext('2d');
+  const monthlyRatings = {{ monthly_ratings|safe }};
+
+  let chartType, chartData, chartOptions;
+
+  if (monthlyRatings.length === 1) {
+    // If there's only one data point, use a bar chart
+    chartType = 'bar';
+    chartData = {
+      labels: [monthlyRatings[0].month],
+      datasets: [{
+        label: 'Average Rating',
+        data: [monthlyRatings[0].average_rating],
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    };
+    chartOptions = {
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: 0,
+          max: 5,
+          title: {
+            display: true,
+            text: 'Rating'
+          }
+        }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: 'Average Rating for ' + monthlyRatings[0].month
+        }
+      }
+    };
+  } else {
+    // If there are multiple data points, use a line chart
+    chartType = 'line';
+    chartData = {
+      labels: monthlyRatings.map(item => item.month),
+      datasets: [{
+        label: 'Average Rating',
+        data: monthlyRatings.map(item => item.average_rating),
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+      }]
+    };
+    chartOptions = {
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: 0,
+          max: 5,
+          title: {
+            display: true,
+            text: 'Rating'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Month'
+          }
+        }
+      }
+    };
+  }
+
+  const averageRatingChart = new Chart(ctxRate, {
+    type: chartType,
+    data: chartData,
+    options: chartOptions
+  });
+</script>
+
+<script>
+  const ctxCategories = document.getElementById('topCategoriesChart').getContext('2d');
+  const topCategoriesChart = new Chart(ctxCategories, {
+    type: 'doughnut',
+    data: {
+      labels: {{ top_categories| safe }},
+  datasets: [{
+    data: {{ category_counts| safe }},
+    backgroundColor: [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+  ],
+    hoverOffset: 4
+      }]
+    },
+  options: {
+    responsive: true,
+      plugins: {
+      legend: {
+        position: 'right',
+        },
+      
+    }
+  }
+  });
+</script>
+
+{% endblock %}

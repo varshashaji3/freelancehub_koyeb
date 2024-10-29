@@ -1,0 +1,503 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            max-height:530px;
+        }
+
+        .sidebar1 {
+            width: 300px;
+            background-color: #34328E;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .sidebar1 .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .sidebar1 .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .sidebar1 .favorites {
+            margin-bottom: 20px;
+        }
+
+        .sidebar1 h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .contact-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .contact {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .contact:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .contact img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .contact .contact-info {
+            flex-grow: 1;
+        }
+
+        .contact .contact-info p {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .contact .contact-info span {
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .contact .message-count {
+            background-color: #ff3b30;
+            color: #fff;
+            font-size: 12px;
+            padding: 5px 8px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .chat-header .chat-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header .chat-info p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .chat-header .chat-info span {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .chat-header .icons {
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header .icons .icon {
+            font-size: 20px;
+            color: #888;
+            margin-left: 15px;
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f7f8fc;
+        }
+
+        .message {
+            margin-bottom: 15px;
+        }
+
+        .message p {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 10px;
+            max-width: 60%;
+            word-wrap: break-word;
+        }
+
+        .message.sent p {
+            background-color: #2E4583; /* Updated background color for sent messages */
+            margin-left: auto;
+            color:white
+        }
+
+        .message.received p {
+            background-color: #ffffff;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .chat-input button {
+            display: none; /* Hide the button */
+        }
+
+        .chat-input i {
+            font-size: 20px;
+            color: #888;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .sidebar1 {
+                display: none; /* Hide sidebar1 on small screens */
+            }
+        }
+    </style>
+
+<div class="row" style="background-color:white;padding:10px;border-radius:10px;margin-top:-25px;">
+
+    <div class="container">
+        <div class="sidebar1" id="sidebar1">
+            <div class="search-bar">
+                <input type="text" placeholder="Search here...">
+            </div>
+            <div class="favorites">
+                <ul class="contact-list">
+                    {% for freelancer in freelancers %}
+                    <li class="contact" data-chat-room-id="{{ freelancer.chat_room_id }}">
+                        <img src="{{ freelancer.register.profile_picture.url }}" alt="{{ freelancer.register.first_name }}">
+                        <div class="contact-info">
+                            <p>{{ freelancer.register.first_name }} {{ freelancer.register.last_name }}</p>
+                        <span>{{ freelancer.last_message }}</span>
+                        </div>
+                        {% if freelancer.message_count %}
+                        <div class="message-count">{{ freelancer.message_count }}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="chat-area" id="chatArea" style="height:550px;width:1200px"> <!-- Adjusted width dynamically -->
+            <div class="chat-header">
+                <div class="chat-info">
+                    <i id="toggleSidebar" class="fas fa-bars" style="cursor: pointer; margin-right: 10px;"></i>
+                    <img id="chatUserImage" src="" alt="User Image" style="display:none;">
+                    <div>
+                        <p id="chatUserName"></p>
+                        <span id="chatUserStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be dynamically inserted here -->
+                <div class="message received" ><p>Select a user to start chatting...</p></div> <!-- Default message when no chat is selected -->
+            </div>
+
+            <div class="chat-input">
+                <input type="hidden" id="chatRoomId">
+                <i class="fas fa-paperclip" id="attachFile" style="color: #888; cursor: pointer; margin-right: 10px;" title="Attach File"></i>
+                <i class="fas fa-image" id="attachImage" style="color: #888; cursor: pointer; margin-right: 10px;" title="Attach Image"></i>
+                <input type="text" id="messageInput" placeholder="Type your message..." required>
+                <i class="fas fa-paper-plane" style="color: #2E4583; cursor: pointer;" onclick="sendMessage()" title="Send message"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function fetchMessages() {
+        const chatRoomId = document.getElementById('chatRoomId').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        if (!chatRoomId) return; // Exit if no chat room is selected
+
+        fetch("{% url 'client:fetch_messages' %}", { // Update with your fetch URL
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ chat_room_id: chatRoomId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const messagesHTML = data.messages.map(msg => {
+                    let messageContent = `<div class="message ${msg.type}">`;
+
+                    // Check if there's an image
+                    if (msg.image) {
+                        const alignmentClass = msg.type === 'sent' ? 'sent' : 'received'; // Determine alignment based on message type
+                        messageContent = `
+                            <div class="${alignmentClass}" style="text-align: ${alignmentClass === 'sent' ? 'right' : 'left'}; position: relative; display: inline-block;">
+                                <img src="${msg.image}" alt="Image" style="max-width: 30%; border-radius: 10px; margin-top: 5px;">
+                                <!-- Download icon placed at the top-right corner of the image -->
+                                <a href="${msg.image}" download style="position: absolute; top: 5px; right: 5px;">
+                                    <i class="fas fa-download" style="color: #2E4583; font-size: 18px;"></i>
+                                </a>
+                            </div><br>
+                        `;
+                    }
+                    // Check if there's a file
+                    else if (msg.file) {
+                        const fileName = msg.file.split('/').pop(); // Extract file name from path
+                        messageContent += `<br><p style="display: flex; align-items: center; justify-content: space-between;">
+                            <img src="{% static 'img/file.png' %}" alt="Download File" style="width: 20px; height: 20px; margin-right: 10px;">
+                            <span>${fileName}</span> <!-- Display only the file name -->
+                            <a href="${msg.file}" download style="margin-left: 10px;">
+                                <i class="fas fa-download" style="color: #2E4583;"></i> <!-- Download icon -->
+                            </a>
+                        </p>`;
+                    }
+                    // Otherwise, display the message content
+                    else {
+                        messageContent += `<p>${msg.content}</p>`;
+                    }
+
+                    messageContent += `</div>`;
+                    return messageContent;
+                }).join('');
+                document.getElementById('chatMessages').innerHTML = messagesHTML;
+                document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching messages:", error);
+        });
+    }
+
+    // Call fetchMessages every 5 seconds
+    setInterval(fetchMessages, 3000);
+    // Toggle sidebar visibility
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar1');
+        const chatArea = document.getElementById('chatArea'); // Reference to chat area
+        sidebar.classList.toggle('collapsed');
+        
+        // Adjust chat area width based on sidebar state
+        if (sidebar.classList.contains('collapsed')) {
+            chatArea.style.width = '1200px'; // Full width when sidebar is collapsed
+        } else {
+            chatArea.style.width = '1200px'; // Original width when sidebar is expanded
+        }
+        
+        // Ensure sidebar is visible on small screens when toggled
+        if (window.innerWidth <= 768) {
+            sidebar.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'flex';
+        }
+    });
+
+    document.querySelectorAll('.contact').forEach(contact => {
+        contact.addEventListener('click', function() {
+            const chatRoomId = this.getAttribute('data-chat-room-id');
+            const userName = this.querySelector('.contact-info p').innerText;
+            const userImage = this.querySelector('img').src;
+
+            // Set the chat room ID for sending messages
+            document.getElementById('chatRoomId').value = chatRoomId;
+
+
+            // Update chat header with selected user info
+            document.getElementById('chatUserName').innerText = userName;
+            document.getElementById('chatUserImage').src = userImage;
+            document.getElementById('chatUserImage').style.display = 'block';
+
+            // Load messages for the selected user (placeholder, implement message loading)
+            document.getElementById('chatMessages').innerHTML = `<div class="message received"><p>Loading messages for ${userName}...</p></div>`;
+        });
+    });
+
+    // Function to send message
+    function sendMessage() {
+        const chatRoomId = document.getElementById('chatRoomId').value; // Ensure chatRoomId is retrieved here
+        const messageContent = document.getElementById('messageInput').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        
+        if (!chatRoomId || !messageContent.trim()) {
+            alert("Please select a chat room and enter a message.");
+            return;
+        }
+
+
+
+
+        
+        fetch("{% url 'client:send_message' %}", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                chat_room_id: chatRoomId,
+                content: messageContent
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('messageInput').value = "";
+            } else {
+                alert(data.error || "Failed to send message.");
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+        });
+    }
+
+    // Function to handle file attachment
+    document.getElementById('attachFile').addEventListener('click', function() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.onchange = () => {
+            const file = fileInput.files[0];
+            if (file) {
+                sendFile(file);
+            }
+        };
+        fileInput.click();
+    });
+
+    // Function to handle image attachment
+    document.getElementById('attachImage').addEventListener('click', function() {
+        const imageInput = document.createElement('input');
+        imageInput.type = 'file';
+        imageInput.accept = 'image/*';
+        imageInput.onchange = () => {
+            const file = imageInput.files[0];
+            if (file) {
+                sendFile(file);
+            }
+        };
+        imageInput.click();
+    });
+
+    // Function to send file or image
+    function sendFile(file) {
+        const chatRoomId = document.getElementById('chatRoomId').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        if (!chatRoomId) {
+            alert("Please select a chat room.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('chat_room_id', chatRoomId);
+        formData.append('file', file);
+
+        fetch("{% url 'client:send_file' %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const messageHTML = `<div class="message sent"><p>File sent: <a href="${data.file_url}" download>${file.name}</a></p></div>`;
+                document.getElementById('chatMessages').insertAdjacentHTML('beforeend', messageHTML);
+                document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+            } else {
+                alert(data.error || "Failed to send file.");
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+        });
+    }
+
+    // Show default message if no contact is selected
+    if (document.querySelectorAll('.contact').length === 0) {
+        document.getElementById('chatMessages').innerHTML = `<div class="message received"><p>Select a user to start chatting...</p></div>`;
+    }
+</script>
+
+<style>
+    /* Add styles for the collapsed state */
+    .sidebar1 {
+        transition: width 0.3s, opacity 0.3s; /* Added opacity transition */
+    }
+    .sidebar1.collapsed {
+        width: 0; /* Collapse width */
+        opacity: 0; /* Fade out */
+        padding: 0; /* Remove padding when collapsed */
+    }
+</style>
+
+{% endblock %}
