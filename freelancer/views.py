@@ -2100,7 +2100,6 @@ from django.template import loader
 from io import BytesIO
 from django.conf import settings
 import os
-import imgkit
 from django.core.files.base import ContentFile
 
 from selenium import webdriver
