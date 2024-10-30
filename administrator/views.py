@@ -378,7 +378,7 @@ def send_permission_email(uid):
     context = {
         'user_name': name
     }
-    html_content = render_to_string('Admin/permission_done.html', context)
+    html_content = render_to_string('Admin/Permission_done.html', context)
     text_content = strip_tags(html_content)
     email = EmailMultiAlternatives(subject, text_content, settings.EMAIL_HOST_USER, [user.email])
     email.attach_alternative(html_content, "text/html")
@@ -576,7 +576,7 @@ def allusers(request):
         'current_year': current_year
     }
     
-    return render(request, 'Admin/Allusers.html', context)
+    return render(request, 'Admin/AllUsers.html', context)
 
 
 
