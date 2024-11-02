@@ -12,8 +12,6 @@ from freelancer.models import FreelancerProfile
 
 from django.contrib import messages
 
-from django.db.models.functions import TruncMonth
-from django.db.models import Count
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -21,16 +19,11 @@ from django.conf import settings
 from client.models import Project
 
 from django.db.models import Count
-from django.db.models import Avg
-import json
 
 from django.db.models import Avg
 from django.db.models.functions import TruncMonth
 import json
 
-from django.db.models import Avg
-from django.db.models.functions import TruncMonth
-import json
 
 @login_required
 @nocache

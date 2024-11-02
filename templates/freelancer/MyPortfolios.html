@@ -71,11 +71,11 @@
     }
 
     .icon-button:hover {
-        background-color: #2980b9; /* Darker shade on hover */
+        background-color: #4f2b89; /* Darker shade on hover */
     }
 
     .btn {
-        background-color: #007BFF;
+        background-color: #4f2b89;
         color: white;
         border: none;
         padding: 10px;
@@ -86,7 +86,7 @@
     }
 
     .btn:hover {
-        background-color: #0056b3;
+        background-color: #4f2b89;
     }
 
     .card-image{
@@ -176,19 +176,22 @@
     <div id="template-container">
         {% for portfolio in portfolios %}
         <div class="card">
-            {% if portfolio.cover_image %}
-            <img class="card-image" src="{{ portfolio.cover_image.url }}" alt="{{ template.name }}">
-            {% else %}
-            <img class="card-image" src="" alt="{{ template.name }}">
-            {% endif %}
+            {% if portfolio.cover_image and portfolio.cover_image.url %}
+            <img class="card-image" src="{{ portfolio.cover_image.url }}" alt="{{ portfolio.name }}">
+        {% else %}
+            <img class="card-image" src="{% static 'images/default-portfolio.jpg' %}" alt="{{ portfolio.name }}">
+        {% endif %}
             <div class="card-overlay">
                 <p class="card-text">Created on: {{ portfolio.created_at|date:"F j, Y" }}</p>
-                <div class="icon-group"> <!-- New icon group for hover effect -->
+                <div class="icon-group" style="display: flex; justify-content: center; gap: 10px;">
                     <a class="btn" href="{{ portfolio.portfolio_file.url }}" download>
                         <i class="fas fa-download"></i>
                     </a>
                     <a class="btn" href="{{ portfolio.portfolio_file.url }}" target="_blank">
                         <i class="fas fa-eye"></i>
+                    </a>
+                    <a class="btn" href="{% url 'freelancer:edit_portfolio' portfolio.id %}">
+                        <i class="fas fa-edit"></i>
                     </a>
                 </div>
             </div>

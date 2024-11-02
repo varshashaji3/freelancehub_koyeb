@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.shortcuts import render
 from django.urls import include, path
 
-from freelancer.views import  update_todo_status,update_complaint_status,update_solution,view_complaints_recieved,view_complaints,preview_template,my_portfolios,download_resume,process_resume,upload_resume,template_list,add_complaint,send_file,fetch_messages,send_message,chat_view,add_url,add_note,add_file, submit_user_review, tasks_list, update_freelancer_signature, upload_pdf, view_contract,view_repository,acc_deactivate, add_new_event, delete_event, edit_created_proposal, notification_mark_as_read, update_event, update_todo, view_created_proposals,proposal_detail1,proposal_detail2,download_proposal_pdf, generate_proposal,delete_todo,proposal_list,add_new_proposal,add_todo, calendar,AddProfileFreelancer, change_profile_image,freelancer_view,account_settings,change_password, single_project_view,update_profile,view_project,client_list,client_detail,todo, payments, download_invoice
+from freelancer.views import  update_todo_status,update_complaint_status,update_solution,view_complaints_recieved,view_complaints,preview_template,my_portfolios,download_resume,process_resume,upload_resume,template_list,add_complaint,send_file,fetch_messages,send_message,chat_view,add_url,add_note,add_file, submit_user_review, tasks_list, update_freelancer_signature, upload_pdf, view_contract,view_repository,acc_deactivate, add_new_event, delete_event, edit_created_proposal, notification_mark_as_read, update_event, update_todo, view_created_proposals,proposal_detail1,proposal_detail2,download_proposal_pdf, generate_proposal,delete_todo,proposal_list,add_new_proposal,add_todo, calendar,AddProfileFreelancer, change_profile_image,freelancer_view,account_settings,change_password, single_project_view,update_profile,view_project,client_list,client_detail,todo, payments, download_invoice, edit_portfolio
 
 urlpatterns = [
     path('freelancer_view/', freelancer_view,name="freelancer_view"),
@@ -96,4 +96,5 @@ urlpatterns = [
      path('update-complaint-status/', update_complaint_status, name='update_complaint_status'),
      path('payments/', payments, name='payments'),
     path('download_invoice/<int:refund_id>/', download_invoice, name='download_invoice'),
+    path('edit-portfolio/<int:portfolio_id>/', edit_portfolio, name='edit_portfolio'),
 ]

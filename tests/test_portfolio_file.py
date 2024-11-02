@@ -38,17 +38,12 @@ try:
     file_input.send_keys(r"C:\Users\LENOVO\Downloads\MC_Assignment 2.docx")
     submit_button = upload_modal.find_element(By.ID, 'subbtn')
 
-    time.sleep(1)
-
     if not submit_button.is_enabled():
-        driver.execute_script("alert('Test Case 1 Passed: DOCX correctly rejected.');")
+        print('Test Case 1 Passed: DOCX correctly rejected.')
     else:
-        driver.execute_script("alert('Test Case 1 Failed: DOCX rejection failed.');")
+        print('Test Case 1 Failed: DOCX rejection failed.')
 
-    alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
-    print(alert.text)
-    time.sleep(3)
-    alert.accept()
+    time.sleep(1)
 
     close_button = upload_modal.find_element(By.ID, 'close')
     close_button.click()
@@ -73,7 +68,7 @@ try:
 
     try:
         WebDriverWait(driver, 10).until(EC.url_matches(r'http://127\.0\.0\.1:8000/freelancer/process_resume/\d+/'))
-        print('Test Case 2 Passed: PDF uploaded successfully.')
+        print('Test Case 2 Passed: PDF uploaded and portfolio generated successfully.')
     except:
         print('Test Case 2 Failed: PDF upload failed.')
 

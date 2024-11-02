@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure--vamx(qq%e)g0=)b$17dg&4kj0&%73+wztckvwmj8b%(8m3k-p
 DEBUG = True
 
 # ALLOWED_HOSTS = ['freelancehub-production.up.railway.app', 'localhost', '127.0.0.1']
-ALLOWED_HOSTS = ['freelancehub.koyeb.app', 'localhost', '127.0.0.1','freelancehub-5tya.onrender.com']
+ALLOWED_HOSTS = ['freelancehub.koyeb.app', 'localhost', '127.0.0.1','freelancehub-5tya.onrender.com','freelancehub-production.up.railway.app']
 
 
 
@@ -78,7 +78,7 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
 ROOT_URLCONF = 'freelancehub.urls'
 
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000','https://freelancehub.koyeb.app','https://freelancehub-5tya.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000','https://freelancehub.koyeb.app','https://freelancehub-5tya.onrender.com','https://freelancehub-production.up.railway.app']
 
 TEMPLATES = [
     {

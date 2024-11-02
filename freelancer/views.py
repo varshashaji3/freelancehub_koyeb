@@ -1,5 +1,3 @@
-
-
 from datetime import datetime
 import random
 import string
@@ -309,6 +307,7 @@ def AddProfileFreelancer(request, uid):
     }
 
     return render(request, 'freelancer/Add_profile.html', context)
+
 
 
 
@@ -2625,3 +2624,52 @@ def download_invoice(request, refund_id):
     }
 
     return render(request, 'freelancer/InvoiceDownload.html', context)
+
+
+from django.contrib import messages
+from django.shortcuts import redirect, get_object_or_404
+import logging  # Add this import
+
+logger = logging.getLogger(__name__)
+
+from django.core.files.base import ContentFile
+import os
+
+def edit_portfolio(request, portfolio_id):
+    portfolio = get_object_or_404(Document, id=portfolio_id, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            new_content = request.POST.get('content')
+            
+            # Create a new ContentFile with the updated content
+            content_file = ContentFile(new_content.encode('utf-8'))
+            
+            # Get the original filename
+            original_filename = os.path.basename(portfolio.portfolio_file.name)
+            
+            # Save the new content to the portfolio_file field
+            portfolio.portfolio_file.save(original_filename, content_file, save=False)
+            
+            # Save the portfolio object
+            portfolio.save()
+            
+            messages.success(request, 'Portfolio template updated successfully!')
+            return redirect('freelancer:my_portfolios')
+            
+        except Exception as e:
+            logger.error(f"Error updating portfolio: {str(e)}")
+            messages.error(request, f'Error updating template: {str(e)}')
+            return redirect('freelancer:edit_portfolio', portfolio_id=portfolio_id)
+    
+    # GET request handling
+    try:
+        content = portfolio.portfolio_file.read().decode('utf-8')
+    except Exception as e:
+        content = ''
+        messages.error(request, f'Error reading template: {str(e)}')
+    
+    return render(request, 'freelancer/edit_portfolio.html', {
+        'portfolio': portfolio,
+        'content': content
+    })
