@@ -184,15 +184,17 @@
             <div class="card-overlay">
                 <p class="card-text">Created on: {{ portfolio.created_at|date:"F j, Y" }}</p>
                 <div class="icon-group" style="display: flex; justify-content: center; gap: 10px;">
-                    <a class="btn" href="{{ portfolio.portfolio_file.url }}" download>
-                        <i class="fas fa-download"></i>
-                    </a>
-                    <a class="btn" href="{{ portfolio.portfolio_file.url }}" target="_blank">
-                        <i class="fas fa-eye"></i>
-                    </a>
-                    <a class="btn" href="{% url 'freelancer:edit_portfolio' portfolio.id %}">
-                        <i class="fas fa-edit"></i>
-                    </a>
+                    {% if portfolio.portfolio_file and portfolio.portfolio_file.url %}
+                        <a class="btn" href="{{ portfolio.portfolio_file.url }}" download>
+                            <i class="fas fa-download"></i>
+                        </a>
+                        <a class="btn" href="{{ portfolio.portfolio_file.url }}" target="_blank">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a class="btn" href="{% url 'freelancer:edit_portfolio' portfolio.id %}">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

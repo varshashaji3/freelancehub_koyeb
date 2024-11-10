@@ -210,7 +210,7 @@
 
             if (file_error) {
                 $("#form_err").html("Please upload a valid PDF file.").show();
-                 // Prevent form submission if validation fails
+                event.preventDefault(); // Prevent form submission if validation fails
             } else {
                 $("#form_err").hide();
                 $("#subbtn").prop("disabled", false);
@@ -288,7 +288,7 @@
 
         <form action="{% url 'freelancer:upload_resume' %}" method="POST" enctype="multipart/form-data" id="resumeform">
             {% csrf_token %}
-            <input type="file" name="resume"  id="file" required>
+            <input type="file" name="resume" id="file" required>
             <br><span id="error_file" style="color: red;"></span>
             <input type="hidden" name="template_id" id="template_id_input">
             <button type="submit" class="upload-button" id="subbtn">Upload Resume</button>

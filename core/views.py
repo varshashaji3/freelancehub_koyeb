@@ -326,7 +326,7 @@ def send_forget_password_mail(request):
         try:
             user = CustomUser.objects.get(email=email)
             token = str(uuid.uuid4())
-            msg = f'http://127.0.0.1:8000/reset_password/{token}/'
+            msg = request.build_absolute_uri(f'/reset_password/{token}/')
             context = {
                 'user': user,
                 'reset_link': msg
@@ -405,7 +405,7 @@ def resend_password_link(request):
             PasswordReset.objects.create(user_id=user, token=new_token, expires_at=expires_at)
 
             # Prepare the reset link
-            msg = f'http://127.0.0.1:8000/reset_password/{new_token}/'
+            msg =  request.build_absolute_uri(f'/reset_password/{new_token}/')
             context = {
                 'user': user,
                 'reset_link': msg
@@ -435,7 +435,7 @@ def send_verification_mail(request):
 
     token = str(uuid.uuid4())
     
-    verification_link = f'http://127.0.0.1:8000/email_verification/{token}/'
+    verification_link =  request.build_absolute_uri(f'/email_verification/{token}/')
     context = {
         'user': user,
         'reset_link': verification_link,
@@ -501,7 +501,7 @@ def resend_verification_email(request):
             verification.delete()
             
             new_token = str(uuid.uuid4())
-            verification_link = f'http://127.0.0.1:8000/email_verification/{new_token}/'
+            verification_link = request.build_absolute_uri(f'/email_verification/{new_token}/')
             context = {
                 'user': user,
                 'reset_link': verification_link,

@@ -328,22 +328,6 @@ def preview_template(request, template_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-# MAILS
-
-
-
-
 def send_permission_email(uid):
     user = CustomUser.objects.get(id=uid)
     print(uid)
