@@ -2276,6 +2276,8 @@ def process_resume(request, document_id):
 
 
 
+
+
 def upload_resume(request):
     if request.method == 'POST':
         if 'resume' in request.FILES and 'template_id' in request.POST:
