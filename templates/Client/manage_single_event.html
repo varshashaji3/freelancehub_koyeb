@@ -1,0 +1,1592 @@
+{% extends 'client/base.html' %}
+{% block 'client_content' %}
+{% load static %}
+{% load custom_filters %}
+<!-- Load necessary CSS and JS libraries -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+
+<style>
+     body {
+        background-color: #f4f7f9;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        margin-top: 30px;
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    h1, h2, h3 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .action-buttons .btn {
+        font-size: 1rem;
+        padding: 10px 20px;
+        border-radius: 25px;
+        color: white;
+        transition: all 0.3s ease;
+        margin: 0 8px;
+        font-weight: 500;
+    }
+
+    .action-buttons .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-add-url {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-add-url:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-add-note {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-add-note:hover {
+        background-color: #218838;
+    }
+
+    .btn-add-files {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    .btn-add-files:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-github {
+        background-color: white;
+        border-color: #333;
+    }
+
+    .btn-github:hover {
+        background-color: #f8f9fa;
+    }
+
+    .recent-activity, .recent-notes {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .activity-item, .note-item {
+        display: flex;
+        align-items: center;
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .activity-item:hover, .note-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .user-logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 15px;
+    }
+
+    .user-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .activity-content, .note-content {
+        flex: 1;
+    }
+
+    .activity-header, .note-header {
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+
+    .activity-meta, .note-meta {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .activity-description, .note-description {
+        color: #2c3e50;
+        line-height: 1.5;
+    }
+
+    .modal-content {
+        border-radius: 10px;
+    }
+
+    .modal-header {
+        background-color: #f7f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px;
+    }
+
+    .modal-title {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #2c3e50;
+    }
+
+    .form-control {
+        border-radius: 6px;
+        padding: 10px;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+
+    /* Toggle buttons */
+    .toggle-buttons {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .toggle-buttons .btn {
+        margin: 0 10px;
+        font-size: 1rem;
+        padding: 10px 20px;
+        border-radius: 25px;
+    }
+
+    .note-item, .task-item {
+        display: flex;
+        align-items: center;
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .note-item:hover, .task-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .note-content, .task-content {
+        flex: 1;
+    }
+
+    .note-header, .task-header {
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+
+    .note-meta, .task-meta {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .note-description, .task-description {
+        color: #2c3e50;
+        line-height: 1.5;
+    }
+
+    .note-textarea, .task-textarea {
+        border-radius: 6px;
+        padding: 10px;
+        width: 100%;
+        height: 150px;
+        margin-bottom: 20px;
+        resize: vertical;
+    }
+
+    .note-actions, .task-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+
+    table.dataTable thead th {
+        background-color: #4B49AC;
+        color: white;
+        font-weight: bold;
+    }
+
+    table.dataTable tbody tr {
+        transition: background-color 0.3s;
+    }
+
+    table.dataTable tbody tr:hover {
+        background-color: #e9ecef;
+    }
+
+    table.dataTable tfoot th {
+        background-color: #f8f9fa;
+        color: #2c3e50;
+    }
+    
+
+    .progress {
+        background-color: #e9ecef; /* Light grey background */
+        border-radius: 5px;
+        overflow: hidden;
+        height: 1px;
+    }
+    
+    .progress-bar-low {
+        background-color: #dc3545; /* Red */
+    }
+    
+    .progress-bar-medium {
+        background-color: #ffc107; /* Yellow */
+    }
+    
+    .progress-bar-high {
+        background-color: #28a745; /* Green */
+    }
+    
+    /* Input styling */
+    .progress-input {
+        width: 60px;
+        height: 25px;
+        margin-right: 5px;
+        padding: 3px;
+        font-size: 0.8rem;
+    }
+    
+    /* Button styling */
+    .btn-sm {
+        padding: 3px 8px;
+        font-size: 0.8rem;
+    }
+
+th,td{
+    font-size: 14px;
+}
+
+
+.btn-icon {
+    background-color: transparent;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    opacity: 0.8;
+}
+
+
+.edit-icon {
+    color: #ba7307;
+}
+.view-icon {
+    color: #4a17b8;
+}
+.btn-icon:focus {
+    outline: none;
+}
+
+
+
+
+.modal-body {
+    padding: 1.5rem; 
+}
+
+
+.modal-body strong {
+    color: blueviolet; 
+}
+
+
+
+
+
+
+/* Add these styles to your existing CSS */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 200px;
+    text-align: center;
+}
+
+
+
+.card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 10px;
+}
+
+.card-body h3 {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    font-family: "Bebas Neue", cursive;
+    color: #28666e;
+}
+
+.card-body a {
+    display: inline-block;
+    margin-top: 10px;
+    color: #28666e;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.card-body a:hover {
+    text-decoration: underline;
+}
+
+
+.icon-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    margin-left:50px;
+}
+
+.icon-view i {
+    color: #28666e;
+    font-size: 24px;
+    transition: color 0.3s;
+}
+
+.icon-view i:hover {
+    color: #204e53;
+}
+
+.icon-download i {
+    color: #4CAF50;
+    font-size: 24px;
+    transition: color 0.3s;
+}
+
+.icon-download i:hover {
+    color: #45a049;
+}
+
+
+
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&family=Assistant:wght@400;600&display=swap');
+
+#project-details-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+    max-height: 50px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#project-details-container.expanded {
+    max-height: none;
+}
+
+#project-details-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f0f4f8;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+#project-details-content {
+    padding: 20px;
+}
+
+.project-details-card {
+    border: none;
+    box-shadow: none;
+}
+
+.project-details-card .card-title {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 700;
+    color: #3498db;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.project-details-card .card-text {
+    font-family: 'Assistant', sans-serif;
+    margin-bottom: 10px;
+    color: #34495e;
+}
+
+.project-details-card .card-text strong {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.file-actions-overlay {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-file-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.pdf-background {
+    background-color: #f8f9fa;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.pdf-background i {
+    font-size: 48px;
+    color: #dc3545;
+    transition: transform 0.3s ease;
+}
+
+.file-card:hover .pdf-background i {
+    transform: scale(1.1);
+}
+
+/* Add these styles to your existing CSS section */
+.pdf-container {
+    text-align: center;
+}
+
+.btn-file-action {
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-view {
+    color: #4a17b8;
+}
+
+.btn-view:hover {
+    background-color: #4a17b8;
+    color: white;
+    border-color: #4a17b8;
+}
+
+.btn-download {
+    color: #28a745;
+}
+
+.btn-download:hover {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.file-actions-overlay {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.pdf-background {
+    background-color: #f8f9fa;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px dashed #dee2e6;
+}
+
+.pdf-background i {
+    font-size: 40px;
+    color: #dc3545;
+    transition: transform 0.3s ease;
+}
+
+.file-card:hover .pdf-background i {
+    transform: scale(1.1);
+}
+
+.event-section {
+    background-color: white; /* White background */
+    border-radius: 8px; /* Rounded borders */
+    padding: 20px; /* Padding for content */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional shadow for better visibility */
+    margin-bottom: 20px; /* Space between sections */
+}
+
+/* Additional styles for better aesthetics */
+.btn-group .btn {
+    border-radius: 25px; /* Rounded buttons */
+}
+
+.event-section h3 {
+    border-bottom: 2px solid #007bff; /* Underline for section titles */
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-family: 'Raleway', sans-serif;
+}
+
+
+.pdf-background {
+    border: 1px solid #dee2e6; /* Border for PDF background */
+    padding: 10px; /* Padding for better spacing */
+}
+
+.file-actions-overlay a {
+    transition: background-color 0.3s; /* Smooth transition for buttons */
+}
+
+.file-actions-overlay a:hover {
+    background-color: #f0f4f8; /* Light background on hover */
+}
+
+.modal-body {
+    background-color: #f9f9f9; /* Light background for modal */
+}
+
+.modal-header {
+    border-bottom: 2px solid #007bff; /* Blue border for modal header */
+}
+
+.table th, .table td {
+    vertical-align: middle; /* Center align content vertically */
+}
+
+.table img {
+    border-radius: 50%; /* Ensure images are rounded */
+}
+
+
+
+
+.leaderboard-container {
+    padding: 30px;
+    background: linear-gradient(145deg, #ffffff, #f0f4f8);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.winners-podium {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 30px;
+    margin-bottom: 50px;
+    padding: 20px;
+    position: relative;
+}
+
+.winner-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.winner-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.first-place {
+    height: 280px;
+    width: 240px;
+    border-top: 6px solid #FFD700;
+    z-index: 3;
+    background: linear-gradient(to bottom, #ffffff, #fff9e6);
+}
+
+.second-place {
+    height: 240px;
+    width: 220px;
+    border-top: 6px solid #C0C0C0;
+    z-index: 2;
+    background: linear-gradient(to bottom, #ffffff, #f5f5f5);
+}
+
+.third-place {
+    height: 220px;
+    width: 220px;
+    border-top: 6px solid #CD7F32;
+    z-index: 1;
+    background: linear-gradient(to bottom, #ffffff, #fff5eb);
+}
+
+.position-badge {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4B49AC;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2em;
+    box-shadow: 0 4px 10px rgba(75, 73, 172, 0.3);
+}
+
+.crown-icon {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #FFD700;
+    font-size: 2em;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.winner-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 20px auto;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.winner-name {
+    font-weight: 700;
+    margin: 10px 0;
+    font-size: 1.2em;
+    color: #2c3e50;
+}
+
+.winner-score {
+    color: #4B49AC;
+    font-weight: 600;
+    margin: 8px 0;
+    font-size: 1.1em;
+}
+
+.winner-accuracy {
+    color: #666;
+    font-size: 0.95em;
+    margin-bottom: 8px;
+}
+
+.medal {
+    margin-top: 15px;
+}
+
+.medal i {
+    font-size: 28px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+/* Rankings Table Styles */
+.rankings-table {
+    background: white;
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    border-bottom: 2px solid #4B49AC;
+    color: #4B49AC;
+    font-weight: 600;
+    padding: 15px;
+}
+
+.ranking-row {
+    transition: all 0.2s ease;
+}
+
+.ranking-row:hover {
+    background-color: #f8f9ff;
+    transform: scale(1.01);
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.participant-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #4B49AC;
+}
+
+.rank-number {
+    background: #f8f9fa;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: #4B49AC;
+    display: inline-block;
+    min-width: 45px;
+    text-align: center;
+}
+
+.score-cell {
+    width: 20px;
+}
+
+.score-number {
+    margin-bottom: 8px;
+    display: inline-block;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.progress {
+    height: 8px;
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #4B49AC, #6c63ff);
+    transition: width 0.6s ease;
+}
+
+.badge {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .winners-podium {
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+    }
+
+    .winner-card {
+        width: 220px !important;
+        height: auto !important;
+    }
+
+    .rankings-table {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .leaderboard-container {
+        padding: 15px;
+    }
+
+    .winner-card {
+        width: 180px !important;
+    }
+
+    .score-cell {
+        width: 150px;
+    }
+}
+.btn-certificate {
+    background-color: #4B49AC;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(75, 73, 172, 0.2);
+}
+
+.btn-certificate:hover {
+    background-color: #3c3a8a;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(75, 73, 172, 0.3);
+}
+
+.btn-certificate i {
+    color: #ffd700;
+    margin-right: 8px;
+}
+
+.btn-certificate:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(75, 73, 172, 0.25);
+}
+
+
+</style>
+
+
+<h2 class="event-title" style="text-align: left; margin-bottom: 20px;color:#4136b3;">Manage {{ event.title }}</h2><br>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active" data-section="event-details">
+                <i class="fas fa-info-circle me-2"></i>Event Details
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-section="participants">
+                <i class="fas fa-users me-2"></i>Participants
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-section="event-settings">
+                <i class="fas fa-cog me-2"></i>Event Settings
+            </button>
+            {% if event.type == 'event' %}
+            <button type="button" class="btn btn-outline-secondary" data-section="attendees" id="toggle-attendees">
+                <i class="fas fa-users me-2"></i>Attendees List
+            </button>
+            {% endif %}
+            
+            {% if event.type == 'quiz' %}
+            <button type="button" class="btn btn-outline-secondary" data-section="leaderboard">
+                <i class="fas fa-trophy me-2"></i>Leaderboard
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add sections for managing the event -->
+<div id="event-details" class="event-section">
+    <h3>Event Details</h3>
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card mt-3 project-details-card" style="width: 600px;">
+                <div class="card-body text-left">
+                    <h5 class="card-title" style="color: #4136b3;">{{ event.title }}</h5>
+                    <p class="card-text"><strong style="color: #800080;">Description:</strong> {{ event.description }}</p>
+                    <p class="card-text"><strong style="color: #ff0057;">Type:</strong>{% if event.type == 'quiz' %}{{event.type}} {% else %} {{ event.type_of_event }} {% endif %}</p>
+                    <p class="card-text"><strong style="color: #800080;">Max. Allowed Participant:</strong> {{ event.max_participants }}</p>
+                    {% if event.online_link%}
+                    <p class="card-text"><strong style="color: #ff0057;">Event Link:</strong> <a href="{{ event.online_link }}">Join</a></p>
+                    {% endif %}
+                    {% if event.certificate_provided %}
+                    <p class="card-text"><strong style="color: #800080;">Certificate Provided:</strong> Yes</p>
+                    {% endif %}
+                    {% if event.prize_enabled %}
+                    <p class="card-text"><strong style="color: #ff0057;">Prize Enabled:</strong> Yes</p>
+                    <p class="card-text"><strong style="color: #ff0057;">Prize Amount:</strong>₹ {{event.prize_amount}}</p>
+                    
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <h6 class="mt-3" style="font-family: 'Raleway', sans-serif; font-weight: 600;">Uploaded File</h6>
+            {% if event.poster %}
+                <div class="card mb-3 file-card">
+                    <div class="card-body">
+                        <div class="pdf-container">
+                            <div class="pdf-background">
+                                <img src="{{ event.poster.url}}" alt="" style="padding-top:10px;">
+                            </div>
+                            <div class="file-actions-overlay">
+                                <a href="{{ event.poster.url }}" target="_blank" class="btn-file-action btn-view">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ event.poster.url }}" download class="btn-file-action btn-download">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p style="font-family: 'Assistant', sans-serif; color: #7f8c8d;">No poster available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="participants" class="event-section" style="display: none;">
+    <h3>Participants</h3>
+    <div class="d-flex justify-content-end mb-3">
+        <button id="send-event-link" class="btn btn-primary" data-event-id="{{ event.id }}">Send Event Link</button>
+    </div>
+    <br>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Freelancer</th>
+                <th scope="col">Email</th>
+                <th scope="col">Registered At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for freelancer in registered_participants %}
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center;">
+                        <img src="{{ freelancer.profile_picture }}" alt="{{ freelancer.first_name }} {{ freelancer.last_name }}" class="rounded-circle" style="width: 50px; height: 50px; margin-right: 10px;">
+                        <span>{{ freelancer.first_name }} {{ freelancer.last_name }}</span>
+                    </div>
+                </td>
+                <td>{{ freelancer.email }}</td>
+                <td>{{ freelancer.registered_at|date:"d-m-Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No participants available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="event-settings" class="event-section" style="display: none;">
+    <h3>Event Settings</h3>
+    <form id="event-settings-form" method="POST" action="{% url 'client:update_event_settings' event.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="event-date" class="form-label">Event Date</label>
+            <input type="datetime-local" class="form-control" id="event-date" name="event_date" required value="{{ event.date|date:'Y-m-d H:i' }}" 
+            {% if event.registration_end_date < now or event.max_participants == event.number_of_registrations %}disabled{% endif %}>
+        </div>
+        <div class="mb-3">
+            <label for="registration-end-date" class="form-label">Registration End Date</label>
+            <input type="datetime-local" class="form-control" id="registration-end-date" name="registration_end_date" required value="{{ event.registration_end_date|date:'Y-m-d H:i' }}" 
+            {% if event.registration_end_date < now or event.max_participants == event.number_of_registrations %}disabled{% endif %}>
+        </div>
+        <div class="mb-3">
+            <label for="participant-limit" class="form-label">Max Participants</label>
+            <input type="number" class="form-control" id="participant-limit" name="max_participants" min="1" value="{{event.max_participants}}" 
+            {% if event.registration_end_date < now or event.max_participants == event.number_of_registrations %}disabled{% endif %}>
+        </div>
+        <div class="mb-3">
+            <label for="registration-enabled" class="form-label">Registration Status</label>
+            <select class="form-select" id="registration-enabled" name="registration_enabled" 
+            {% if event.registration_end_date < now or event.max_participants == event.number_of_registrations %}disabled{% endif %}>
+                <option value="open" {% if event.registration_status == 'open' %}selected{% endif %}>Open</option>
+                <option value="closed" {% if event.registration_status == 'closed' %}selected{% endif %}>Closed</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" 
+        {% if event.registration_end_date|date:"Y-m-d H:i" < now|date:"Y-m-d H:i" or event.max_participants == event.registered_participants %}disabled{% endif %}>Save Settings</button>
+    </form>
+</div>
+
+
+
+<div id="attendees" class="event-section" style="display: none;">
+    <h3>Attendees List</h3>
+    
+    {% if event.certificate_provided %}
+        <div class="d-flex justify-content-end mb-4">
+            <button id="generate-certificates-attendees" class="btn btn-success me-2 generate-certificates" data-event-id="{{ event.id }}" {% if not event.certificate_template %}disabled{% endif %}>
+                <i class="fas fa-certificate me-2"></i>Send Certificates to Participants
+            </button>
+            {% if not event.certificate_template %}
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#certificateTemplateModal">
+                    <i class="fas fa-upload me-2"></i>Upload Certificate Template
+                </button>
+            {% else %}
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#certificateTemplateModal" disabled>
+                <i class="fas fa-upload me-2"></i>Uploaded
+            </button>
+            {% endif %}
+        </div>
+
+        {% if not event.certificate_template %}
+            <div class="alert alert-warning mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Certificate generation is enabled but no template has been uploaded. Please upload a template to generate certificates.
+            </div>
+       
+        {% endif %}
+
+        <div class="modal fade" id="certificateTemplateModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Certificate Template</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="certificateTemplateForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="certificateTemplate" class="form-label">Certificate Template Image (PNG/JPG)</label>
+                                <input type="file" class="form-control" id="certificateTemplate" name="certificate_template" accept="image/*" required>
+                                <small class="form-text text-muted">
+                                    Upload your certificate template with a blank space in the center where the participant's name will be added. 
+                                    The template should already include your event title, date, and any other static content.
+                                </small>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                The participant's name will be automatically centered in the template. Make sure your template has adequate space in the middle for names of varying lengths.
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload Template</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    <ul>
+        {% for attendee in attendees %}
+        <li>{{ attendee.name }} - {{ attendee.email }}</li>
+        {% empty %}
+        <li>No attendees available.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+
+<div id="leaderboard" class="event-section" style="display: none;">
+    <h3 class="mb-4">Quiz Leaderboard</h3>
+
+    {% if event.certificate_provided %}
+        <div class="d-flex justify-content-end mb-4">
+            <button id="generate-certificates-leaderboard" class="btn btn-success me-2 generate-certificates" data-event-id="{{ event.id }}" {% if not event.certificate_template %}disabled{% endif %}>
+                <i class="fas fa-certificate me-2"></i>Send Certificates to Participants
+            </button>
+            {% if not event.certificate_template %}
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#certificateTemplateModal">
+                    <i class="fas fa-upload me-2"></i>Upload Certificate Template
+                </button>
+            {% else %}
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#certificateTemplateModal" disabled>
+                <i class="fas fa-upload me-2"></i>Uploaded
+            </button>
+            {% endif %}
+        </div>
+
+        {% if not event.certificate_template %}
+            <div class="alert alert-warning mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Certificate generation is enabled but no template has been uploaded. Please upload a template to generate certificates.
+            </div>
+       
+        {% endif %}
+
+        <!-- Certificate Template Modal -->
+        <div class="modal fade" id="certificateTemplateModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Certificate Template</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="certificateTemplateForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="certificateTemplate" class="form-label">Certificate Template Image (PNG/JPG)</label>
+                                <input type="file" class="form-control" id="certificateTemplate" name="certificate_template" accept="image/*" required>
+                                <small class="form-text text-muted">
+                                    Upload your certificate template with a blank space in the center where the participant's name will be added. 
+                                    The template should already include your event title, date, and any other static content.
+                                </small>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                The participant's name will be automatically centered in the template. Make sure your template has adequate space in the middle for names of varying lengths.
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload Template</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+        <div class="top-winners mb-5">
+            <div class="winners-podium">
+                {% if leaderboard %}
+                    <!-- Second Place -->
+                    {% if leaderboard|length > 1 %}
+                    <div class="winner-card second-place">
+                        <div class="position-badge">2</div>
+                        <div class="winner-avatar" style="margin-top:-10px;">
+                            {% if leaderboard.1.profile_picture %}
+                                <img src="{{ leaderboard.1.profile_picture }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                                <i class="fas fa-user-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="winner-name">{{ leaderboard.1.name }}</div>
+                        <div class="winner-score">{{ leaderboard.1.score }} points</div>
+                        <div class="medal"><i class="fas fa-medal" style="color: #C0C0C0;"></i></div>
+                    </div>
+                    {% endif %}
+
+                    <!-- First Place -->
+                    {% if leaderboard|length > 0 %}
+                    <div class="winner-card first-place">
+                        <!-- <div class="position-badge">1</div> -->
+                        <div class="crown-icon">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="winner-avatar">
+                            {% if leaderboard.0.profile_picture %}
+                                <img src="{{ leaderboard.0.profile_picture }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                                <i class="fas fa-user-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="winner-name">{{ leaderboard.0.name }}</div>
+                        <div class="winner-score">{{ leaderboard.0.score }} points</div>
+                        <div class="medal"><i class="fas fa-medal" style="color: #FFD700;"></i></div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Third Place -->
+                    {% if leaderboard|length > 2 %}
+                    <div class="winner-card third-place">
+                        <div class="position-badge">3</div>
+                        <div class="winner-avatar" style="margin-top:-20px;">
+                            {% if leaderboard.2.profile_picture %}
+                                <img src="{{ leaderboard.2.profile_picture }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                                <i class="fas fa-user-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="winner-name">{{ leaderboard.2.name }}</div>
+                        <div class="winner-score">{{ leaderboard.2.score }} points</div>
+                        <div class="medal"><i class="fas fa-medal" style="color: #CD7F32;"></i></div>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center mt-4">
+                        <i class="fas fa-trophy fa-3x mb-3" style="color: #4B49AC;"></i>
+                        <p class="lead">No quiz attempts yet. The podium is waiting for champions!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Full Rankings Table -->
+        <div class="rankings-table">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Participant</th>
+                        <th>Score</th>
+                        <th>Accuracy</th>
+                        <th>Attempt Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participant in leaderboard %}
+                    <tr class="ranking-row">
+                        <td class="rank-cell">
+                            <span class="rank-number">
+                                {% if forloop.counter == 1 %}
+                                    <i class="fas fa-crown" style="color: #FFD700;"></i>
+                                {% else %}
+                                    #{{ forloop.counter }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="participant-info">
+                                {% if participant.profile_picture %}
+                                    <img src="{{ participant.profile_picture }}" alt="Profile" class="participant-avatar">
+                                {% else %}
+                                    <i class="fas fa-user-circle fa-2x" style="color: #4B49AC;"></i>
+                                {% endif %}
+                                <span class="participant-name">{{ participant.name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="score-cell">
+                                <span class="score-number">{{ participant.score }} / {{ participant.total_possible_points }}</span>
+                                
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ participant.accuracy }}%</span>
+                        </td>
+                        <td>{{ participant.attempt_time }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                
+                                {% if event.prize_enabled and forloop.counter == 1 %}
+                                {% if prize_paid %}
+                                    <button type="button" class="btn btn-sm btn-success" disabled title="Prize Paid">
+                                        <i class="fas fa-check-circle"></i> Paid
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-success pay-prize-btn" 
+                                            data-winner-id="{{ participant.id }}" 
+                                            data-event-id="{{ event.id }}"
+                                            data-amount="{{ event.prize_amount }}"
+                                            title="Pay Prize Amount">
+                                        <i class="fas fa-money-bill-wave"></i> Pay ₹{{ event.prize_amount }}
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                            
+                            </div>
+                        </td>
+                        
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No participants have completed the quiz yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+</div>
+
+
+
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+$(document).ready(function() {
+    $('.pay-prize-btn').click(function() {
+        const winnerId = $(this).data('winner-id');
+        const eventId = $(this).data('event-id');
+        const amount = $(this).data('amount');
+
+        Swal.fire({
+            title: 'Confirm Prize Payment',
+            text: `Are you sure you want to pay ₹${amount} to the winner?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Pay Now',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '{% url "client:create_prize_payment" %}',
+                    type: 'POST',
+                    data: {
+                        winner_id: winnerId,
+                        event_id: eventId,
+                        amount: amount,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            // Initialize Razorpay payment
+                            var options = {
+                                key: response.key,
+                                amount: response.amount,
+                                currency: response.currency,
+                                name: response.name,
+                                description: response.description,
+                                order_id: response.order_id,
+                                handler: function(response) {
+                                    // Verify payment
+                                    $.ajax({
+                                        url: '{% url "client:verify_prize_payment" %}',
+                                        type: 'POST',
+                                        data: {
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_order_id: response.razorpay_order_id,
+                                            razorpay_signature: response.razorpay_signature,
+                                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                                        },
+                                        success: function(verifyResponse) {
+                                            if (verifyResponse.status === 'success') {
+                                                Swal.fire({
+                                                    title: 'Success!',
+                                                    text: 'Prize payment has been processed successfully.',
+                                                    icon: 'success',
+                                                    confirmButtonText: 'OK'
+                                                }).then(() => {
+                                                    location.reload();
+                                                });
+                                            }
+                                        },
+                                        error: function() {
+                                            Swal.fire({
+                                                title: 'Error!',
+                                                text: 'Payment verification failed.',
+                                                icon: 'error',
+                                                confirmButtonText: 'OK'
+                                            });
+                                        }
+                                    });
+                                },
+                                prefill: {
+                                    email: response.winner_email,
+                                    contact: response.winner_contact
+                                },
+                                theme: {
+                                    color: '#4B49AC'
+                                }
+                            };
+                            var rzp = new Razorpay(options);
+                            rzp.open();
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'There was an issue creating the payment.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+
+<script>
+    $(document).ready(function() {
+        // Project Details toggle
+        $('#project-details-toggle').click(function() {
+            $('#project-details-container').toggleClass('expanded');
+            $(this).find('i').toggleClass('fa-chevron-down fa-chevron-up');
+        });
+
+        // Toggle between event management sections
+        $('.btn-group button').click(function() {
+            var section = $(this).data('section');
+            $('.event-section').hide(); // Hide all sections
+            $('#' + section).show(); // Show the selected section
+            $('.btn-group button').removeClass('active btn-primary').addClass('btn-outline-secondary'); // Reset all buttons
+            $(this).removeClass('btn-outline-secondary').addClass('btn-primary'); // Highlight the clicked button
+        });
+
+        $('#send-event-link').click(function() {
+            var eventId = $(this).data('event-id');
+            $.ajax({
+                url: '{% url "client:send_event_link" %}', // Update with your URL
+                type: 'POST',
+                data: {
+                    event_id: eventId,
+                    csrfmiddlewaretoken: '{{ csrf_token }}' // Include CSRF token
+                },
+                success: function(response) {
+                    // Show SweetAlert on success
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Event link has been sent to all participants.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                error: function(xhr, status, error) {
+                    // Handle error
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'There was an issue sending the event link.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        });
+
+        // Certificate template upload
+        $('#certificateTemplateForm').submit(function(e) {
+            e.preventDefault();
+            
+            let formData = new FormData(this);
+            
+            $.ajax({
+                url: `/client/upload-certificate-template/{{ event.id }}/`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Certificate template uploaded successfully',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: xhr.responseJSON?.message || 'An error occurred while uploading the template',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        });
+
+        // Generate and send certificates
+        $('.generate-certificates').click(function() {
+            const eventId = $(this).data('event-id');
+            
+            Swal.fire({
+                title: 'Generate Certificates',
+                text: 'Are you sure you want to generate and send certificates to all participants?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Generate',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading animation without OK button
+                    Swal.fire({
+                        title: 'Sending...',
+                        text: 'Please wait while we generate the certificates.',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        onBeforeOpen: () => {
+                            Swal.showLoading(); // Show loading animation
+                        }
+                    });
+
+                    // Proceed with AJAX request if confirmed
+                    $.ajax({
+                        url: `/client/generate-certificates/${eventId}/`,
+                        type: 'POST',
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}' // Ensure CSRF token is included
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK' // OK button for success message
+                            });
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message || 'An error occurred while generating certificates',
+                                icon: 'error',
+                                confirmButtonText: 'OK' // OK button for error message
+                            });
+                        },
+                        complete: function() {
+                            // Close the loading animation
+                            Swal.close();
+                        }
+                    });
+                }
+            });
+        });
+
+        
+    });
+</script>
+
+{% endblock %}

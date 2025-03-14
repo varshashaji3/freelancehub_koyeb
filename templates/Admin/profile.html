@@ -316,8 +316,12 @@
             {% csrf_token %}
             <div class="mb-3">
               <label for="current_password" class="form-label">Current Password</label>
-              <input type="password" class="form-control" id="current_password" name="current_password"
-                >
+             
+                <div class="password-container">
+                  <input type="password" class="form-control password" id="current_password" name="current_password" required>
+                  <span class="password-toggle-icon" id="toggle_current_password"><i class="fa fa-eye"></i></span>
+                  
+                </div>
             </div>
             <div class="form-group mb-3">
               <label for="new_password" class="form-label">New Password</label>

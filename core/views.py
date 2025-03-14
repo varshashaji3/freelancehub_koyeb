@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.shortcuts import render,redirect
 
 from client.models import ClientProfile, Project, Review
-from .models import EmailVerification, Notification, PasswordReset, CustomUser, Register, SiteReview
+from .models import EmailVerification, Notification, PasswordReset, CustomUser, Register, SiteReview, UserSubscription, SubscriptionPlan
 from django.core.mail import EmailMessage
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -25,6 +25,9 @@ from administrator.views import admin_view
 from urllib.parse import urlparse, parse_qs, urlunparse
 from urllib.parse import urlencode
 from django.http import JsonResponse
+import razorpay
+import json
+from django.views.decorators.csrf import csrf_exempt
 
 
 def index(request):
@@ -38,7 +41,7 @@ def index(request):
 
     if request.user.is_authenticated or 'uid' in request.session:
         uid = request.user
-        print(uid)
+        
         return redirect_based_on_user_type(request, request.user)
         
     review_details = []
@@ -145,7 +148,6 @@ def service(request):
 
 def login_view(request):
     if request.user.is_authenticated and request.user.status=='active' :
-        print(f"User {request.user} is already authenticated, redirecting...")
         return redirect_based_on_user_type(request, request.user)
     
     return render(request, 'login.html', {'page': 'sign-in'})
@@ -154,9 +156,7 @@ def login_view(request):
 
 def register_view(request):
     if request.user.is_authenticated:
-        print(f"User {request.user} is already authenticated, redirecting...")
         return redirect_based_on_user_type(request, request.user)
-    print("Rendering register page")
     return render(request, 'login.html', {'page': 'sign-up'})
 
 def faqs(request):
@@ -218,41 +218,32 @@ def login(request):
 
 def redirect_based_on_user_type(request, user):
     user.backend = 'django.contrib.auth.backends.ModelBackend'
-    print(f"Redirecting user: {user}")
     
     existing_entry = Register.objects.filter(user_id=user.id).first()
     if not existing_entry:
         user2 = Register(user_id=user.id)
         user2.save()
-        print(f"Created Register entry for user: {user}")
     
-    print(f"User role: {user.role}")
     if not user.role:
-        print(f"User role not set, redirecting to add_user_type for user: {user}")
         return add_user_type(request, user.id)
     
     if user.status != 'active':
-        print(f"User status is not active, logging out user: {user}")
         return redirect('logout')
     
     
     if user.role == 'admin':
         auth_login(request, user)
         request.session['uid'] = user.id
-        print(f"Redirecting admin user: {user}")
         return redirect('administrator:admin_view')
     elif user.role == 'client':
         auth_login(request, user)
         request.session['uid'] = user.id
-        print(f"Redirecting client user: {user}")
         return redirect('client:client_view')
     elif user.role == 'freelancer':
         auth_login(request, user)
         request.session['uid'] = user.id
-        print(f"Redirecting freelancer user: {user}")
         return redirect('freelancer:freelancer_view')
     else:
-        print(f"User role is undefined, redirecting to login for user: {user}")
         return redirect('login')
 
 
@@ -326,7 +317,7 @@ def send_forget_password_mail(request):
         try:
             user = CustomUser.objects.get(email=email)
             token = str(uuid.uuid4())
-            msg = request.build_absolute_uri(f'/reset_password/{token}/')
+            msg = f'http://127.0.0.1:8000/reset_password/{token}/'
             context = {
                 'user': user,
                 'reset_link': msg
@@ -405,7 +396,7 @@ def resend_password_link(request):
             PasswordReset.objects.create(user_id=user, token=new_token, expires_at=expires_at)
 
             # Prepare the reset link
-            msg =  request.build_absolute_uri(f'/reset_password/{new_token}/')
+            msg = f'http://127.0.0.1:8000/reset_password/{new_token}/'
             context = {
                 'user': user,
                 'reset_link': msg
@@ -435,7 +426,7 @@ def send_verification_mail(request):
 
     token = str(uuid.uuid4())
     
-    verification_link =  request.build_absolute_uri(f'/email_verification/{token}/')
+    verification_link = f'http://127.0.0.1:8000/email_verification/{token}/'
     context = {
         'user': user,
         'reset_link': verification_link,
@@ -460,7 +451,6 @@ def send_verification_mail(request):
 def email_verification(request, token):
     verification = EmailVerification.objects.filter(token=token).first()
     if not verification:
-        print('Invalid or expired token.')
         return redirect('login_view')
     
     # Check if the token has expired
@@ -471,7 +461,6 @@ def email_verification(request, token):
         print('Expiration time not set for this token.')
     
     if is_expired:
-        print('Token has expired.')
         return render(request, 'email_verification.html', {'expired': True})
 
     uid = verification.user_id_id
@@ -480,7 +469,6 @@ def email_verification(request, token):
     user.save()
     verification.delete()
 
-    print('Email verified successfully.')
 
     context = {
         'token': token,
@@ -501,7 +489,7 @@ def resend_verification_email(request):
             verification.delete()
             
             new_token = str(uuid.uuid4())
-            verification_link = request.build_absolute_uri(f'/email_verification/{new_token}/')
+            verification_link = f'http://127.0.0.1:8000/email_verification/{new_token}/'
             context = {
                 'user': user,
                 'reset_link': verification_link,
@@ -591,7 +579,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Sum
 
-from decimal import Decimal  # Make sure Decimal is imported
+from decimal import Decimal 
 
 def update_cancellation_status(request, cancellation_id):
     if request.method == 'POST':
@@ -623,32 +611,30 @@ def update_cancellation_status(request, cancellation_id):
                 total_paid = total_paid_result['amount__sum'] or Decimal('0')
                 total_paid -= project.gst_amount
                 
-                # Determine if the requester is a client or freelancer
-                if cancellation.requested_by == project.user:  # Client cancels
+                if cancellation.requested_by == project.user:  
                     if total_paid > total_completed_amount:
                         overpayment = total_paid - total_completed_amount
                         if overpayment >= compensation_amount:
-                            # Sufficient overpayment for compensation, refund excess overpayment
+
                             amount_due = Decimal('0')
                             refund_amount = overpayment - compensation_amount
                             if refund_amount > Decimal('0'):
                                 RefundPayment.objects.create(
                                     user_id=project.freelancer.id,
-                                    pay_to=cancellation.requested_by,  # Refund to client
+                                    pay_to=cancellation.requested_by,  
                                     amount=refund_amount,
-                                    total_paid=total_paid,  # New entry
-                                    compensation_amount=compensation_amount  # New entry
+                                    total_paid=total_paid,  
+                                    compensation_amount=compensation_amount 
                                 )
                                 print(f"Refund entry created: {refund_amount} from freelancer {project.freelancer.id} to client {cancellation.requested_by.id}")
                         else:
-                            # Not enough overpayment for compensation
                             amount_due = compensation_amount - overpayment
                             RefundPayment.objects.create(
                                 user_id=cancellation.requested_by.id,
-                                pay_to=project.freelancer,  # Pay to freelancer
+                                pay_to=project.freelancer,  
                                 amount=overpayment,
-                                total_paid=total_paid,  # New entry
-                                compensation_amount=compensation_amount  # New entry
+                                total_paid=total_paid,  
+                                compensation_amount=compensation_amount  
                             )
                             print(f"Refund entry created: {overpayment} from client {cancellation.requested_by.id} to freelancer {project.freelancer.id}")
                     else:
@@ -688,11 +674,6 @@ from .models import RefundPayment  # Update the import to match your model path
 @csrf_exempt
 def payment_success(request):
     if request.method == 'POST':
-        # Debug print statements to check the received data
-        print("Received POST request for payment success")
-        print(request.POST)
-
-        # Get payment details from the request
         refund_payment_id = request.POST.get('refund_payment_id')
         payment_id = request.POST.get('payment_id')
         order_id = request.POST.get('order_id')
@@ -714,6 +695,98 @@ def payment_success(request):
         else:
             return JsonResponse({'status': 'failed', 'error': 'Invalid data received'}, status=400)
     
+
+@csrf_exempt
+def initiate_payment(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            subscription_plan_id = data.get('subscription_plan_id')
+            
+            # Get the subscription plan and user
+            plan = SubscriptionPlan.objects.get(id=subscription_plan_id)
+            user = CustomUser.objects.get(id=user_id)
+            
+            # Create a subscription entry with pending status
+            subscription = UserSubscription.objects.create(
+                user=user,
+                subscription_plan=plan,
+                payment_status='Pending',
+                amount=plan.price
+            )
+            
+            # Initialize Razorpay client
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+            
+            # Create a Razorpay order
+            amount = int(plan.price * 100)  # Convert to paise
+            order_data = {
+                'amount': amount,
+                'currency': 'INR',
+                'receipt': f'order_rcptid_{user_id}_{subscription_plan_id}',
+                'payment_capture': 1
+            }
+            order = client.order.create(data=order_data)
+            
+            # Update subscription with order ID
+            subscription.razorpay_order_id = order['id']
+            subscription.save()
+            
+            return JsonResponse({
+                'success': True,
+                'amount': amount,
+                'order_id': order['id'],
+                'subscription_id': subscription.id
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@csrf_exempt
+def subscription_payment_success(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            subscription_plan_id = data.get('subscription_plan_id')
+            user_id = data.get('user_id')
+            razorpay_payment_id = data.get('razorpay_payment_id')
+            razorpay_order_id = data.get('razorpay_order_id')
+            razorpay_signature = data.get('razorpay_signature')
+
+            if not (subscription_plan_id and user_id and razorpay_payment_id and razorpay_order_id and razorpay_signature):
+                return JsonResponse({'status': 'failed', 'error': 'Missing required parameters'}, status=400)
+            
+            # Get the user and subscription plan
+            user = CustomUser.objects.get(id=user_id)
+            plan = SubscriptionPlan.objects.get(id=subscription_plan_id)
+            
+            # Find or create a subscription for this user and plan
+            user_subscription, created = UserSubscription.objects.get_or_create(
+                user=user,
+                subscription_plan=plan,
+                payment_status='Pending',
+                defaults={'amount': plan.price}
+            )
+            
+            # Update subscription with payment details
+            user_subscription.razorpay_payment_id = razorpay_payment_id
+            user_subscription.razorpay_order_id = razorpay_order_id
+            user_subscription.payment_status = 'Completed'
+            user_subscription.start_date = timezone.now()
+            user_subscription.save()
+
+            return JsonResponse({'success': True})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'failed', 'error': 'Invalid JSON'}, status=400)
+        except (CustomUser.DoesNotExist, SubscriptionPlan.DoesNotExist):
+            return JsonResponse({'status': 'failed', 'error': 'User or subscription plan not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'error': str(e)}, status=500)
+    
+    return JsonResponse({'status': 'failed', 'error': 'Only POST requests are allowed'}, status=405)
 
 
 

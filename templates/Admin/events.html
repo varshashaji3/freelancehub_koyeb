@@ -1,0 +1,634 @@
+{% extends 'Admin/base.html' %}
+{% load static %}
+
+{% block 'admin_content' %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Events </h1>
+        <div>
+            <button onclick="downloadExcel()" class="btn btn-success rounded-pill px-3 mr-2">
+                <i class="fas fa-file-excel mr-1"></i> Export Excel
+            </button>
+            <button onclick="downloadPDF()" class="btn btn-danger rounded-pill px-3">
+                <i class="fas fa-file-pdf mr-1"></i> Export PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        
+        <div class="card-body">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs mb-3" id="eventTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="approved-tab" data-toggle="tab" href="#approved" role="tab">
+                        Approved <span class="badge badge-success ml-1">{{ approved_count }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
+                        Pending <span class="badge badge-warning ml-1">{{ pending_count }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="rejected-tab" data-toggle="tab" href="#rejected" role="tab">
+                        Rejected <span class="badge badge-danger ml-1">{{ rejected_count }}</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="eventTabContent">
+                <!-- Approved Events -->
+                <div class="tab-pane fade show active" id="approved" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="approvedTable" width="100%" cellspacing="0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="font-weight-bold">Title</th>
+                                    <th class="font-weight-bold">Organizer</th>
+                                    <th class="font-weight-bold">Type</th>
+                                    <th class="font-weight-bold">Status</th>
+                                    <th class="font-weight-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in events %}
+                                {% if item.event.approval_status == 'approved' %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.event.poster %}
+                                                    <img src="{{ item.event.poster.url }}" alt="Event Poster" class="rounded-circle mr-2 border" style="width: 45px; height: 45px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                {% endif %}
+                                                <div class="font-weight-bold">{{ item.event.title }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.organizer_picture %}
+                                                    <img src="{{ item.organizer_picture.url }}" alt="Organizer" class="rounded-circle mr-2 border" style="width: 35px; height: 35px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                {% endif %}
+                                                <div>{{ item.organizer_name }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="font-weight-medium">{{ item.type|title }}</span>
+                                            {% if item.subtype %}
+                                                <br><small class="text-muted">({{ item.subtype|title }})</small>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <span class="badge badge-pill badge-{% if item.event.event_status == 'upcoming' %}primary{% elif item.event.event_status == 'completed' %}success{% else %}secondary{% endif %} px-3">
+                                                {{ item.event.event_status|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-info rounded-pill px-3 mr-1" data-toggle="modal" data-target="#eventModal{{ item.event.id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if item.event.approval_status == 'pending' %}
+                                                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3 mr-1" onclick="approveEvent({{ item.event.id }})">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3" onclick="rejectEvent({{ item.event.id }})">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <span class="badge badge-pill badge-{% if item.event.approval_status == 'approved' %}success{% else %}danger{% endif %} px-3 ml-2">
+                                                        {{ item.event.approval_status|title }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal for event details -->
+                                    <div class="modal fade" id="eventModal{{ item.event.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title font-weight-bold">{{ item.type|title }} Details</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            {% if item.event.poster %}
+                                                                <img src="{{ item.event.poster.url }}" alt="Event Poster" class="img-fluid rounded shadow-sm mb-3">
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h4 class="font-weight-bold mb-3">{{ item.event.title }}</h4>
+                                                            <div class="info-group mb-2">
+                                                                <p class="mb-2"><strong class="text-primary">Description:</strong> {{ item.event.description }}</p>
+                                                                {% if item.event.approval_status == 'rejected' and item.event.rejection_reason %}
+                                                                    <p class="mb-2 bg-danger-light p-2 rounded">
+                                                                        <strong class="text-danger">Rejection Reason:</strong> 
+                                                                        <span class="text-danger">{{ item.event.rejection_reason }}</span>
+                                                                    </p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Date:</strong> {{ item.event_date }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Type:</strong> {{ item.type|title }}</p>
+                                                                {% if item.subtype %}
+                                                                    <p class="mb-2"><strong class="text-primary">Subtype:</strong> {{ item.subtype|title }}</p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Participants:</strong> {{ item.participants }}</p>
+                                                                {% if item.event.online_link %}
+                                                                    <p class="mb-2"><strong class="text-primary">Online Link:</strong> <a href="{{ item.event.online_link }}" target="_blank" class="btn btn-sm btn-outline-primary">Join Link</a></p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Certificate Provided:</strong> 
+                                                                    <span class="badge badge-{% if item.event.certificate_provided %}success{% else %}secondary{% endif %}">
+                                                                        {{ item.event.certificate_provided|yesno:"Yes,No" }}
+                                                                    </span>
+                                                                </p>
+                                                                {% if item.event.prize_enabled %}
+                                                                    <p class="mb-2"><strong class="text-primary">Prize Amount:</strong> <span class="text-success">₹{{ item.event.prize_amount }}</span></p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Registration Status:</strong> {{ item.event.registration_status|title }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Event Status:</strong> {{ item.event.event_status|title }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Organizer:</strong> {{ item.organizer_name }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Created On:</strong> {{ item.created_date }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer bg-light">
+                                                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">Close</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pending Events -->
+                <div class="tab-pane fade" id="pending" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="pendingTable" width="100%" cellspacing="0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="font-weight-bold">Title</th>
+                                    <th class="font-weight-bold">Organizer</th>
+                                    <th class="font-weight-bold">Type</th>
+                                    <th class="font-weight-bold">Status</th>
+                                    <th class="font-weight-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in events %}
+                                {% if item.event.approval_status == 'pending' %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.event.poster %}
+                                                    <img src="{{ item.event.poster.url }}" alt="Event Poster" class="rounded-circle mr-2 border" style="width: 45px; height: 45px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                {% endif %}
+                                                <div class="font-weight-bold">{{ item.event.title }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.organizer_picture %}
+                                                    <img src="{{ item.organizer_picture.url }}" alt="Organizer" class="rounded-circle mr-2 border" style="width: 35px; height: 35px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                {% endif %}
+                                                <div>{{ item.organizer_name }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="font-weight-medium">{{ item.type|title }}</span>
+                                            {% if item.subtype %}
+                                                <br><small class="text-muted">({{ item.subtype|title }})</small>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <span class="badge badge-pill badge-{% if item.event.event_status == 'upcoming' %}primary{% elif item.event.event_status == 'completed' %}success{% else %}secondary{% endif %} px-3">
+                                                {{ item.event.event_status|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-info rounded-pill px-3 mr-1" data-toggle="modal" data-target="#eventModal{{ item.event.id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if item.event.approval_status == 'pending' %}
+                                                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3 mr-1" onclick="approveEvent({{ item.event.id }})">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3" onclick="rejectEvent({{ item.event.id }})">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <span class="badge badge-pill badge-{% if item.event.approval_status == 'approved' %}success{% else %}danger{% endif %} px-3 ml-2">
+                                                        {{ item.event.approval_status|title }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal for event details -->
+                                    <div class="modal fade" id="eventModal{{ item.event.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title font-weight-bold">{{ item.type|title }} Details</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            {% if item.event.poster %}
+                                                                <img src="{{ item.event.poster.url }}" alt="Event Poster" class="img-fluid rounded shadow-sm mb-3">
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h4 class="font-weight-bold mb-3">{{ item.event.title }}</h4>
+                                                            <div class="info-group mb-2">
+                                                                <p class="mb-2"><strong class="text-primary">Description:</strong> {{ item.event.description }}</p>
+                                                                {% if item.event.approval_status == 'rejected' and item.event.rejection_reason %}
+                                                                    <p class="mb-2 bg-danger-light p-2 rounded">
+                                                                        <strong class="text-danger">Rejection Reason:</strong> 
+                                                                        <span class="text-danger">{{ item.event.rejection_reason }}</span>
+                                                                    </p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Date:</strong> {{ item.event_date }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Type:</strong> {{ item.type|title }}</p>
+                                                                {% if item.subtype %}
+                                                                    <p class="mb-2"><strong class="text-primary">Subtype:</strong> {{ item.subtype|title }}</p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Participants:</strong> {{ item.participants }}</p>
+                                                                {% if item.event.online_link %}
+                                                                    <p class="mb-2"><strong class="text-primary">Online Link:</strong> <a href="{{ item.event.online_link }}" target="_blank" class="btn btn-sm btn-outline-primary">Join Link</a></p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Certificate Provided:</strong> 
+                                                                    <span class="badge badge-{% if item.event.certificate_provided %}success{% else %}secondary{% endif %}">
+                                                                        {{ item.event.certificate_provided|yesno:"Yes,No" }}
+                                                                    </span>
+                                                                </p>
+                                                                {% if item.event.prize_enabled %}
+                                                                    <p class="mb-2"><strong class="text-primary">Prize Amount:</strong> <span class="text-success">₹{{ item.event.prize_amount }}</span></p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Registration Status:</strong> {{ item.event.registration_status|title }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Event Status:</strong> {{ item.event.event_status|title }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Organizer:</strong> {{ item.organizer_name }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Created On:</strong> {{ item.created_date }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer bg-light">
+                                                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">Close</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Rejected Events -->
+                <div class="tab-pane fade" id="rejected" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="rejectedTable" width="100%" cellspacing="0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="font-weight-bold">Title</th>
+                                    <th class="font-weight-bold">Organizer</th>
+                                    <th class="font-weight-bold">Type</th>
+                                    <th class="font-weight-bold">Status</th>
+                                    <th class="font-weight-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in events %}
+                                {% if item.event.approval_status == 'rejected' %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.event.poster %}
+                                                    <img src="{{ item.event.poster.url }}" alt="Event Poster" class="rounded-circle mr-2 border" style="width: 45px; height: 45px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                {% endif %}
+                                                <div class="font-weight-bold">{{ item.event.title }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.organizer_picture %}
+                                                    <img src="{{ item.organizer_picture.url }}" alt="Organizer" class="rounded-circle mr-2 border" style="width: 35px; height: 35px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                {% endif %}
+                                                <div>{{ item.organizer_name }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="font-weight-medium">{{ item.type|title }}</span>
+                                            {% if item.subtype %}
+                                                <br><small class="text-muted">({{ item.subtype|title }})</small>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <span class="badge badge-pill badge-{% if item.event.event_status == 'upcoming' %}primary{% elif item.event.event_status == 'completed' %}success{% else %}secondary{% endif %} px-3">
+                                                {{ item.event.event_status|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-info rounded-pill px-3 mr-1" data-toggle="modal" data-target="#eventModal{{ item.event.id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if item.event.approval_status == 'pending' %}
+                                                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3 mr-1" onclick="approveEvent({{ item.event.id }})">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3" onclick="rejectEvent({{ item.event.id }})">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <span class="badge badge-pill badge-{% if item.event.approval_status == 'approved' %}success{% else %}danger{% endif %} px-3 ml-2">
+                                                        {{ item.event.approval_status|title }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal for event details -->
+                                    <div class="modal fade" id="eventModal{{ item.event.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title font-weight-bold">{{ item.type|title }} Details</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            {% if item.event.poster %}
+                                                                <img src="{{ item.event.poster.url }}" alt="Event Poster" class="img-fluid rounded shadow-sm mb-3">
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h4 class="font-weight-bold mb-3">{{ item.event.title }}</h4>
+                                                            <div class="info-group mb-2">
+                                                                <p class="mb-2"><strong class="text-primary">Description:</strong> {{ item.event.description }}</p>
+                                                                {% if item.event.approval_status == 'rejected' and item.event.rejection_reason %}
+                                                                    <p class="mb-2 bg-danger-light p-2 rounded">
+                                                                        <strong class="text-danger">Rejection Reason:</strong> 
+                                                                        <span class="text-danger">{{ item.event.rejection_reason }}</span>
+                                                                    </p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Date:</strong> {{ item.event_date }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Type:</strong> {{ item.type|title }}</p>
+                                                                {% if item.subtype %}
+                                                                    <p class="mb-2"><strong class="text-primary">Subtype:</strong> {{ item.subtype|title }}</p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Participants:</strong> {{ item.participants }}</p>
+                                                                {% if item.event.online_link %}
+                                                                    <p class="mb-2"><strong class="text-primary">Online Link:</strong> <a href="{{ item.event.online_link }}" target="_blank" class="btn btn-sm btn-outline-primary">Join Link</a></p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Certificate Provided:</strong> 
+                                                                    <span class="badge badge-{% if item.event.certificate_provided %}success{% else %}secondary{% endif %}">
+                                                                        {{ item.event.certificate_provided|yesno:"Yes,No" }}
+                                                                    </span>
+                                                                </p>
+                                                                {% if item.event.prize_enabled %}
+                                                                    <p class="mb-2"><strong class="text-primary">Prize Amount:</strong> <span class="text-success">₹{{ item.event.prize_amount }}</span></p>
+                                                                {% endif %}
+                                                                <p class="mb-2"><strong class="text-primary">Registration Status:</strong> {{ item.event.registration_status|title }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Event Status:</strong> {{ item.event.event_status|title }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Organizer:</strong> {{ item.organizer_name }}</p>
+                                                                <p class="mb-2"><strong class="text-primary">Created On:</strong> {{ item.created_date }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer bg-light">
+                                                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">Close</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    border-top: none;
+}
+
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.badge-pill {
+    padding-right: 1em;
+    padding-left: 1em;
+}
+
+.info-group p {
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.info-group p:hover {
+    background-color: #f8f9fa;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 8px;
+}
+
+.modal-header {
+    border-radius: 8px 8px 0 0;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,.02);
+    transition: background-color 0.2s;
+}
+
+.nav-tabs .nav-link {
+    color: #4e73df;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    color: #2e59d9;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.bg-danger-light {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+</style>
+
+<!-- Include required libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Include SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Get active tab's table
+        const activeTab = document.querySelector('.tab-pane.active');
+        const table = activeTab.querySelector('table');
+        doc.autoTable({ html: table });
+        
+        // Download PDF
+        doc.save('events-list.pdf');
+    }
+
+    function downloadExcel() {
+        // Get active tab's table
+        const activeTab = document.querySelector('.tab-pane.active');
+        const table = activeTab.querySelector('table');
+        
+        // Convert table data to worksheet
+        const ws = XLSX.utils.table_to_sheet(table);
+        
+        // Create workbook and add worksheet
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Events');
+        
+        // Download Excel file
+        XLSX.writeFile(wb, 'events-list.xlsx');
+    }
+
+    function approveEvent(eventId) {
+        Swal.fire({
+            title: 'Confirm Approval',
+            text: 'Are you sure you want to approve this event?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, approve it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Send approval request to backend
+                fetch("{% url 'administrator:approve_event' 0 %}".replace('0', eventId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Approved!', 'The event has been approved.', 'success')
+                        .then(() => location.reload());
+                    } else {
+                        Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function rejectEvent(eventId) {
+        Swal.fire({
+            title: 'Reject Event',
+            html: `
+                <form id="rejectionForm">
+                    <div class="form-group">
+                        <label for="rejection_reason" class="float-left">Rejection Reason:</label>
+                        <textarea id="rejection_reason" class="form-control" rows="4" required></textarea>
+                    </div>
+                </form>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Reject',
+            preConfirm: () => {
+                const reason = document.getElementById('rejection_reason').value;
+                if (!reason) {
+                    Swal.showValidationMessage('Please provide a rejection reason');
+                    return false;
+                }
+                return reason;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Send rejection request to backend
+                fetch("{% url 'administrator:reject_event' 0 %}".replace('0', eventId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        reason: result.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Rejected!', 'The event has been rejected.', 'success')
+                        .then(() => location.reload());
+                    } else {
+                        Swal.fire('Error!', data.message || 'Something went wrong.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+{% endblock %}
+ 

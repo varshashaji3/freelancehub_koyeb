@@ -172,6 +172,11 @@
     }
 </script>
 
+<!-- New button to create a portfolio -->
+<div class="row" >
+    <a href="{% url 'freelancer:template_list' %}" class="btn" style="width: auto;margin-left:820px;margin-top:20px;">Create New Portfolio</a>
+</div>
+
     {% if portfolios %}
     <div id="template-container">
         {% for portfolio in portfolios %}
@@ -184,17 +189,15 @@
             <div class="card-overlay">
                 <p class="card-text">Created on: {{ portfolio.created_at|date:"F j, Y" }}</p>
                 <div class="icon-group" style="display: flex; justify-content: center; gap: 10px;">
-                    {% if portfolio.portfolio_file and portfolio.portfolio_file.url %}
-                        <a class="btn" href="{{ portfolio.portfolio_file.url }}" download>
-                            <i class="fas fa-download"></i>
-                        </a>
-                        <a class="btn" href="{{ portfolio.portfolio_file.url }}" target="_blank">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a class="btn" href="{% url 'freelancer:edit_portfolio' portfolio.id %}">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                    {% endif %}
+                    <a class="btn" href="{{ portfolio.portfolio_file.url }}" download>
+                        <i class="fas fa-download"></i>
+                    </a>
+                    <a class="btn" href="{{ portfolio.portfolio_file.url }}" target="_blank">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a class="btn" href="{% url 'freelancer:edit_portfolio' portfolio.id %}">
+                        <i class="fas fa-edit"></i>
+                    </a>
                 </div>
             </div>
         </div>

@@ -80,6 +80,18 @@
     .todo-form input {
         margin-right: 10px;
     }
+
+    .todo-actions {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
+    }
+
+    .btn-edit[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
 </style>
 
 
@@ -162,10 +174,13 @@ $("#update_form").submit(function () {
   }
 });
 
-// Add this new event handler
+// Replace the existing checkbox change handler with this updated version
 $(".todo-checkbox").change(function() {
-    var todoId = $(this).data('id');
-    var isCompleted = $(this).prop('checked');
+    var $checkbox = $(this);
+    var todoId = $checkbox.data('id');
+    var isCompleted = $checkbox.prop('checked');
+    var $todoItem = $(`#todo-item-${todoId}`);
+    var $editButton = $todoItem.find('.btn-edit');
     
     $.ajax({
         url: "{% url 'freelancer:update_todo_status' %}",
@@ -177,16 +192,24 @@ $(".todo-checkbox").change(function() {
         },
         success: function(response) {
             if (response.status === 'success') {
+                // Update UI based on the current state
                 if (isCompleted) {
-                    $(`#todo-item-${todoId}`).addClass('completed');
+                    $todoItem.addClass('completed');
+                    $editButton.attr('disabled', true);
+                    $checkbox.attr('disabled', true);  // Disable the checkbox
                 } else {
-                    $(`#todo-item-${todoId}`).removeClass('completed');
+                    $todoItem.removeClass('completed');
+                    $editButton.attr('disabled', false);
                 }
             } else {
+                // Revert checkbox state if the server update failed
+                $checkbox.prop('checked', !isCompleted);
                 alert('Failed to update todo status');
             }
         },
         error: function() {
+            // Revert checkbox state on error
+            $checkbox.prop('checked', !isCompleted);
             alert('An error occurred while updating todo status');
         }
     });
@@ -203,21 +226,23 @@ $(".todo-checkbox").change(function() {
                     <li id="todo-item-{{ todo.id }}" class="{% if todo.is_completed %}completed{% endif %}">
                         <div class="form-check form-check-flat">
                             <label class="form-check-label">
-                                <input class="checkbox todo-checkbox" type="checkbox" data-id="{{ todo.id }}" {% if todo.is_completed %}checked{% endif %}>
+                                <input class="checkbox todo-checkbox" type="checkbox" data-id="{{ todo.id }}" {% if todo.is_completed %}checked disabled{% endif %}>
                                 {{ todo.title }}
                             </label>
                         </div>
-                        <a href="#" class="btn btn-primary btn-edit" data-title="{{ todo.title }}" data-id="{{ todo.id }}"
-                           style="text-decoration: none; color: white; margin-left: 370px; padding: 10px;">
-                            Edit
-                        </a>
-                        <form action="{% url 'freelancer:delete_todo' todo.id %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="next" value="{{ request.path }}">
-                            <button type="submit" class="btn btn-danger" style="padding: 10px; margin-left: 10px;">
-                                Delete
-                            </button>
-                        </form>
+                        <div class="todo-actions">
+                            <a href="#" class="btn btn-primary btn-edit" data-title="{{ todo.title }}" data-id="{{ todo.id }}"
+                                style="text-decoration: none; color: white; padding: 10px;" {% if todo.is_completed %}disabled{% endif %}>
+                                Edit
+                            </a>
+                            <form action="{% url 'freelancer:delete_todo' todo.id %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" class="btn btn-danger" style="padding: 10px;">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>

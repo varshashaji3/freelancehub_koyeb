@@ -24,7 +24,34 @@
   <!-- endinject -->
   <link rel="shortcut icon" href="{%  static 'images/favicon.png' %}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* Chatbot styles */
+    #chatbox {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: none; /* Initially hidden */
+        z-index: 1000;
+    }
+    #messages {
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+    }
+    #user_input {
+        width: calc(100% - 60px);
+        padding: 10px;
+    }
+    #send_button {
+        padding: 10px;
+    }
+  </style>
 </head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 
@@ -175,6 +202,39 @@
   #reviewForm button:hover {
     background-color: #45a049; /* Darker green on hover */
   }
+
+  .close-button {
+        color: white;
+        cursor: pointer;
+        font-size: 20px;
+    }
+
+    .close-button:hover {
+        color: #ffdddd;
+    }
+
+    .chat-toggle-button {
+        background-color: #007bff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Floating animation */
+    @keyframes float {
+        0% { transform: translatey(0); }
+        50% { transform: translatey(-10px); }
+        100% { transform: translatey(0); }
+    }
+
+    .floating {
+        animation: float 2s ease-in-out infinite;
+    }
 </style>
 
 <script>
@@ -231,10 +291,22 @@
           <span class="icon-menu"></span>
         </button>
         <ul class="navbar-nav mr-lg-2">
-
+          <!-- Remove these items from here -->
         </ul>
         <ul class="navbar-nav navbar-nav-right">
-
+          <li class="nav-item">
+            <a href="{% url 'freelancer:plans' %}" id="upgradeBtn" class="btn btn-warning" style="margin-right: 15px;">
+              Upgrade
+          </a>
+        </li>
+          <!-- Add this new list item for the Open to Work button -->
+          <li class="nav-item">
+              <button id="openToWorkBtn" class="btn {% if freelancer.is_open_to_work %}btn-success{% else %}btn-primary{% endif %}" style="margin-right: 15px;">
+                  <i class="fas fa-briefcase"></i> {% if freelancer.is_open_to_work %}Not Open to Work{% else %}Open to Work{% endif %}
+              </button>
+          </li>
+          
+          <!-- Existing notification dropdown and other items -->
           <li class="nav-item dropdown">
             <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-toggle="dropdown">
                 <i class="icon-bell mx-0"></i>
@@ -256,12 +328,10 @@
                                 {{ notification.created_at|timesince }} ago
                             </p>
                         </div>
-                        <form action="{% url 'freelancer:notification_mark_as_read' not_id=notification.id %}?next={{ request.path }}" method="post">
-
+                        <form action="{% url 'freelancer:notification_mark_as_read' notification.id %}" method="post">
                           {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-link">Mark as Read</button>
+                          <input type="submit" class="btn btn-success btn-sm" value="Mark as Read">
                       </form>
-                      
                     </div>
                 </a>
                 {% endfor %}
@@ -298,11 +368,11 @@
 
             </div>
           </li>
-          <li class="nav-item nav-settings d-none d-lg-flex">
+          <!-- <li class="nav-item nav-settings d-none d-lg-flex">
             <a class="nav-link" href="#">
               <i class="icon-ellipsis"></i>
             </a>
-          </li>
+          </li> -->
           <!-- Add this new list item for the review button -->
         
         </ul>
@@ -381,6 +451,7 @@
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
+         
       
           <li class="nav-item">
             <a class="nav-link" href="{% url 'freelancer:account_settings' %}">
@@ -389,69 +460,46 @@
             </a>
           </li>
       
+          
           <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#project" aria-expanded="false" aria-controls="ui-basic">
-              <i class="fas fa-tasks menu-icon"></i> <!-- Project Icon -->
-              <span class="menu-title">Project</span>
+            <a class="nav-link" href="{% url 'freelancer:analyze_skill_gap' %}">
+              <i class="fas fa-chart-line menu-icon"></i> <!-- Skill Analysis Icon -->
+              <span class="menu-title">Skill Analysis</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#projects" aria-expanded="false" aria-controls="ui-basic">
+              <i class="fas fa-folder menu-icon"></i> <!-- Complaints Icon -->
+              <span class="menu-title">Manage Projects</span>
               <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="project">
+            <div class="collapse" id="projects">
               <ul class="nav flex-column sub-menu">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'freelancer:view_project' %}">View Project</a>
+                <li class="nav-item"> <a class="nav-link"  href="{% url 'freelancer:view_project' %}">Available Projects</a></li>
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:view_created_proposals' %}">My Project Proposals</a>
+                </li>
+                <li class="nav-item"> <a class="nav-link" href="{% url 'freelancer:freelancer_repositories' %}">Project Repositories</a>
                 </li>
               </ul>
             </div>
           </li>
-      
-          <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#proposal" aria-expanded="false" aria-controls="ui-basic">
-              <i class="fas fa-file-alt menu-icon"></i> <!-- Proposal Icon -->
-              <span class="menu-title">Project Proposals</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="proposal">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'freelancer:view_created_proposals' %}">Submitted Proposals</a>
-                </li>
-              </ul>
-            </div>
-          </li>
-      
-          <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#repos" aria-expanded="false" aria-controls="ui-basic">
-              <i class="fas fa-code-branch menu-icon"></i> <!-- Repositories Icon -->
-              <span class="menu-title">Repositories</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="repos">
-              <ul class="nav flex-column sub-menu">
-                {% for repo in repositories %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'freelancer:view_repository' repo.id %}">{{ repo.name }}</a>
-                </li>
-                {% empty %}
-                <li class="nav-item">No repositories found.</li>
-                {% endfor %}
-              </ul>
-            </div>
-          </li>
-      
-          <li class="nav-item">
+          
+
+          <!-- <li class="nav-item">
             <a class="nav-link" href="{% url 'freelancer:tasks_list' %}">
               <i class="fas fa-tasks menu-icon"></i> <!-- Tasks Icon -->
-              <span class="menu-title">Tasks</span>
+              <!-- <span class="menu-title">Tasks</span>
             </a>
-          </li>
+          </li> --> 
       
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <a class="nav-link" href="{% url 'freelancer:client_list' %}">
-              <i class="fas fa-users menu-icon"></i> <!-- Clients Icon -->
+              <i class="fas fa-users menu-icon"></i>
               <span class="menu-title">Clients</span>
             </a>
           </li>
-      
+       -->
           <li class="nav-item">
             <a class="nav-link" href="{% url 'freelancer:todo' %}">
               <i class="fas fa-clipboard-list menu-icon"></i> <!-- Todo Icon -->
@@ -512,11 +560,25 @@
           </li>
       
           <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:my_teams' %}">
+              <i class="fas fa-users-cog menu-icon"></i> <!-- Team Management Icon -->
+              <span class="menu-title">Manage Team</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'freelancer:events_and_quizzes_view' %}">
+              <i class="fas fa-calendar-check menu-icon"></i> <!-- Events & Quizzes Icon -->
+              <span class="menu-title">Events & Quizzes</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{% url 'logout'%}">
               <i class="fas fa-sign-out-alt menu-icon"></i> <!-- Logout Icon -->
               <span class="menu-title">Logout</span>
             </a>
           </li>
+
+          
         </ul>
       </nav>
       
@@ -540,14 +602,14 @@
 
 
 
+ 
   <div id="siteReviewModal" class="modal">
     <div class="modal-content">
         <h2>We Value Your Feedback</h2>
         <img src="{% static 'img/review.png' %}" alt="Feedback Image" class="modal-image">
-        <form id="SiteReviewForm" method="post" action="{% url 'site_review' %}?next={{ request.path }}">
+        <form id="reviewForm" method="post" action="{% url 'site_review' %}?next={{ request.path }}">
             {% csrf_token %}
             <textarea name="review_text" placeholder="Your review" required></textarea>
-            <span id="siteReviewError" class="error"></span>
             <p>Please rate your experience with FreelanceHub on a scale from 1 to 5</p>
             <div class="star-rating">
               <input type="radio" id="star5" name="rating" value="5">
@@ -561,7 +623,8 @@
               <input type="radio" id="star1" name="rating" value="1">
               <label for="star1" title="1 star">&#9733;</label>
             </div>
-            <span id="siteRatingError" class="error"></span>
+            
+          
             <button type="submit">Submit Review</button>
         </form>
     </div>
@@ -628,7 +691,7 @@
         {% endif %}
       });
       </script>
-      <script>
+      <!-- <script>
         $(document).ready(function() {
           $("#reviewForm").submit(function(event) {
               var isValid = validateForm();
@@ -686,7 +749,7 @@
               }
           });
       });
-      </script>
+      </script> -->
 
       <div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -887,6 +950,347 @@
   <script src="{%  static 'js/dashboard.js' %}"></script>
   <script src="{%  static 'js/Chart.roundedBarCharts.js' %} "></script>
   <!-- End custom js for this page-->
+
+  <!-- Chat Button -->
+  <div id="supportChatButton" class="chat-toggle-button floating" style="position: fixed; bottom: 40px; right: 20px; z-index: 1000; background-color: #063970; transition: transform 0.3s; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+    <img src="{% static 'img/robot-assistant.png' %}" alt="Chat" style="width: 50px; height: 50px;" id="chatIcon">
+</div>
+<div id="closeChatButton" class="chat-toggle-button" style="display: none; position: fixed; bottom: 40px; right: 20px; z-index: 1000; background-color: #063970; transition: transform 0.3s; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+    <span class="close-button" style="font-size: 28px; cursor: pointer;">&times;</span>
+</div>
+  <div id="supportChatWidget" class="chat-widget" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 400px; background: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); z-index: 1000; overflow: hidden;">
+      <!-- Chat Header -->
+      <div class="chat-header" style="background-color: #063970; color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="{% static 'img/robot-assistant.png' %}" alt="Bot Avatar" style="width: 30px; height: 30px; border-radius: 50%;">
+              <span style="font-weight: bold;">FreelanceHub Assistant</span>
+          </div>
+          <span id="closeChatButton" style="cursor: pointer; font-size: 20px;">&times;</span>
+      </div>
+
+      <!-- Chat Body -->
+      <div class="chat-body" style="height: calc(100% - 180px); background-color: #f8f9fa; overflow-y: auto; padding: 15px;">
+          <div id="chat-messages">
+              <!-- Messages will appear here -->
+              <div class="bot-message" style="font-size: 13px;">
+                  Hi! I'm FreelanceHub Assistant. How can I help you today?
+              </div>
+          </div>
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="chat-input-area" style="padding: 15px; background-color: #fff; border-top: 1px solid #dee2e6;">
+          <div style="display: flex; gap: 10px;">
+              <input type="text" id="user-input" placeholder="Type your message..." 
+                     style="flex-grow: 1; padding: 10px; border: 1px solid #dee2e6; border-radius: 5px; outline: none;">
+              <button id="send-button" 
+                      style="background-color: #063970; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                  Send
+              </button>
+          </div>
+      </div>
+
+      <!-- Chat Footer -->
+      <div class="chat-footer" style="padding: 5px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
+          <small style="color: #6c757d;">Powered by FreelanceHub</small>
+      </div>
+  </div>
+
+  <style>
+      /* Animation for chat widget */
+      @keyframes slideIn {
+          from {
+              transform: translateX(100%);
+              opacity: 0;
+          }
+          to {
+              transform: translateX(0);
+              opacity: 1;
+          }
+      }
+
+      @keyframes slideOut {
+          from {
+              transform: translateX(0);
+              opacity: 1;
+          }
+          to {
+              transform: translateX(100%);
+              opacity: 0;
+          }
+      }
+
+      #supportChatWidget {
+          animation: slideIn 0.3s ease-out;
+      }
+
+      #supportChatWidget.hiding {
+          animation: slideOut 0.3s ease-in;
+      }
+
+      /* Hover effect for chat button */
+      #supportChatButton:hover {
+          transform: scale(1.1);
+          transition: transform 0.2s ease;
+      }
+
+      /* Responsive design */
+      @media (max-width: 480px) {
+          #supportChatWidget {
+              width: 90%;
+              right: 5%;
+              bottom: 80px;
+          }
+          
+          #supportChatButton {
+              bottom: 20px;
+              right: 10px;
+          }
+      }
+
+      /* Message Styles */
+      .bot-message, .user-message {
+          margin-bottom: 15px;
+          padding: 10px 15px;
+          border-radius: 15px;
+          max-width: 80%;
+          word-wrap: break-word;
+      }
+
+      .bot-message {
+          background-color: #e9ecef;
+          color: #212529;
+          margin-right: auto;
+          border-bottom-left-radius: 5px;
+      }
+
+      .user-message {
+          background-color: #063970;
+          color: white;
+          margin-left: auto;
+          border-bottom-right-radius: 5px;
+      }
+
+      #user-input:focus {
+          border-color: #063970;
+          box-shadow: 0 0 0 2px rgba(6, 57, 112, 0.1);
+      }
+
+      #send-button:hover {
+          background-color: #052c56;
+      }
+
+      /* Loading Animation */
+      .typing-indicator {
+          background-color: #e9ecef;
+          padding: 10px 15px;
+          border-radius: 15px;
+          margin-bottom: 15px;
+          display: none;
+      }
+
+      .typing-indicator span {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          background-color: #6c757d;
+          border-radius: 50%;
+          margin-right: 5px;
+          animation: typing 1s infinite;
+      }
+
+      .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+      .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes typing {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+      }
+  </style>
+
+  <script>
+  $(document).ready(function() {
+    $("#supportChatButton").click(function () {
+            $("#supportChatWidget").toggle();
+            $("#supportChatButton").hide();
+            $("#closeChatButton").show();
+        });
+
+      $("#closeChatButton, #closeChatHeader").click(function() {
+          $("#supportChatWidget").addClass('hiding');
+          setTimeout(function() {
+              $("#supportChatWidget").hide().addClass('hiding');
+              $("#supportChatButton").show();
+              
+            $("#closeChatButton").hide();
+          }, 290);
+      });
+
+      // Handle window resize
+      $(window).resize(function() {
+          if ($(window).width() <= 480) {
+              $("#supportChatWidget").css({
+                  'width': '90%',
+                  'right': '5%'
+              });
+          } else {
+              $("#supportChatWidget").css({
+                  'width': '350px',
+                  'right': '20px'
+              });
+          }
+      });
+
+      // Add typing indicator to chat
+      $('#chat-messages').append(`
+          <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+          </div>
+      `);
+
+      // Handle send button click
+      $('#send-button').click(sendMessage);
+
+      // Handle enter key press
+      $('#user-input').keypress(function(e) {
+          if (e.which == 13) { // Enter key
+              sendMessage();
+          }
+      });
+
+      function sendMessage() {
+          const userInput = $('#user-input').val().trim();
+          if (!userInput) return;
+
+          // Add user message to chat
+          $('#chat-messages').append(`
+              <div class="user-message">${userInput}</div>
+          `);
+          
+          // Clear input field
+          $('#user-input').val('');
+
+          // Add typing indicator below user message
+          $('#chat-messages').append(`
+              <div class="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+              </div>
+          `);
+          scrollToBottom();
+
+          // Send to backend
+          $.ajax({
+              url: '/chatbot/chat/',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify({ message: userInput }),
+              success: function(data) {
+                  setTimeout(() => {
+                      $('.typing-indicator').remove(); // Remove instead of hide
+                      $('#chat-messages').append(`
+                          <div class="bot-message" style="font-size: 13px;">${data.response}</div>
+                      `);
+                      scrollToBottom();
+                  }, 1000);
+              },
+              error: function() {
+                  setTimeout(() => {
+                      $('.typing-indicator').remove(); // Remove instead of hide
+                      $('#chat-messages').append(`
+                          <div class="bot-message" style="background-color: #ffebee; color: #c62828; font-size: 13px;">
+                              Sorry, I couldn't process your request. Please try again.
+                          </div>
+                      `);
+                      scrollToBottom();
+                  }, 1000);
+              }
+          });
+      }
+
+      function scrollToBottom() {
+          const chatBody = $('.chat-body');
+          chatBody.scrollTop(chatBody[0].scrollHeight);
+      }
+
+      // Focus input when chat opens
+      $("#supportChatButton").click(function() {
+          setTimeout(() => {
+              $('#user-input').focus();
+          }, 300);
+      });
+  });
+  </script>
+
+  <!-- Add this script before the closing body tag -->
+  <script>
+    $(document).ready(function() {
+        $('#openToWorkBtn').click(function() {
+            const isOpenToWork = $(this).hasClass('btn-success'); // Check current status
+            const confirmationText = isOpenToWork 
+                ? 'Are you sure you want to mark yourself as not open to work?' 
+                : 'Are you sure you want to mark yourself as open to work?';
+
+            Swal.fire({
+                title: 'Toggle Work Status',
+                text: confirmationText,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: isOpenToWork ? 'Yes, mark as not open!' : 'Yes, mark as open!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const newStatus = isOpenToWork ? 'close' : 'open'; // Determine new status
+                    $.ajax({
+                        url: '{% url "freelancer:toggle_open_to_work" %}',  // Update this line
+                        type: 'POST',
+                        data: {
+                            'csrfmiddlewaretoken': '{{ csrf_token }}',
+                            'status': newStatus
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                // Update button text and class based on new status
+                                const newText = newStatus === 'open' ? 'Not Open to Work' : 'Open to Work';
+                                const newClass = newStatus === 'open' ? 'btn-success' : 'btn-primary';
+
+                                $('#openToWorkBtn')
+                                    .removeClass('btn-primary btn-success')
+                                    .addClass(newClass)
+                                    .text(newText);
+                                
+                                // Display the success message
+                                Swal.fire(
+                                    'Updated!',
+                                    response.message,  // Use the message from the response
+                                    'success'
+                                );
+                            } else {
+                                Swal.fire(
+                                    'Error!',
+                                    'Something went wrong.',
+                                    'error'
+                                );
+                            }
+                        },
+                        error: function() {
+                            Swal.fire(
+                                'Error!',
+                                'Something went wrong.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+    });
+  </script>
 
 </body>
 

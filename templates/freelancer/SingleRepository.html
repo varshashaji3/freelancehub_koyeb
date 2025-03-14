@@ -805,8 +805,8 @@ font-size: 12px;
 
 
 <div class="container-fluid row" style="width: 1000px;">
-    <div id="project-details-container" style="width: 930px; margin-left: -2px;">
-        <div id="project-details-toggle" class="cursor-pointer" style="width: 800px;color: #ff0057;margin-left: 300px;background-color: transparent;font-size: 20px;padding-bottom: 10px;">
+    <div id="project-details-container" style="width: 950px; margin-left: -10px;">
+        <div id="project-details-toggle" class="cursor-pointer" style="width: 1000px;color: #ff0057;margin-left: 300px;background-color: transparent;font-size: 20px;padding-bottom: 10px;">
             Project Details <i class="fas fa-chevron-down"></i>
         </div>
         <div id="project-details-content">
@@ -884,7 +884,7 @@ font-size: 12px;
                 <div id="tasks-section">
                     <h2>Project Tasks</h2>
                     <br>
-                    <!-- Add these buttons above the table -->
+                   
                     <div class="task-filter-buttons mb-3">
                         <button class="btn btn-outline-primary filter-btn active" data-filter="all">All Tasks</button>
                         <button class="btn btn-outline-primary filter-btn" data-filter="In Progress">In Progress</button>
@@ -901,6 +901,10 @@ font-size: 12px;
                                     <th>Due Date</th>
                                     <th>Status</th>
                                     <th>Progress</th>
+                                    {% if is_project_manager %}
+                                    <th>Assign Team Member</th>
+                                    
+                                    {% endif %}
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -908,7 +912,7 @@ font-size: 12px;
                                 {% for task in tasks %}
                                 <tr>
                                     <td>{{ task.title }}</td>
-                                    <td>{{ task.description }}</td>
+                                    <td>{{ task.description|truncatewords:5 }}</td>
                                     <td>{{ task.due_date|date:"Y-m-d" }}</td>
                                     <td style="color: {% if task.status == 'Completed' %}green{% elif task.status == 'In Progress' %}blue{% elif task.status == 'On Hold' %}orange{% else %}red{% endif %};">
                                         {{ task.status }}
@@ -934,47 +938,58 @@ font-size: 12px;
                                             <span>{{ task.progress_percentage }}%</span>
                                         </div>
                                     </td>
+                                    {% if is_project_manager %}
+                                    <td>
+                                        
+                                        <select class="form-select mt-2" id="teamMemberSelect-{{ task.id }}">
+                                            <option value="">Assign to...</option>
+                                            {% for member in team_members %}
+                                                {% if member.role != 'PROJECT_MANAGER' %}
+                                                    <option value="{{ member.user_id }}">{{ member.username }} ({{ member.role }})</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-primary mt-2 assign-task-btn" data-task-id="{{ task.id }}">Assign</button>
+                                        
+                                        <script>
+                                            $(document).on('click', '.assign-task-btn', function() {
+                                                var taskId = $(this).data('task-id');
+                                                var selectedMemberId = $('#teamMemberSelect-' + taskId).val();
+                                                
+                                                if (selectedMemberId) {
+                                                    $.ajax({
+                                                        url: "{% url 'freelancer:assign_task' %}", // Update with your URL for task assignment
+                                                        type: 'POST',
+                                                        data: {
+                                                            'task_id': taskId,
+                                                            'assigned_to': selectedMemberId, // Use user_id here
+                                                            'csrfmiddlewaretoken': '{{ csrf_token }}' // Include CSRF token
+                                                        },
+                                                        success: function(response) {
+                                                            toastr.success('Task assigned successfully to user ID ' + selectedMemberId);
+                                                            setTimeout(function() {
+                                                                window.location.reload();
+                                                            }, 2000); 
+                                                        },
+                                                        error: function(xhr) {
+                                                            toastr.error('Error assigning task: ' + xhr.responseText);
+                                                        }
+                                                    });
+                                                } else {
+                                                    alert('Please select a team member to assign the task.');
+                                                }
+                                            });
+                                        </script>
+                                    </td>{% endif %}
                                     <td>
                                         <button class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#viewTaskModal-{{ task.id }}">
                                             <i class="fas fa-eye view-icon"></i>
                                         </button>
                                     </td>
                                 </tr>
-
-
-
-
-                                
-    <div class="modal fade" id="viewTaskModal-{{ task.id }}" tabindex="-1" aria-labelledby="viewTaskModalLabel-{{ task.id }}" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewTaskModalLabel-{{ task.id }}">Task Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Title:</strong> {{ task.title }}</p><p><strong>Description:</strong> {{ task.description|truncatechars:10 }}</p>
-
-                    <p><strong>Start Date:</strong> {{ task.start_date|date:"Y-m-d" }}</p>
-                    <p><strong>Due Date:</strong> {{ task.due_date|date:"Y-m-d" }}</p>
-                    <p><strong>Status:</strong> {{ task.status }}</p>
-                    <p><strong>Progress:</strong> {{ task.progress_percentage }}%</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4">No tasks found.</td>
-                                </tr>
                                 {% endfor %}
                             </tbody>
-                            
                         </table>
-                    
                     </div>
                 </div>
 
@@ -1246,13 +1261,11 @@ font-size: 12px;
                 type: 'POST',
                 data: form.serialize(), // Serialize form data
                 success: function(response) {
-                    // Handle success (e.g., show a success message or update the UI)
-                    alert('Cancellation status updated successfully!');
+                    toastr.success('Cancellation status updated successfully!');
                     window.location.reload(); // Reload the page after successful update
                 },
                 error: function(xhr) {
-                    // Handle error (e.g., show an error message)
-                    alert('Error updating cancellation status: ' + xhr.responseText);
+                    toastr.error('Error updating cancellation status: ' + xhr.responseText);
                 }
             });
         });

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Update Skill Assessment</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="skill_name" class="form-label">Skill Name</label>
+                            <input type="text" class="form-control" id="skill_name" name="skill_name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="proficiency_level" class="form-label">Proficiency Level</label>
+                            <select class="form-select" id="proficiency_level" name="proficiency_level" required>
+                                <option value="1">Beginner</option>
+                                <option value="2">Intermediate</option>
+                                <option value="3">Advanced</option>
+                                <option value="4">Expert</option>
+                            </select>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{% url 'freelancer:learning_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Assessment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

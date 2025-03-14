@@ -1,0 +1,464 @@
+{% extends 'Client/base.html' %}
+{% load static %}
+
+{% block 'client_content' %}
+<div class="container mt-4">
+    <h2>Manage Event/Quizzes</h2>
+    
+    <br><br>
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <img src="{% static 'img/webinar.png' %}" alt="Event Icon" class="me-2" style="width: 24px; height: 24px;">
+                    <div class="text-center flex-grow-1">
+                        <h5 class="card-title mb-0">Total Events</h5>
+                    </div>
+                    <h2 class="display-6 mb-0" style="font-size:medium;">{{ total_events }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <img src="{% static 'img/Quizzes.png' %}" alt="Quiz Icon" class="me-2" style="width: 24px; height: 24px;">
+                    <div class="text-center flex-grow-1">
+                        <h5 class="card-title mb-0">Total Quizzes</h5>
+                    </div>
+                    <h2 class="display-6 mb-0" style="font-size:medium;">{{ total_quizzes }}</h2>
+                </div>
+            </div>
+        </div><br><br>
+        <div class="col-md-6 d-flex justify-content-end align-items-center">
+            <a href="{% static 'quiz_template.csv' %}" class="btn btn-info me-2" download style="margin-right:10px;">
+                Download Quiz Template (CSV)
+            </a>
+            <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEventModal">Create New Event</a>
+        </div>
+    </div>
+
+    <!-- Section Toggles -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-section="upcoming">
+                    <i class="fas fa-calendar-alt me-2"></i>Upcoming
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-section="past">
+                    <i class="fas fa-history me-2"></i>Past
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Events Section -->
+    <div class="card mb-4" id="upcoming-section">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming Events/Quizzes</h4>
+        </div>
+        <div class="card-body">
+            {% if upcoming %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>No of Participants <br> Allowed</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in upcoming %}
+                            <tr>
+                                <td> {{ item.title|truncatechars:16 }}</td>
+                                <td>
+                                    <span class="badge text-white {% if item.type == 'event' %}bg-primary{% else %}bg-success{% endif %}">
+                                        {{ item.type|title }}
+                                    </span>
+                                </td>
+                                <td>{{ item.date|date:"M d, Y h:i A" }}</td>
+                                <td>{{ item.max_participants|default_if_none:"∞" }}</td>
+                                <td>
+                                    <!-- <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a> -->
+                                    <a href="#" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#eventDetailsModal" data-event-id="{{ item.id }}"><i class="fas fa-eye"></i> </a>
+                                    <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete('{{ item.id }}')"><i class="fas fa-trash"></i></a>
+                                    <a href="{% url 'client:manage_single_event' item.id %}" class="btn btn-sm btn-info"><i class="fas fa-cog"></i> Manage Event</a>
+                                    
+                                    </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No upcoming events or quizzes.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Past Events Section -->
+    <div class="card mb-4" id="past-section" style="display: none;">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0"><i class="fas fa-history me-2"></i>Past Events/Quizzes</h4>
+        </div>
+        <div class="card-body">
+            {% if past %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in past %}
+                            <tr>
+                                <td>{{ item.title }}</td>
+                                <td>
+                                    <span class="badge text-white {% if item.type == 'event' %}bg-primary{% else %}bg-success{% endif %}">
+                                        {{ item.type|title }}
+                                    </span>
+                                </td>
+                                <td>{{ item.date|date:"M d, Y h:i A" }}</td>
+                               <td>
+                                    <a href="{% url 'client:manage_single_event' item.id %}" class="btn btn-sm btn-info"><i class="fas fa-users"></i> Manage Event</a>
+                                    <a href="#" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#eventDetailsModal" data-event-id="{{ item.id }}"><i class="fas fa-eye"></i> Show Details</a>
+                                   
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No past events or quizzes.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="createEventModalLabel">
+                        <i class="fas fa-calendar-plus me-2"></i>Create New Event
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="createEventForm" method="POST" action="{% url 'client:create_event' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="eventTitle" class="form-label fw-bold">Event Title</label>
+                                    <input type="text" class="form-control" id="eventTitle" name="title" required>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="eventDate" class="form-label fw-bold">Date and Time</label>
+                                    <input type="datetime-local" class="form-control" id="eventDate" name="date" required>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="eventType" class="form-label fw-bold">Type</label>
+                                    <select class="form-select" id="eventType" name="type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="event">Event</option>
+                                        <option value="quiz">Quiz</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4" id="typeOfEventDiv" style="display: none;">
+                                    <label for="typeOfEvent" class="form-label fw-bold">Type of Event</label>
+                                    <select class="form-select" id="typeOfEvent" name="type_of_event">
+                                        <option value="">Select Event Type</option>
+                                        <option value="webinar">Webinar</option>
+                                        <option value="workshop">Workshop</option>
+                                        <option value="conference">Conference</option>
+                                    </select>
+                                </div>
+
+                                <!-- CSV File Upload Field (Initially Hidden) -->
+                                <div class="mb-4" id="quizFileDiv" style="display: none;">
+                                    <label for="quizFile" class="form-label fw-bold">Upload Quiz Questions (CSV)</label>
+                                    <input type="file" class="form-control" id="quizFile" name="quiz_file" accept=".csv">
+                                    <small class="form-text text-muted">Upload a CSV file with questions, options, correct answer, and points.</small>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="registrationEndDate" class="form-label fw-bold">Registration End Date*</label>
+                                    <input type="datetime-local" class="form-control" id="registrationEndDate" name="registration_end_date" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="poster" class="form-label fw-bold">Event Poster</label>
+                                    <input type="file" class="form-control" id="poster" name="poster" accept="image/*">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="maxParticipants" class="form-label fw-bold">Maximum Participants</label>
+                                    <input type="number" class="form-control" id="maxParticipants" name="max_participants">
+                                </div>
+
+                                <div class="mb-4" id="onlineLinkDiv" style="display: none;">
+                                    <label for="onlineLink" class="form-label fw-bold">Online Link</label>
+                                    <input type="url" class="form-control" id="onlineLink" name="online_link">
+                                </div>
+
+                                <div class="mb-4" id="durationDiv" style="display: none;">
+                                    <label for="eventDuration" class="form-label fw-bold">Duration (in minutes)*</label>
+                                    <input type="number" class="form-control" id="eventDuration" name="duration" min="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-4">
+                                    <label for="description" class="form-label fw-bold">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-body">
+                                        <div class="form-check mb-2">
+                                            <input type="checkbox" class="form-check-input" id="certificateProvided" name="certificate_provided">
+                                            <label class="form-check-label fw-bold" for="certificateProvided">Certificate Provided</label>
+                                        </div>
+                                        <div class="form-check" id="prizeEnabledDiv" style="display: none;">
+                                            <input type="checkbox" class="form-check-input" id="prizeEnabled" name="prize_enabled">
+                                            <label class="form-check-label fw-bold" for="prizeEnabled">Prize Enabled</label>
+                                        </div>
+                                        <div id="prizeAmountDiv" style="display: none;">
+                                            <label for="prizeAmount" class="form-label fw-bold">Prize Amount</label>
+                                            <input type="number" step="0.01" class="form-control" id="prizeAmount" name="prize_amount">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModal">Close</button>
+                    <button type="submit" form="createEventForm" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Create Event
+                    </button>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="eventDetailsModalLabel">Event Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="eventDetailsContent">
+                    <!-- Event details will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createButton = document.querySelector('[data-bs-target="#createEventModal"]');
+    createButton.addEventListener('click', function() {
+        console.log('Button clicked');
+        const modal = new bootstrap.Modal(document.getElementById('createEventModal'));
+        modal.show();
+    });
+
+    // Fix close button selector and handler
+    const closeButton = document.getElementById('closeModal');
+    closeButton.addEventListener('click', function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createEventModal'));
+        modal.hide();
+    });
+
+    // Show/hide prize amount field based on prize enabled checkbox
+    const prizeEnabled = document.getElementById('prizeEnabled');
+    const prizeAmountDiv = document.getElementById('prizeAmountDiv');
+    
+    prizeEnabled.addEventListener('change', function() {
+        prizeAmountDiv.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) {
+            document.getElementById('prizeAmount').value = '';
+        }
+    });
+
+    // Remove duplicate eventType declaration and consolidate event type handling
+    const eventType = document.getElementById('eventType');
+    const typeOfEventDiv = document.getElementById('typeOfEventDiv');
+    const onlineLinkDiv = document.getElementById('onlineLinkDiv');
+    const quizFileDiv = document.getElementById('quizFileDiv');
+    const quizDurationDiv = document.getElementById('durationDiv');
+    const prizeEnabledDiv = document.getElementById('prizeEnabledDiv');
+    
+    eventType.addEventListener('change', function() {
+        const isEvent = this.value === 'event';
+        const isQuiz = this.value === 'quiz';
+        
+        // Handle event-specific elements
+        typeOfEventDiv.style.display = isEvent ? 'block' : 'none';
+        onlineLinkDiv.style.display = isEvent ? 'block' : 'none';
+        
+        // Handle quiz-specific elements
+        quizFileDiv.style.display = isQuiz ? 'block' : 'none';
+        quizDurationDiv.style.display = isQuiz ? 'block' : 'none';
+        prizeEnabledDiv.style.display = isQuiz ? 'block' : 'none';
+        
+        // Clear fields when switching types
+        if (!isEvent) {
+            document.getElementById('typeOfEvent').value = '';
+            document.getElementById('onlineLink').value = '';
+        }
+        if (!isQuiz) {
+            document.getElementById('quizFile').value = '';
+            document.getElementById('eventDuration').value = '';
+            document.getElementById('prizeEnabled').checked = false;
+            document.getElementById('prizeAmount').value = '';
+            prizeAmountDiv.style.display = 'none';
+        }
+    });
+
+    // Show event details modal on button click
+    const detailButtons = document.querySelectorAll('[data-bs-target="#eventDetailsModal"]');
+    detailButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const eventId = this.getAttribute('data-event-id'); // Get the event ID
+            
+            // Fetch event details from the server
+            fetch("{% url 'client:get_event_details' 0 %}".replace('0', eventId))
+                .then(response => response.json())
+                .then(eventDetails => {
+                    // Populate the modal with event details
+                    document.getElementById('eventDetailsContent').innerHTML = `
+                        <div class="d-flex">
+                            <div class="flex-grow-1 me-3">
+                                <h5>${eventDetails.title}</h5>
+                                <p><strong>Date:</strong> ${new Date(eventDetails.date).toLocaleString()}</p>
+                                <p><strong>Maximum Participants:</strong>  ${eventDetails.max_participants}</p>
+                                <p><strong>Description:</strong> ${eventDetails.description}</p>
+                                ${eventDetails.online_link ? `<p><strong>Online Link:</strong> <a href="${eventDetails.online_link}" target="_blank">${eventDetails.online_link}</a></p>` : ''}
+                                ${eventDetails.prize_enabled ? `<p><strong>Prize Amount:</strong> ${eventDetails.prize_amount}</p>` : ''}
+                            </div>
+                            ${eventDetails.type === 'event' ? `<img src="${eventDetails.poster}" alt="Event Poster" class="img-fluid" style="height:200px;width:200px;">` : ''}
+                        </div>
+                    `;
+
+                    const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error fetching event details:', error);
+                    document.getElementById('eventDetailsContent').innerHTML = '<p class="text-danger">Error loading event details.</p>';
+                });
+        });
+    });
+
+    // Section toggle functionality
+    const toggleButtons = document.querySelectorAll('[data-section]');
+    const sections = {
+        upcoming: document.getElementById('upcoming-section'),
+        past: document.getElementById('past-section')
+    };
+
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update button states
+            toggleButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.section === 'upcoming') {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                } else {
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-outline-secondary');
+                }
+            });
+
+            // Activate clicked button
+            this.classList.add('active');
+            if (this.dataset.section === 'upcoming') {
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+            } else {
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-secondary');
+            }
+
+            // Show selected section, hide others
+            Object.keys(sections).forEach(key => {
+                sections[key].style.display = key === this.dataset.section ? 'block' : 'none';
+            });
+        });
+    });
+});
+
+function confirmDelete(eventId) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = "{% url 'client:remove_event' 0 %}".replace('0', eventId);
+        }
+    });
+}
+</script>
+
+<!-- Custom Modal Styles -->
+<style>
+.modal-content {
+    border-radius: 10px; /* Rounded corners */
+}
+
+.modal-header {
+    border-bottom: 2px solid #007bff; /* Blue border */
+}
+
+.modal-title {
+    font-size: 1.5rem; /* Larger title */
+}
+
+.modal-body {
+    font-size: 1rem; /* Standard font size */
+    line-height: 1.5; /* Better line spacing */
+}
+
+.modal-footer {
+    border-top: 2px solid #007bff; /* Blue border */
+}
+</style>
+{% endblock %} 

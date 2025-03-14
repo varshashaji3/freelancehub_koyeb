@@ -1,0 +1,11 @@
+Question,Option 1,Option 2,Option 3,Option 4,Correct Answer,Points
+What does HTML stand for?,Hyper Text Markup Language,Hyperlinks and Text Markup Language,Home Tool Markup Language,Hyper Transfer Markup Language,Hyper Text Markup Language,1
+Which HTML tag is used to define a hyperlink?,<a>,<link>,<href>,<url>,<a>,1
+What is the correct HTML element for inserting a line break?,<break>,<br>,<lb>,<hr>,<br>,1
+Which tag is used to define an unordered list?,<ul>,<ol>,<li>,<list>,<ul>,1
+What is the correct HTML for creating a checkbox?,"<input type=""check"">",<check>,"<input type=""checkbox"">",<checkbox>,"<input type=""checkbox"">",1
+Which attribute is used to provide alternative text for an image?,title,alt,src,href,alt,1
+What does the <title> element specify?,The main heading of the page,The title of the document,The background color,The footer text,The title of the document,1
+Which tag is used to create a table in HTML?,<table>,<tr>,<td>,<th>,<table>,1
+How do you create a numbered list in HTML?,<ul>,<ol>,<li>,<numbered>,<ol>,1
+What is the correct HTML tag for the largest heading?,<h1>,<head>,<h6>,<large>,<h1>,1

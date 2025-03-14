@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
     .table-container {
         background-color: white;
@@ -20,9 +22,11 @@
         margin-bottom: 20px;
     }
     .toggle-buttons {
-        margin-left: 630px;
+        display: flex;
+        justify-content: flex-end;
         margin-bottom: 20px;
         margin-top: 20px;
+        margin-left: 600px;
     }
     .btn-toggle {
         margin-right: 10px;
@@ -118,17 +122,17 @@
                             {% if client.user.email_verified %}Verified{% else %}Not Verified{% endif %}
                         </td>
                         <td>
-                            <form action="{% url 'administrator:toggle_status' client.user.id %}" method="post">
+                            <form action="{% url 'administrator:toggle_status' client.user.id %}" method="post" class="status-form">
                                 {% csrf_token %}
-                                <button type="submit" class="btn {% if client.user.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                <button type="submit" class="btn {% if client.user.status == 'active' %}status-active{% else %}status-inactive{% endif %}" data-status="{{ client.user.status }}">
                                     {% if client.user.status == 'active' %}Active{% else %}Inactive{% endif %}
                                 </button>
                             </form>
                         </td>
                         <td>
-                            <form action="{% url 'administrator:toggle_permission' client.user.id %}" method="post">
+                            <form action="{% url 'administrator:toggle_permission' client.user.id %}" method="post" class="permission-form">
                                 {% csrf_token %}
-                                <button type="submit" class="btn {% if client.user.permission %}permission-granted{% else %}permission-rejected{% endif %}">
+                                <button type="submit" class="btn {% if client.user.permission %}permission-granted{% else %}permission-rejected{% endif %}" data-permission="{{ client.user.permission|yesno:'true,false' }}">
                                     {% if client.user.permission %}Granted{% else %}Rejected{% endif %}
                                 </button>
                             </form>
@@ -203,17 +207,17 @@
                             {% if freelancer.user.email_verified %}Verified{% else %}Not Verified{% endif %}
                         </td>
                         <td>
-                            <form action="{% url 'administrator:toggle_status' freelancer.user.id %}" method="post">
+                            <form action="{% url 'administrator:toggle_status' freelancer.user.id %}" method="post" class="status-form">
                                 {% csrf_token %}
-                                <button type="submit" class="btn {% if freelancer.user.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                <button type="submit" class="btn {% if freelancer.user.status == 'active' %}status-active{% else %}status-inactive{% endif %}" data-status="{{ freelancer.user.status }}">
                                     {% if freelancer.user.status == 'active' %}Active{% else %}Inactive{% endif %}
                                 </button>
                             </form>
                         </td>
                         <td>
-                            <form action="{% url 'administrator:toggle_permission' freelancer.user.id %}" method="post">
+                            <form action="{% url 'administrator:toggle_permission' freelancer.user.id %}" method="post" class="permission-form">
                                 {% csrf_token %}
-                                <button type="submit" class="btn {% if freelancer.user.permission %}permission-granted{% else %}permission-rejected{% endif %}">
+                                <button type="submit" class="btn {% if freelancer.user.permission %}permission-granted{% else %}permission-rejected{% endif %}" data-permission="{{ freelancer.user.permission|yesno:'true,false' }}">
                                     {% if freelancer.user.permission %}Granted{% else %}Rejected{% endif %}
                                 </button>
                             </form>
@@ -258,4 +262,60 @@
         </table>
     </div>
 </div>
+
+<script>
+    // SweetAlert confirmation for status change
+    document.querySelectorAll('.status-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent the form from submitting immediately
+            const button = this.querySelector('button');
+            const currentStatus = button.getAttribute('data-status'); // Get the current status
+            const newStatus = currentStatus === 'active' ? 'Inactive' : 'Active'; // Determine new status
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: `You are about to change the status to ${newStatus}.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, change it!',
+                cancelButtonText: 'No, cancel!',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    button.setAttribute('data-status', currentStatus === 'active' ? 'inactive' : 'active'); // Update the status attribute
+                    button.innerText = newStatus; // Update button text
+                    this.submit(); // Submit the form if confirmed
+                }
+            });
+        });
+    });
+
+    // SweetAlert confirmation for permission change
+    document.querySelectorAll('.permission-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent the form from submitting immediately
+            const button = this.querySelector('button');
+            const currentPermission = button.getAttribute('data-permission'); // Get the current permission
+            const newPermission = currentPermission === 'true' ? 'Rejected' : 'Granted'; // Determine new permission
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: `You are about to change the permission to ${newPermission}.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, change it!',
+                cancelButtonText: 'No, cancel!',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    button.setAttribute('data-permission', currentPermission === 'true' ? 'false' : 'true'); // Update the permission attribute
+                    button.innerText = currentPermission === 'true' ? 'Rejected' : 'Granted'; // Update button text
+                    this.submit(); // Submit the form if confirmed
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

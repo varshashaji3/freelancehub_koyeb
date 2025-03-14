@@ -61,5 +61,8 @@ def between(value, args):
     
 @register.simple_tag
 def continuous_number(counter):
-    # Return the counter incremented by 1 to start numbering from 1
     return counter + 1
+
+
+
+

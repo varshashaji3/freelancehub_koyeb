@@ -1,0 +1,784 @@
+{% extends 'freelancer/base.html' %}
+{% load custom_filters %}
+
+
+{% block 'freelancer_content' %}
+<div class="row">
+    <!-- Events Section -->
+    <div class="col-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    <i class="fas fa-calendar-alt"></i> Events
+                </h4>
+                <ul class="nav nav-tabs" id="eventTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="upcoming-tab" data-toggle="tab" href="#upcoming" role="tab">
+                            Upcoming Events
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="past-tab" data-toggle="tab" href="#past" role="tab">
+                            Past Events
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="upcoming-quiz-tab" data-toggle="tab" href="#upcoming-quiz" role="tab">
+                            Upcoming Quizzes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="past-quiz-tab" data-toggle="tab" href="#past-quiz" role="tab">
+                            Past Quizzes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="certificates-tab" data-toggle="tab" href="#certificates" role="tab">
+                            Certificates
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="eventTabContent">
+                    <!-- Upcoming Events Tab -->
+                    <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Event Name</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for event in upcoming_events %}
+                                    <tr>
+                                        <td>
+                                           
+                                            {{ event.title }}
+                                        </td>
+                                        <td><span class="badge badge-info">{{ event.type_of_event|title }}</span></td>
+                                        <td>{{ event.date|date:"M d, Y g:i A" }}</td>
+                                        <td>{{ event.description|truncatechars:50 }}</td>
+                                        
+                                        <td>
+                                            {% if event.id in registered_events %}
+                                               <button class="btn btn-success btn-sm" disabled>Registered</button>
+                                            {% elif event.registration_status == 'open' and event.number_of_registrations < event.max_participants %}
+                                                <button class="btn btn-primary btn-sm register-btn" data-event-id="{{ event.id }}">Register</button>
+                                            {% else %}
+                                                <button class="btn btn-secondary btn-sm" disabled>Registration Closed</button>
+                                            {% endif %}
+                                            <button class="btn btn-info btn-sm view-details-btn" 
+                                                    data-title="{{ event.title }}"
+                                                    data-description="{{ event.description }}"
+                                                    data-date="{{ event.date|date:'M d, Y g:i A' }}"
+                                                    data-type="{{ event.type_of_event }}"
+                                                    data-max-participants="{{ event.max_participants }}"
+                                                    data-current-registrations="{{ event.number_of_registrations }}"
+                                                    data-registration-end="{{ event.registration_end_date|date:'M d, Y' }}"
+                                                    {% if event.poster %}
+                                                    data-poster="{{ event.poster.url }}"
+                                                    {% endif %}
+                                                    data-certificate="{{ event.certificate_provided|yesno:'Yes,No' }}"
+                                                    {% if event.prize_enabled %}
+                                                    data-prize="₹{{ event.prize_amount }}"
+                                                    {% endif %}>
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No upcoming events available</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Past Events Tab -->
+                    <div class="tab-pane fade" id="past" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Event Name</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for event in past_events %}
+                                    <tr>
+                                        <td>
+                                            {% if event.poster %}
+                                                <img src="{{ event.poster.url }}" alt="{{ event.title }}" class="event-poster mb-2">
+                                            {% endif %}
+                                            {{ event.title }}
+                                        </td>
+                                        <td><span class="badge badge-info">{{ event.type_of_event|title }}</span></td>
+                                        <td>{{ event.date|date:"M d, Y g:i A" }}</td>
+                                        <td>{{ event.description|truncatechars:50 }}</td>
+                                        <td>
+                                            {% if event.id in registered_events %}
+                                                <span class="badge badge-success">Attended</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Not Registered</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-info btn-sm view-details-btn" 
+                                                    data-title="{{ event.title }}"
+                                                    data-description="{{ event.description }}"
+                                                    data-date="{{ event.date|date:'M d, Y g:i A' }}"
+                                                    data-type="{{ event.type_of_event }}"
+                                                    data-max-participants="{{ event.max_participants }}"
+                                                    data-current-registrations="{{ event.number_of_registrations }}"
+                                                    data-registration-end="{{ event.registration_end_date|date:'M d, Y' }}"
+                                                    {% if event.poster %}
+                                                    data-poster="{{ event.poster.url }}"
+                                                    {% endif %}
+                                                    data-certificate="{{ event.certificate_provided|yesno:'Yes,No' }}"
+                                                    {% if event.prize_enabled %}
+                                                    data-prize="₹{{ event.prize_amount }}"
+                                                    {% endif %}>
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">No past events available</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+<!-- Upcoming Quizzes Tab -->
+<div class="tab-pane fade" id="upcoming-quiz" role="tabpanel">
+    <div class="row mt-4">
+        {% for quiz in upcoming_quizzes %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100" style="max-width: 300px;">
+                <div class="card-body">
+                    {% if quiz.poster %}
+                        <img src="{{ quiz.poster.url }}" alt="{{ quiz.title }}" class="quiz-poster mb-3">
+                    {% endif %}
+                    <h5 class="card-title">{{ quiz.title }}</h5>
+                    <p class="card-text collapsed-text" data-quiz-id="{{ quiz.id }}">{{ quiz.description|truncatechars:50 }}</p>
+                    <p class="card-text expanded-text" data-quiz-id="{{ quiz.id }}" style="display: none;">{{ quiz.description }}</p>
+                    <button class="btn btn-link p-0 mb-3 expand-btn" data-quiz-id="{{ quiz.id }}">
+                        Read More <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-clock"></i> Duration: {{ quiz.duration }}</li>
+                        <li><i class="fas fa-calendar"></i> Date: {{ quiz.date|date:"M d, Y g:i A" }}</li>
+                        {% if quiz.prize_enabled %}
+                        <li><i class="fas fa-trophy"></i> Prize: ₹{{ quiz.prize_amount }}</li>
+                        {% endif %}
+                        {% if quiz.certificate_provided %}
+                        <li><i class="fas fa-certificate"></i> Certificate Provided</li>
+                        {% endif %}
+                    </ul>
+                    {% if quiz.id in registered_events %}
+                    <a href="{% url 'freelancer:quiz_view' quiz.id %}" class="btn btn-success btn-block" target="_blank">Start Quiz</a>
+                                             
+                        <!-- <button class="btn btn-success btn-block" disabled>Registered</button> -->
+                    {% elif quiz.registration_status == 'open' and quiz.number_of_registrations < quiz.max_participants %}
+                        <button class="btn btn-primary btn-block register-btn" data-event-id="{{ quiz.id }}">Register</button>
+                    {% else %}
+                        <button class="btn btn-secondary btn-block" disabled>Registration Closed</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center">No upcoming quizzes available at the moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Past Quizzes Tab -->
+<div class="tab-pane fade" id="past-quiz" role="tabpanel">
+    <div class="row mt-4">
+        {% for quiz in past_quizzes %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    {% if quiz.poster %}
+                        <img src="{{ quiz.poster.url }}" alt="{{ quiz.title }}" class="quiz-poster mb-3">
+                    {% endif %}
+                    <h5 class="card-title">{{ quiz.title }}</h5>
+                    <p class="card-text">{{ quiz.description|truncatechars:100 }}</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-clock"></i> Duration: {{ quiz.duration }}</li>
+                        <li><i class="fas fa-calendar"></i> Date: {{ quiz.date|date:"M d, Y g:i A" }}</li>
+                        {% if quiz.prize_enabled %}
+                        <li><i class="fas fa-trophy"></i> Prize: ₹{{ quiz.prize_amount }}</li>
+                        {% endif %}
+                        {% if quiz.certificate_provided %}
+                        <li><i class="fas fa-certificate"></i> Certificate Provided</li>
+                        {% endif %}
+                        </ul>
+                    <div class="mt-3">
+                        {% if quiz.id in registered_events and registered_events|get_item:quiz.id %}
+                            <button class="btn btn-info btn-block" disabled>Completed</button>
+                        {% elif quiz.id in registered_events %}
+                            <button class="btn btn-warning btn-block" disabled>Registered</button>
+                        {% else %}
+                            <button class="btn btn-secondary btn-block" disabled>Not Participated</button>
+                        {% endif %}
+                        <button class="btn btn-primary btn-block view-details-btn mt-2"
+                                data-title="{{ quiz.title }}"
+                                data-description="{{ quiz.description }}"
+                                data-date="{{ quiz.date|date:'M d, Y g:i A' }}"
+                                data-type="Quiz"
+                                data-duration="{{ quiz.duration }}"
+                                data-max-participants="{{ quiz.max_participants }}"
+                                data-current-registrations="{{ quiz.number_of_registrations }}"
+                                data-registration-end="{{ quiz.registration_end_date|date:'M d, Y' }}"
+                                {% if quiz.poster %}
+                                data-poster="{{ quiz.poster.url }}"
+                                {% endif %}
+                                data-certificate="{{ quiz.certificate_provided|yesno:'Yes,No' }}"
+                                {% if quiz.prize_enabled %}
+                                data-prize="₹{{ quiz.prize_amount }}"
+                                {% endif %}>
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center">No past quizzes available.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Certificates Tab -->
+<div class="tab-pane fade" id="certificates" role="tabpanel">
+    <div class="row mt-4">
+        {% for certificate in certificates %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body certificate-preview" 
+                     data-pdf="{{ certificate.view_url }}">
+                </div>
+                <div class="d-flex justify-content-center p-3">
+                    <a href="{{ certificate.view_url }}" class="btn btn-light btn-sm mx-2" target="_blank">View</a>
+                    <a href="{{ certificate.download_url }}" class="btn btn-primary btn-sm mx-2" download>Download</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center">No certificates available</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.certificate-preview').forEach(preview => {
+            const pdfUrl = preview.getAttribute('data-pdf');
+            if (!pdfUrl) return;
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+                return pdf.getPage(1);
+            }).then(page => {
+                const scale = 2; // Increase scale for better quality
+                const viewport = page.getViewport({ scale });
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                return page.render({ canvasContext: context, viewport }).promise;
+            }).then(() => {
+                const imgData = canvas.toDataURL("image/png");
+                preview.style.backgroundImage = `url(${imgData})`;
+                preview.style.backgroundSize = 'cover';
+                preview.style.backgroundPosition = 'center';
+                preview.style.aspectRatio = '16 / 9'; // Adjust to fit content
+                preview.style.borderRadius = '8px';
+                preview.innerHTML = ''; // Remove any unwanted text
+            }).catch(error => console.error("PDF Rendering Error:", error));
+        });
+    });
+</script>
+
+</div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</div>
+
+<style>
+    .card {
+        position: relative; /* Ensure positioning context */
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .card-title {
+        color: #2c3e50;
+    }
+
+    .list-unstyled li {
+        margin-bottom: 8px;
+        color: #666;
+    }
+
+    .list-unstyled i {
+        margin-right: 8px;
+        color: #3498db;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+
+    /* Add new styles for tabs */
+    .nav-tabs .nav-link {
+        color: #666;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 10px 20px;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #3498db;
+        border-bottom: 2px solid #3498db;
+        background: transparent;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #3498db;
+    }
+
+    .badge {
+        padding: 8px 12px;
+        border-radius: 4px;
+    }
+
+    .badge-info {
+        background-color: #17a2b8;
+        color: white;
+        padding: 5px 10px;
+    }
+    
+    .badge-success {
+        background-color: #28a745;
+    }
+    
+    .badge-secondary {
+        background-color: #6c757d;
+    }
+    
+    .card-text {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    .swal-wide {
+        max-width: 800px !important;
+        width: 90% !important;
+    }
+
+    .view-details-btn {
+        margin-left: 5px;
+        padding: auto;
+    }
+
+    .text-left {
+        text-align: left;
+    }
+
+    .event-poster {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }
+
+    .quiz-poster {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 4px 4px 0 0;
+        margin: -1.25rem -1.25rem 1rem -1.25rem;
+        width: calc(100% + 2.5rem);
+    }
+
+    .swal-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    /* Add Bootstrap-like grid for SweetAlert */
+    .container-fluid {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -15px;
+        margin-left: -15px;
+    }
+
+    .col-md-5, .col-md-7, .col-md-12 {
+        position: relative;
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+
+    @media (min-width: 768px) {
+        .col-md-5 {
+            flex: 0 0 41.666667%;
+            max-width: 41.666667%;
+        }
+        .col-md-7 {
+            flex: 0 0 58.333333%;
+            max-width: 58.333333%;
+        }
+        .col-md-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+
+    /* SweetAlert Custom Styles */
+    .swal-wide {
+        max-width: 800px !important;
+        width: 90% !important;
+        background: linear-gradient(to bottom right, #ffffff, #f8f9fa) !important;
+        border-radius: 15px !important;
+    }
+
+    .swal-title {
+        color: #2c3e50 !important;
+        font-size: 24px !important;
+        font-weight: 600 !important;
+        padding: 20px !important;
+        border-bottom: 1px solid #eee;
+    }
+
+    .event-details {
+        padding: 20px 0;
+    }
+
+    .detail-item {
+        padding: 12px 15px;
+        margin: 8px 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .detail-item:hover {
+        transform: translateX(5px);
+    }
+
+    .detail-item i {
+        width: 20px;
+        margin-right: 10px;
+    }
+
+    .detail-item.type i { color: #3498db; }
+    .detail-item.date i { color: #e74c3c; }
+    .detail-item.description i { color: #2ecc71; }
+    .detail-item.registration i { color: #f1c40f; }
+    .detail-item.certificate i { color: #9b59b6; }
+    .detail-item.prize i { color: #e67e22; }
+
+    .detail-item strong {
+        color: #34495e;
+        margin-right: 5px;
+    }
+
+    .swal-button {
+        background-color: #3498db !important;
+        border-radius: 8px !important;
+        padding: 8px 25px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .swal-button:hover {
+        background-color: #2980b9 !important;
+        transform: translateY(-2px);
+    }
+
+    .swal-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .detail-item.duration i { color: #1abc9c; }
+
+    .expand-btn {
+        color: #3498db;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .expand-btn:hover {
+        color: #2980b9;
+        text-decoration: none;
+    }
+
+    .expand-btn i {
+        transition: transform 0.3s ease;
+    }
+
+    .expand-btn.expanded i {
+        transform: rotate(180deg);
+    }
+
+    .collapsed-text, .expanded-text {
+        margin-bottom: 0.5rem;
+    }
+
+    .certificate-image {
+        position: relative; /* Ensure it is above any overlays */
+        z-index: 1; /* Bring it to the front */
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const registerButtons = document.querySelectorAll('.register-btn');
+    const viewDetailsButtons = document.querySelectorAll('.view-details-btn');
+    
+    registerButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const eventId = this.getAttribute('data-event-id');
+            
+            // Show confirmation dialog
+            Swal.fire({
+                title: 'Confirm Registration',
+                text: 'Are you sure you want to register for this event?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Register',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#3498db',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Send registration request
+                    fetch('/freelancer/register-event/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            event_id: eventId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            Swal.fire({
+                                title: 'Registration Successful!',
+                                text: 'You have been registered for the event. Check your email for details.',
+                                icon: 'success',
+                                confirmButtonColor: '#3498db'
+                            }).then(() => {
+                                // Reload page to update UI
+                                window.location.reload();
+                            });
+                        } else {
+                            // Show error message
+                            Swal.fire({
+                                title: 'Registration Failed',
+                                text: data.message || 'Something went wrong. Please try again.',
+                                icon: 'error',
+                                confirmButtonColor: '#3498db'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Something went wrong. Please try again.',
+                            icon: 'error',
+                            confirmButtonColor: '#3498db'
+                        });
+                    });
+                }
+            });
+        });
+    });
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    viewDetailsButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const title = this.getAttribute('data-title');
+            const description = this.getAttribute('data-description');
+            const date = this.getAttribute('data-date');
+            const type = this.getAttribute('data-type');
+            const registrationEnd = this.getAttribute('data-registration-end');
+            const poster = this.getAttribute('data-poster');
+            const certificate = this.getAttribute('data-certificate');
+            const prize = this.getAttribute('data-prize');
+            const duration = this.getAttribute('data-duration');
+
+            const posterHtml = poster ? `
+                <div class="col-md-5">
+                    <img src="${poster}" alt="${title}" class="swal-poster">
+                </div>` : '';
+
+            const certificateHtml = certificate ? `<p class="detail-item certificate"><i class="fas fa-certificate"></i> <strong>Certificate:</strong> ${certificate}</p>` : '';
+            const prizeHtml = prize ? `<p class="detail-item prize"><i class="fas fa-trophy"></i> <strong>Prize:</strong> ${prize}</p>` : '';
+            const durationHtml = duration ? `<p class="detail-item duration"><i class="fas fa-clock"></i> <strong>Duration:</strong> ${duration}</p>` : '';
+
+            Swal.fire({
+                title: title,
+                html: `
+                    <div class="container-fluid">
+                        <div class="row">
+                            ${posterHtml}
+                            <div class="col-md-${poster ? '7' : '12'}">
+                                <div class="text-left event-details">
+                                    <p class="detail-item type"><i class="fas fa-tag"></i> <strong>Type:</strong> ${type}</p>
+                                    <p class="detail-item date"><i class="fas fa-calendar"></i> <strong>Date:</strong> ${date}</p>
+                                    <p class="detail-item description"><i class="fas fa-align-left"></i> <strong>Description:</strong> ${description}</p>
+                                    ${durationHtml}
+                                    ${certificateHtml}
+                                    ${prizeHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#3498db',
+                customClass: {
+                    popup: 'swal-wide',
+                    title: 'swal-title',
+                    confirmButton: 'swal-button'
+                }
+            });
+        });
+    });
+
+    // Add expand/collapse functionality
+    const expandButtons = document.querySelectorAll('.expand-btn');
+    
+    expandButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const quizId = this.getAttribute('data-quiz-id');
+            const collapsedText = document.querySelector(`.collapsed-text[data-quiz-id="${quizId}"]`);
+            const expandedText = document.querySelector(`.expanded-text[data-quiz-id="${quizId}"]`);
+            
+            if (this.classList.contains('expanded')) {
+                // Collapse
+                collapsedText.style.display = 'block';
+                expandedText.style.display = 'none';
+                this.innerHTML = 'Read More <i class="fas fa-chevron-down"></i>';
+                this.classList.remove('expanded');
+            } else {
+                // Expand
+                collapsedText.style.display = 'none';
+                expandedText.style.display = 'block';
+                this.innerHTML = 'Show Less <i class="fas fa-chevron-down"></i>';
+                this.classList.add('expanded');
+            }
+        });
+    });
+});
+</script>
+
+<!-- Modal -->
+<div class="modal fade" id="certificateModal" tabindex="-1" role="dialog" aria-labelledby="certificateModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="certificateModalLabel">Certificate</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <iframe id="certificateFrame" src="" style="width: 100%; height: 400px;" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$('#certificateModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget); // Button that triggered the modal
+    var url = button.data('url'); // Extract info from data-* attributes
+    var modal = $(this);
+    modal.find('#certificateFrame').attr('src', url); // Set the iframe source to the certificate URL
+});
+</script>
+{% endblock %}

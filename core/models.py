@@ -178,3 +178,44 @@ class RefundPayment(models.Model):
 
     def __str__(self):
         return f"Refund Payment of {self.amount} to {self.pay_to} for Project {self.project.id}"
+
+class SubscriptionPlan(models.Model):
+    PLAN_CHOICES = [
+        ('basic', 'Basic Plan'),
+        ('standard', 'Standard Plan'),
+        ('pro', 'Pro Plan'),
+        ('ultimate', 'Ultimate Plan'),
+    ]
+    
+    name = models.CharField(max_length=50, choices=PLAN_CHOICES)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    duration = models.PositiveIntegerField()  # Duration in months
+    features = models.TextField()  
+
+    def __str__(self):
+        return self.name
+
+class UserSubscription(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    subscription_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)  # Allow null initially
+    is_active = models.BooleanField(default=True)
+
+    # New fields for payment details
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    razorpay_order_id = models.CharField(max_length=255, null=True, blank=True)
+    razorpay_payment_id = models.CharField(max_length=255, null=True, blank=True)
+    payment_status = models.CharField(max_length=20, default='Pending')  # e.g., 'Completed', 'Failed'
+
+    def save(self, *args, **kwargs):
+        # Make sure start_date is set
+        if self.payment_status == 'Completed' and not self.end_date:
+            if self.start_date and self.subscription_plan and self.subscription_plan.duration:
+                # Calculate end date based on the plan duration in months
+                self.end_date = self.start_date + relativedelta(months=self.subscription_plan.duration)
+        
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.subscription_plan.name}"

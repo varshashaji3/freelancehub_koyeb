@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.shortcuts import render
 from django.urls import include, path
 
-from client.views import  mark_project_completed,download_invoice,view_invoice,payments,update_complaint_status,update_solution,view_complaints_recieved,view_complaints,add_complaint,send_file,fetch_messages,send_message,chat_view,add_github_link,edit_task, submit_review, update_task_status, verify_payment,payment_success,make_payment, submit_contract,add_task, add_url,add_note,add_file, create_repository,acc_deactivate,lock_proposal, notification_mark_as_read, toggle_project_status,edit_project,delete_event,update_event,add_event,update_proposal_status,freelancer_detail,calendar,AddProfileClient, client_view,account_settings,change_password, project_list, single_project_view,update_profile,change_profile_image,add_new_project,freelancer_list, update_task_progress, view_repository
+from client.views import  plans,mark_project_completed,download_invoice,view_invoice,payments,update_complaint_status,update_solution,view_complaints_recieved,view_complaints,add_complaint,send_file,fetch_messages,send_message,chat_view,add_github_link,edit_task, submit_review, update_task_status, verify_payment,payment_success,make_payment, submit_contract,add_task, add_url,add_note,add_file, create_repository,acc_deactivate,lock_proposal, notification_mark_as_read, toggle_project_status,edit_project,delete_event,update_event,add_event,update_proposal_status,freelancer_detail,calendar,AddProfileClient, client_view,account_settings,change_password, project_list, single_project_view,update_profile,change_profile_image,add_new_project,freelancer_list, update_task_progress, view_repository, hire_freelancer, accept_interview, reject_interview, track_hiring, submit_meeting, toggle_hiring_status, manage_event_quizzes, create_event, get_event_details,remove_event,manage_single_event,update_event_settings, send_event_link,create_prize_payment,verify_prize_payment, upload_certificate_template, generate_certificates,client_repositories
 def welcome(request):
     return render(request,'welcome.html')
 urlpatterns = [
@@ -88,4 +88,24 @@ urlpatterns = [
     path('view_invoice/<int:contract_id>/', view_invoice, name='view_invoice'),
     path('download_invoice/<int:contract_id>/', download_invoice, name='download_invoice'),
     path('mark_project_completed/', mark_project_completed, name='mark_project_completed'),
+    path('hire-freelancer/', hire_freelancer, name='hire_freelancer'),
+    path('accept_interview/<int:invitation_id>/', accept_interview, name='accept_interview'),
+    path('reject_interview/<int:invitation_id>/', reject_interview, name='reject_interview'),
+    path('track_hiring/', track_hiring, name='track_hiring'),
+    path('submit_meeting', submit_meeting, name='submit_meeting'),
+    path('toggle_hiring_status/', toggle_hiring_status, name='toggle_hiring_status'),
+    path('manage_event_quizzes/', manage_event_quizzes, name='manage_event_quizzes'),
+    path('create_event/', create_event, name='create_event'),
+    path('get_event_details/<int:event_id>/', get_event_details, name='get_event_details'),
+    path('remove_event/<int:event_id>/', remove_event, name='remove_event'), 
+    path('manage_single_event/<int:event_id>/', manage_single_event, name='manage_single_event'),
+    path('update_event_settings/<int:event_id>/', update_event_settings, name='update_event_settings'), 
+    path('send-event-link/', send_event_link, name='send_event_link'),
+    path('create-prize-payment/', create_prize_payment, name='create_prize_payment'),
+    path('verify-prize-payment/', verify_prize_payment, name='verify_prize_payment'),
+    path('upload-certificate-template/<int:event_id>/', upload_certificate_template, name='upload_certificate_template'),
+    path('generate-certificates/<int:event_id>/', generate_certificates, name='generate_certificates'),
+    
+    path('repositories/', client_repositories, name='client_repositories'),
+    path('plans/', plans, name='plans'),
 ]

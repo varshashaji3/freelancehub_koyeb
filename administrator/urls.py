@@ -1,10 +1,10 @@
-
 from django.contrib import admin
 from django.shortcuts import render
 from django.urls import include, path
 
-from administrator.views import update_solution,site_complaints,preview_template,template_list,add_template,admin_view, allusers, complaints,projects, reviews,notification_mark_as_read,user_list,toggle_status,toggle_permission,change_profile_image,account_settings,change_password
+from administrator.views import update_solution,site_complaints,preview_template,template_list,add_template,admin_view, allusers, complaints,projects, reviews,notification_mark_as_read,user_list,toggle_status,toggle_permission,change_profile_image,account_settings,change_password, events, approve_event, reject_event
 
+app_name = 'administrator'
 
 urlpatterns = [
     
@@ -30,6 +30,9 @@ urlpatterns = [
     path('preview_template/<int:template_id>/', preview_template, name='preview_template'),
     
     path('update_solution/', update_solution, name='update_solution'),
+    path('events/', events, name='events'),
+    path('approve_event/<int:event_id>/', approve_event, name='approve_event'),
+    path('reject_event/<int:event_id>/', reject_event, name='reject_event'),
 ]
 
 

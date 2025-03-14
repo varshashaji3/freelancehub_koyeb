@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .header {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .event-details {
+            background: #f5f8fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .detail-item {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .detail-item i {
+            position: absolute;
+            left: 0;
+            color: #3498db;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .important-note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .poster-image {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            margin: 20px auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Registration Confirmation</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ user.get_full_name|default:user.username }},</p>
+            
+            <p>Thank you for registering for <strong>{{ event.title }}</strong>! We're excited to have you join us.</p>
+
+            
+            
+            <div class="event-details">
+                <h3>{% if event.type == 'event' %}Event{% else %}Quiz{% endif %} Details:</h3>
+                <div class="detail-item">
+                    <i class="fas fa-calendar"></i>
+                    <strong>Date:</strong> {{ event.date|date:"F d, Y" }}
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-clock"></i>
+                    <strong>Time:</strong> {{ event.date|date:"g:i A" }}
+                </div>
+                {% if event.type == 'event' %}
+                <div class="detail-item">
+                    <i class="fas fa-tag"></i>
+                    <strong>Type:</strong> {{ event.type_of_event }}
+                </div>
+                {% endif %}
+                {% if event.duration %}
+                <div class="detail-item">
+                    <i class="fas fa-hourglass-half"></i>
+                    <strong>Duration:</strong> {{ event.duration }}
+                </div>
+                {% endif %}
+                {% if event.certificate_provided %}
+                <div class="detail-item">
+                    <i class="fas fa-certificate"></i>
+                    <strong>Certificate:</strong> Will be provided upon completion
+                </div>
+                {% endif %}
+                {% if event.prize_enabled %}
+                <div class="detail-item">
+                    <i class="fas fa-trophy"></i>
+                    <strong>Prize:</strong> ₹{{ event.prize_amount }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="event-description">
+                <h3>Description:</h3>
+                <p>{{ event.description }}</p>
+            </div>
+
+            {% if event.type == 'quiz' %}
+            <div class="important-note">
+                <strong>Important Notes for Quiz:</strong>
+                <ul>
+                    <li>Make sure you have a stable internet connection</li>
+                    <li>Keep your camera on during the quiz</li>
+                    <li>No tab switching is allowed during the quiz</li>
+                    <li>Results will be announced after completion</li>
+                </ul>
+            </div>
+            {% endif %}
+
+            <p>Please make sure to join on time. A reminder email will be sent 24 hours before the {% if event.type == 'event' %}event{% else %}quiz{% endif %}.</p>
+        </div>
+        <div class="footer">
+            <p>If you have any questions, please don't hesitate to contact us.</p>
+            <p>Best regards,<br>The Team</p>
+        </div>
+    </div>
+</body>
+</html>

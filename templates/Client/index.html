@@ -324,20 +324,23 @@
               <thead>
                 <tr>
                   <th>Project</th>
-                  <th>Freelancer</th>
+                  <th>Freelancer/Team</th>
                   <th>Budget</th>
                   <th>Status</th>
                   <th>Progress</th>
+                  
                 </tr>
               </thead>
               <tbody>
                 {% for project_data in project_progress_data %}
                 <tr>
                   <td>{{ project_data.project.title }}</td>
-                  <td>{{ project_data.project.freelancer.name }}</td>
-
+                  <td> {% if project_data.project.team %}
+                    {{ project_data.project.team.name }}  (Team)
+                  {% else %}
+                  {{ project_data.project.freelancer.register.first_name }} {{ project_data.project.freelancer.register.last_name }}
+                  {% endif %}</td>
                   <td class="font-weight-bold">{{ project_data.project.budget }}</td>
-
                   <td class="font-weight-medium">
                     <div class="badge 
                     {% if project_data.project.project_status == 'Not Started' %}
@@ -358,8 +361,8 @@
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: {{ project_data.progress_percentage }}%" aria-valuenow="{{ project_data.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
-                </td>
-                
+                  </td>
+                  
                 </tr>
                 {% endfor %}
               </tbody>

@@ -54,10 +54,14 @@
                     <div class="mb-md-0 mb-6">
                         <div class="d-flex svg-illustration mb-6 gap-2 align-items-center">
                             <span class="app-brand-logo demo">
-                                <img src="{{ profile2.profile_picture.url }}" alt="profile" style="height: 80px;width:80px;margin-right:20px;border-radius:50%;">
+                                <img src="{{ profile2.profile_picture.url }}" alt="profile" style="height: 90px;width:90px;margin-right:20px;border-radius:50%;">
                             </span>
-                            <span class="app-brand-text demo fw-bold ms-50">{{ profile2.first_name }} {{ profile2.last_name }}</span>
-                        </div>
+                            {% if team_details %}
+                                <span class="app-brand-text demo fw-bold ms-50">{{ profile2.first_name }} {{ profile2.last_name }} <br><br> 
+                                <p style="color: red;font-size: medium;">Project Manager & Team Lead - {{ team_details.name }}</p></span>
+                            {% else %}
+                                <span class="app-brand-text demo fw-bold ms-50">{{ profile2.first_name }} {{ profile2.last_name }}</span>
+                            {% endif %}</div>
                     </div>
                     <div class="col-md-5 col-8 pe-0 ps-0 ps-md-2">
                         <dl class="row mb-0 gx-4">

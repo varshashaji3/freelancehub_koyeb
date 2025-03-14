@@ -17,7 +17,7 @@
                 <th>Client Name</th>
                 <th>Amount</th>
                 <th>Paid Date</th>
-                <th>Status</th>
+                <!-- <th>Status</th> -->
                 <th>Action</th>
             </tr>
         </thead>
@@ -29,7 +29,7 @@
                 <td>{{ refund.client_name }}</td>
                 <td>{{ refund.amount }}</td>
                 <td>{{ refund.paid_date|default:"Not processed yet" }}</td>
-                <td>{{ refund.status }}</td>
+                <!-- <td>{{ refund.status }}</td> -->
                 <td>
                     <a href="{% url 'freelancer:download_invoice' refund.id %}" class="btn btn-sm btn-primary" target="_blank">
                         <i class="fas fa-download"></i> Download Invoice

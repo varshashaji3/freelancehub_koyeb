@@ -6,6 +6,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from io import BytesIO
 from .models import Document, Template  # Adjust import based on your project structure
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
 # Load spaCy's English NLP model
 try:
@@ -349,3 +352,6 @@ if __name__ == "__main__":
     accuracy = calculate_accuracy(extracted_info, ground_truth_data)
     print("\n\n\n")
     print(f"Accuracy: {accuracy:.2f}%")
+    
+    
+    

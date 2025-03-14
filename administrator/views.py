@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, get_object_or_404
-from client.models import ClientProfile, Complaint
+from client.models import ClientProfile, Complaint, EventAndQuiz
 from core.decorators import nocache
 from core.models import CustomUser, Notification, Register, SiteReview
 from freelancer.models import FreelancerProfile
@@ -23,6 +23,8 @@ from django.db.models import Count
 from django.db.models import Avg
 from django.db.models.functions import TruncMonth
 import json
+
+from datetime import datetime
 
 
 @login_required
@@ -328,6 +330,22 @@ def preview_template(request, template_id):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+# MAILS
+
+
+
+
 def send_permission_email(uid):
     user = CustomUser.objects.get(id=uid)
     print(uid)
@@ -506,11 +524,10 @@ def reviews(request):
 
 
 
-from datetime import datetime
 def allusers(request):
     # Fetch all non-admin users
     users_list = CustomUser.objects.filter(is_superuser=False)
-    current_year = datetime.now().year
+    current_year =datetime.now().year
     user_details = []
     for user in users_list:
         # Fetch related information from Register table
@@ -663,6 +680,111 @@ def update_solution(request):
 
 
 
+
+
+
+
+@login_required
+@nocache
+def events(request):
+    # Get all events and quizzes with related client information
+    events_list = EventAndQuiz.objects.select_related('client').all().order_by('-created_at')
+    
+    event_data = []
+    for event in events_list:
+        # Get client details
+        register_info = Register.objects.get(user=event.client)
+        
+        # Format event data
+        event_info = {
+            'event': event,
+            'organizer_name': f"{register_info.first_name} {register_info.last_name}",
+            'organizer_picture': register_info.profile_picture,
+            'created_date': event.created_at.strftime('%B %d, %Y'),
+            'event_date': event.date.strftime('%B %d, %Y'),
+            'type': event.type,
+            'subtype': event.type_of_event if event.type == 'event' else None,
+            'registration_status': event.registration_status,
+            'event_status': event.event_status,
+            'participants': f"{event.number_of_registrations}/{event.max_participants if event.max_participants else 'Unlimited'}",
+        }
+        event_data.append(event_info)
+
+    approved_count = events_list.filter(approval_status='approved').count()
+    pending_count = events_list.filter(approval_status='pending').count()
+    rejected_count = events_list.filter(approval_status='rejected').count()
+
+    context = {
+        'events': event_data,
+        'current_year': datetime.now().year,
+        'approved_count': approved_count,
+        'pending_count': pending_count,
+        'rejected_count': rejected_count,
+    }
+    
+    return render(request, 'Admin/events.html', context)
+
+
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+@login_required
+@require_POST
+def approve_event(request, event_id):
+    try:
+        event = get_object_or_404(EventAndQuiz, id=event_id)
+        event.approval_status = 'approved'
+        event.save()
+        
+        # Create notification for the event organizer
+        Notification.objects.create(
+            user=event.client,
+            message=f"Your event '{event.title}' has been approved."
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Event approved successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_POST
+def reject_event(request, event_id):
+    try:
+        import json
+        data = json.loads(request.body)
+        rejection_reason = data.get('reason', '')
+        
+        if not rejection_reason:
+            return JsonResponse({
+                'success': False,
+                'message': 'Rejection reason is required'
+            }, status=400)
+
+        event = get_object_or_404(EventAndQuiz, id=event_id)
+        event.approval_status = 'rejected'
+        event.rejection_reason = rejection_reason
+        event.save()
+        
+        # Create notification for the event organizer
+        Notification.objects.create(
+            user=event.client,
+            message=f"Your event '{event.title}' has been rejected. Reason: {rejection_reason}"
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Event rejected successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
 
 
 

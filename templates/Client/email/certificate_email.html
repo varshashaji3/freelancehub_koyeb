@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Your Certificate of Completion</h2>
+        </div>
+        
+        <div class="content">
+            <p>Dear {{ participant_name }},</p>
+            
+            <p>Congratulations on completing {{ event_title }}! We're pleased to present you with your certificate of completion.</p>
+            
+            <p>You'll find your certificate attached to this email. This certificate recognizes your achievement and participation in the event.</p>
+            
+            <p>Thank you for your participation!</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html> 

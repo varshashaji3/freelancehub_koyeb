@@ -1,6 +1,13 @@
-{% extends 'Client/base.html' %}
+{% extends 'client/base.html' %}
 {% block 'client_content' %}
 {% load static %}
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<!-- Add SweetAlert2 CDN in the head section or after jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     // Define updateAnchorText function first so it's available globally
@@ -163,6 +170,9 @@
                 card.style.display = showCard ? '' : 'none';
             });
         }
+
+        
+       
     });
 </script>
 <div class="container">
@@ -222,40 +232,193 @@
         {% for user_data in users %}
             {% if user_data.registers %}
                 {% for register in user_data.registers %}
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                {% if register.profile_picture %}
-                                    <img src="{{ register.profile_picture.url }}" alt="User Image" class="profile-img mb-3">
-                                {% else %}
-                                    <img src="{% static 'img/default-profile.jpg' %}" alt="Default User Image" class="profile-img mb-3">
-                                {% endif %}
-                                <h5 class="card-title">{{ register.first_name|default:'' }} {{ register.last_name|default:'' }}</h5>
-                                <p class="card-text text-muted">
-                                    {% for profession in user_data.professions %}
-                                        <span class="profession">{{ profession }}{% if not forloop.last %}, {% endif %}</span>
-                                    {% empty %}
-                                        No professions listed
-                                    {% endfor %}
-                                </p>
-                                <p class="card-text">{{ register.bio_description|default:''|truncatewords:20 }}</p>
-                                <a href="{% url 'client:freelancer_detail' user_data.user.id %}" class="btn btn-primary">View Details</a>
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                <div class="social-media">
-                                    <a href="{{ register.linkedin }}" class="social-icon"><img src="{% static 'img/linkedin.png' %}" alt="Linkedin"></a>
-                                    <a href="{{ register.instagram }}" class="social-icon"><img src="{% static 'img/instagram.png' %}" alt="Instagram"></a>
-                                    <a href="{{ register.twitter }}" class="social-icon"><img src="{% static 'img/twitter.png' %}" alt="Twitter"></a>
-                                    <a href="{{ user_data.freelancer_profile.portfolio_link }}" class="social-icon"><img src="{% static 'img/web.png' %}" alt="Website"></a>
+                    {% if user_data.freelancer_profile.is_open_to_work %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    {% if register.profile_picture %}
+                                        <img src="{{ register.profile_picture.url }}" alt="User Image" class="profile-img mb-3">
+                                    {% else %}
+                                        <img src="{% static 'img/default-profile.jpg' %}" alt="Default User Image" class="profile-img mb-3">
+                                    {% endif %}
+                                    <h5 class="card-title">{{ register.first_name|default:'' }} {{ register.last_name|default:'' }}</h5>
+                                    <p class="card-text text-muted">
+                                        {% for profession in user_data.professions %}
+                                            <span class="profession">{{ profession }}{% if not forloop.last %}, {% endif %}</span>
+                                        {% empty %}
+                                            No professions listed
+                                        {% endfor %}
+                                    </p>
+                                    <p class="card-text">{{ register.bio_description|default:''|truncatewords:20 }}</p>
+                                    <a href="{% url 'client:freelancer_detail' user_data.user.id %}" class="btn btn-primary">View Details</a>
+                                    <button type="button" class="btn btn-success" onclick="openHireModal('{{ user_data.user.id }}')">Hire</button>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="social-media">
+                                        <a href="{{ register.linkedin }}" class="social-icon"><img src="{% static 'img/linkedin.png' %}" alt="Linkedin"></a>
+                                        <a href="{{ register.instagram }}" class="social-icon"><img src="{% static 'img/instagram.png' %}" alt="Instagram"></a>
+                                        <a href="{{ register.twitter }}" class="social-icon"><img src="{% static 'img/twitter.png' %}" alt="Twitter"></a>
+                                        <a href="{{ user_data.freelancer_profile.portfolio_link }}" class="social-icon"><img src="{% static 'img/web.png' %}" alt="Website"></a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
         {% endfor %}
     </div>
 </div>
+
+<!-- Add this modal HTML at the end of the body -->
+<div class="modal fade" id="hireModal" tabindex="-1" role="dialog" aria-labelledby="hireModalLabel" aria-hidden="true">
+    <div class="modal-dialog custom-modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hireModalLabel">Hire Freelancer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="hireForm">
+                    <p>Are you sure you want to hire this freelancer?</p>
+                    <input type="hidden" id="freelancerId" name="user_id" value="">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="jobRole">Job Role</label>
+                                <input type="text" class="form-control" id="jobRole" name="job_role" placeholder="Enter job role" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="jobDescription">Description</label>
+                                <textarea class="form-control" id="jobDescription" name="job_description" rows="3" placeholder="Enter job description" required></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="compensation">Salary per Month</label>
+                                <input type="number" class="form-control" id="compensation" name="compensation" placeholder="Enter salary amount" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="workMode">Work Mode</label>
+                                <select class="form-control" id="workMode" name="work_mode" required>
+                                    <option value="">Select Work Mode</option>
+                                    <option value="Remote">Remote</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="On-Site">On-Site</option>
+                                    <option value="Specify Later">Specify Later</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="benefits">Benefits</label>
+                                <textarea class="form-control" id="benefits" name="benefits" rows="3" placeholder="List benefits (e.g., insurance, bonuses)"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="bondPeriod">Minimum Bond Period</label>
+                                <input type="text" class="form-control" id="bondPeriod" name="bond_period" placeholder="E.g., '6 months'" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Is a Contract Needed?</label><br>
+                                <label class="radio-inline">
+                                    <input type="radio" name="contract_needed" value="true" required checked> Yes
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="contract_needed" value="false" required > No
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" id="submitJobInvitation">Confirm Hire</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openHireModal(userId) {
+        document.getElementById('freelancerId').value = userId;
+        $('#hireModal').modal('show');
+    }
+
+    $(document).ready(function () {
+        $("#submitJobInvitation").click(function(event) {
+            event.preventDefault();
+            
+            // Collect form data
+            const userId = document.getElementById('freelancerId').value;
+            const jobRole = document.getElementById('jobRole').value;
+            const jobDescription = document.getElementById('jobDescription').value;
+            const compensation = document.getElementById('compensation').value;
+            const workMode = document.getElementById('workMode').value;
+            const benefits = document.getElementById('benefits').value;
+            const bondPeriod = document.getElementById('bondPeriod').value;
+            const contractNeeded = document.querySelector('input[name="contract_needed"]:checked')?.value;
+
+            // Submit the data via AJAX
+            $.ajax({
+                type: 'POST',
+                url: '{% url "client:hire_freelancer" %}',
+                data: {
+                    user_id: userId,
+                    job_role: jobRole,
+                    job_description: jobDescription,
+                    compensation: compensation,
+                    work_mode: workMode,
+                    benefits: benefits,
+                    bond_period: bondPeriod,
+                    contract_needed: contractNeeded,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Invitation sent successfully!',
+                            confirmButtonColor: '#3085d6'
+                        }).then((result) => {
+                            $('#hireModal').modal('hide');
+                            // Clear the form
+                            $('#hireForm')[0].reset();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: response.error,
+                            confirmButtonColor: '#3085d6'
+                        });
+                    }
+                },
+                error: function(xhr, errmsg, err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'An error occurred. Please try again later.',
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            });
+        });
+    });
+</script>
 
 <style>
     .profile-img {
@@ -340,6 +503,16 @@
     .dropdown-check-list.visible .items {
         display: block;
     }
+
+    .custom-modal-dialog {
+        max-width: 1200px; /* Adjust the width as needed */
+        width: 100%; /* Ensure it takes full width up to the max */
+    }
+
+    /* Add this CSS to create vertical lines between columns */
+   
 </style>
 
+
+<!-- /^[a-zA-Z0-9]+( [a-zA-Z0-9]+)*$/ -->
 {% endblock %}

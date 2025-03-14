@@ -1,4 +1,4 @@
-{% extends 'Client/base.html' %}
+{% extends 'client/base.html' %}
 {% block 'client_content' %}
 {% load static %}
 {% load custom_filters %}
@@ -24,8 +24,14 @@
             <tr>
                 <td>{{ forloop.counter }}</td>
                 <td>{{ payment.project_title }}</td>
-                <td>{{ payment.freelancer_first_name }} {{ payment.freelancer_last_name }}</td>
-                <td>{{ payment.amount }}</td>
+                <td>
+                    {% if payment.team_name %}
+                    <strong>Team:</strong> {{ payment.team_name }} <br> <br>
+                    <strong>Project Manager:</strong> {{ payment.project_manager_full_name }}
+                {% else %}
+                    {{ payment.freelancer_first_name }} {{ payment.freelancer_last_name }}
+                {% endif %}</td>
+                <td>{{ payment.total_amount }}</td>
                 <td>
                     <a href="{% url 'client:view_invoice' payment.contract_id %}" class="btn btn-sm">
                         <i class="fas fa-eye" style="color: blue;"></i>

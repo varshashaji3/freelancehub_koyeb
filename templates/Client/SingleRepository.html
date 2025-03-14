@@ -1,5 +1,5 @@
 
-{% extends 'Client/base.html' %}
+{% extends 'client/base.html' %}
 {% block 'client_content' %}
 {% load static %}
 {% load custom_filters %}
@@ -621,7 +621,7 @@ th,td{
         });
     
         function check_url(field_id, error_id) {
-            var pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+            var pattern = /.*/; // Allow all characters
             var url = $(field_id).val();
             if (url.trim() === "") {
                 $(error_id).html("The URL field cannot be empty. Please provide a URL.").show();
@@ -639,7 +639,7 @@ th,td{
         }
     
         function check_description() {
-            var pattern = /^(?!.*\d{3})(?!^\s)(?!.*\s{2,})(?!.*\s$)[a-zA-Z\s]*$/;
+            var pattern = /.*/; // Allow all characters
             var description = $("#description").val();
             if (description.trim() === "") {
                 $("#error_des").html("Description cannot be empty").show();
@@ -684,7 +684,7 @@ th,td{
 
         function check_title(field_id, error_id) {
             var title = $(field_id).val().trim();
-            var pattern = /^(?!.*\d{3})(?!^\s)(?!.*\s{2,})(?!.*\s$)[a-zA-Z\s]*$/;
+            var pattern = /.*/; // Allow all characters
             
             if (title === "") {
                 $(error_id).html("Title cannot be empty.").show();
@@ -704,7 +704,7 @@ th,td{
         // Function to check task description
         function check_description(field_id, error_id) {
             var description = $(field_id).val().trim();
-            var pattern = /^(?!.*\d{3})(?!^\s)(?!.*\s{2,})(?!.*\s$)[a-zA-Z\s]*$/;
+            var pattern = /.*/; // Allow all characters
             
             if (description === "") {
                 $(error_id).html("Description cannot be empty.").show();
@@ -1088,7 +1088,7 @@ th,td{
                 <tbody>
                     {% for task in tasks %}
                     <tr>
-                        <td>{{ task.title }}</td>
+                        <td>{{ task.title|slice:":20" }}{% if task.title|length > 50 %}...{% endif %}</td>
                         <td>{{ task.due_date|date:"Y-m-d" }}</td>
                         <td style="color: {% if task.status == 'Completed' %}green{% elif task.status == 'In Progress' %}blue{% elif task.status == 'On Hold' %}orange{% else %}red{% endif %};">
                             {{ task.status }}

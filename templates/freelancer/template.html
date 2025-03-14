@@ -122,10 +122,15 @@
                             <span class="app-brand-logo demo">
                                 <img src="{{ profile2.profile_picture.url }}" alt="profile" style="height: 80px; width: 80px; margin-right:20px;border-radius:50%;">
                             </span>
-                            <span class="app-brand-text demo fw-bold ms-50">{{profile2.first_name}} {{profile2.last_name}}</span>
+                            {% if request.GET.team_id %}
+                                <span class="app-brand-text demo fw-bold ms-50">{{profile2.first_name}} {{profile2.last_name}} <br><br> <p style="color: red;font-size: medium;">Project Manager & Team Lead -{{ team_details.name }}</p></span>
+                            {% else %}
+                                <span class="app-brand-text demo fw-bold ms-50">{{profile2.first_name}} {{profile2.last_name}}</span>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="col-md-5 col-8 pe-0 ps-0 ps-md-2">
+                    <div class="col-md-5 col-8 pe-0 ps-0 ps-md-
+                    2">
                         <dl class="row mb-0 gx-4">
                             <dt class="col-sm-5 mb-1 d-md-flex align-items-center justify-content-end">
                                 <span class="fw-normal">Proposal:</span>
@@ -208,7 +213,7 @@
             <div class="card-body px-0 pb-0">
                 <div class="row">
                     <div class="col-12">
-                        <p>Thank you for considering my proposal. I’m excited about the possibility of working together and am confident I can deliver exceptional results. Feel free to reach out if you have any questions or need more information. Thank You!</p>
+                        <p>Thank you for considering my proposal. I'm excited about the possibility of working together and am confident I can deliver exceptional results. Feel free to reach out if you have any questions or need more information. Thank You!</p>
                     </div>
                 </div>
             </div>

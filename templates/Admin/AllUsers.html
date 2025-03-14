@@ -220,51 +220,6 @@
     </div>
 </div>
 
-<div class="year-filter">
-    <h4 class="filter-heading" style="color:#ff0057;">Filter by</h4><br>
-    <form method="GET" id="filterForm">
-        <div class="filter-row">
-            
-
-            <div class="filter-group">
-                <label for="year">Year:</label>
-                <select name="year" id="year" onchange="this.form.submit()">
-                    {% for year in 2023|to:current_year %}
-                    <option value="{{ year }}" {% if request.GET.year == year|stringformat:"i" or not request.GET.year and year == 2024 %}selected{% endif %}>{{ year }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="start_month">From:</label>
-                <select name="start_month" id="start_month" onchange="validateMonths()">
-                    <option value="">Month</option>
-                    {% for i in '1,2,3,4,5,6,7,8,9,10,11,12'|split:',' %}
-                    <option value="{{ i }}" {% if request.GET.start_month == i %}selected{% endif %}>
-                        {{ i|month_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="end_month">To:</label>
-                <select name="end_month" id="end_month" onchange="validateMonths()" {% if not request.GET.start_month %}disabled{% endif %}>
-                    <option value="">Month</option>
-                    {% for i in '1,2,3,4,5,6,7,8,9,10,11,12'|split:',' %}
-                    <option value="{{ i }}" {% if request.GET.end_month == i %}selected{% endif %}>
-                        {{ i|month_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <button type="button" onclick="clearFilters()" class="clear-filters-btn">
-                Clear
-            </button>
-        </div>
-    </form>
-</div><br>
 
 
 <div class="row" style="background-color:white;padding:10px;border-radius:10px;margin-top:-25px;

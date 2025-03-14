@@ -1,0 +1,325 @@
+{% extends 'freelancer/base.html' %}
+{% load static %}
+
+{% block 'freelancer_content' %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Skill Gap Analysis</h2>
+            
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            
+            <!-- Job Role Selection -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Enter Job Role</h5>
+                    <input type="text" id="jobRoleInput" class="form-control mb-3" placeholder="e.g. Frontend Developer, UI/UX Designer">
+                    <div id="jobRoleError" class="text-danger mb-2" style="display: none;">Please enter a valid job role (letters, spaces between words, and only - or / allowed)</div>
+                    <button id="analyzeBtn" class="btn btn-primary" disabled>Analyze Skills</button>
+                </div>
+            </div>
+            
+            <!-- Analysis Results -->
+            <div id="analysisResults" style="display: none;">
+                <div class="row">
+                    <!-- Existing Skills -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Your Skills</h5>
+                                <div id="existingSkills" class="skill-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fundamental Skills -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Required Fundamental Skills</h5>
+                                <div id="fundamentalSkills" class="skill-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Missing Fundamentals or Trending Skills -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title" id="thirdColumnTitle">Skills to Learn</h5>
+                                <div id="skillsToLearn" class="skill-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alert for Missing Fundamentals -->
+                <div id="fundamentalsAlert" class="alert alert-warning mt-4" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    We noticed you're missing some fundamental skills. We recommend focusing on these core skills before moving to advanced topics.
+                </div>
+
+                <!-- Course Recommendations -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title" id="courseRecommendationsTitle">Recommended Courses</h5>
+                        <div id="courseRecommendations"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.container {
+    background-color: #f8f9fa; /* Light background for better contrast */
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    border: none; /* Remove default card border */
+    border-radius: 8px; /* Rounded corners for cards */
+    transition: transform 0.3s; /* Smooth transform on hover */
+}
+
+.card:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Shadow on hover */
+}
+
+.skill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skill-badge {
+    background-color: #007bff; /* Primary color for skill badges */
+    color: white; /* White text for contrast */
+    border-radius: 16px;
+    padding: 6px 12px; /* Increased padding for better touch targets */
+    font-size: 14px;
+    transition: background-color 0.3s; /* Smooth background color transition */
+}
+
+.skill-badge:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+}
+
+.btn-primary {
+    background-color: #28a745; /* Green button for primary actions */
+    border: none; /* Remove border */
+    transition: background-color 0.3s; /* Smooth background color transition */
+}
+
+.btn-primary:hover {
+    background-color: #218838; /* Darker green on hover */
+}
+
+.course-recommendations-grid {
+    display: grid; /* Use grid layout for better control */
+    grid-template-columns: repeat(4, 1fr); /* Four cards per row */
+    gap: 20px; /* Space between cards */
+    margin-top: 16px;
+}
+
+.course-card {
+    background: #ffffff; /* White background for course cards */
+    border: 1px solid #dee2e6; /* Light border */
+    border-radius: 8px; /* Rounded corners */
+    padding: 16px;
+    transition: transform 0.3s, box-shadow 0.3s; /* Smooth transitions */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+.course-card:hover {
+    transform: scale(1.05); /* Slightly enlarge on hover */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Shadow on hover */
+}
+
+.course-image {
+    width: 100%;
+    height: 160px;  /* Increased height for better visibility */
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 12px; /* Space between image and content */
+}
+
+.course-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Space between title and button */
+}
+
+.course-title {
+    font-size: 16px; /* Increased font size for title */
+    font-weight: bold; /* Bold title for emphasis */
+    color: #333; /* Darker color for better readability */
+}
+
+.platform-badge {
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.spinner-border {
+    width: 1rem;
+    height: 1rem;
+    vertical-align: middle;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    const jobRoleRegex = /^[a-zA-Z]+(?:[-/][a-zA-Z]+)*(?:\s[a-zA-Z]+(?:[-/][a-zA-Z]+)*)*$/;
+    
+    $('#jobRoleInput').on('keyup', function() {
+        const inputValue = $(this).val();
+        const isValid = jobRoleRegex.test(inputValue);
+        
+        if (isValid) {
+            $('#jobRoleError').hide();
+            $('#analyzeBtn').prop('disabled', false);
+        } else {
+            $('#jobRoleError').show();
+            $('#analyzeBtn').prop('disabled', true);
+        }
+    });
+});
+
+document.getElementById('analyzeBtn').addEventListener('click', async () => {
+    const jobRole = document.getElementById('jobRoleInput').value.trim();
+    if (!jobRole) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Oops...',
+            text: 'Please enter a job role'
+        });
+        return;
+    }
+    
+    // Show SweetAlert loader
+    const loadingAlert = Swal.fire({
+        title: 'Analyzing Skills...',
+        html: 'Please wait while we analyze the skill requirements',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    try {
+        const response = await fetch('/freelancer/get-skill-analysis/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ job_role: jobRole })
+        });
+        
+        const data = await response.json();
+        // Close loading alert
+        loadingAlert.close();
+        
+        if (data.success) {
+            displayResults(data);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error analyzing skills'
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        loadingAlert.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while analyzing skills'
+        });
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function displayResults(data) {
+    // Show results container
+    document.getElementById('analysisResults').style.display = 'block';
+    
+    // Display existing skills
+    const existingSkillsDiv = document.getElementById('existingSkills');
+    existingSkillsDiv.innerHTML = data.existing_skills
+        .map(skill => `<span class="skill-badge">${skill}</span>`)
+        .join('');
+    
+    // Display fundamental skills
+    const fundamentalSkillsDiv = document.getElementById('fundamentalSkills');
+    fundamentalSkillsDiv.innerHTML = data.fundamental_skills
+        .map(skill => `<span class="skill-badge">${skill}</span>`)
+        .join('');
+    
+    // Handle missing fundamentals or trending skills
+    const thirdColumnTitle = document.getElementById('thirdColumnTitle');
+    const skillsToLearnDiv = document.getElementById('skillsToLearn');
+    const fundamentalsAlert = document.getElementById('fundamentalsAlert');
+    const courseRecommendationsTitle = document.getElementById('courseRecommendationsTitle');
+    
+    if (data.needs_fundamentals) {
+        thirdColumnTitle.textContent = 'Missing Fundamental Skills';
+        skillsToLearnDiv.innerHTML = data.missing_fundamentals
+            .map(skill => `<span class="skill-badge">${skill}</span>`)
+            .join('');
+        fundamentalsAlert.style.display = 'block';
+        courseRecommendationsTitle.textContent = 'Recommended Fundamental Courses';
+    } else {
+        thirdColumnTitle.textContent = 'Trending Skills to Learn';
+        skillsToLearnDiv.innerHTML = data.skill_gaps
+            .map(skill => `<span class="skill-badge">${skill}</span>`)
+            .join('');
+        fundamentalsAlert.style.display = 'none';
+        courseRecommendationsTitle.textContent = 'Recommended Advanced Courses';
+    }
+    
+    // Display course recommendations
+    const courseRecsDiv = document.getElementById('courseRecommendations');
+    courseRecsDiv.innerHTML = `
+        <div class="course-recommendations-grid">
+            ${data.course_recommendations.map(course => `
+                <div class="course-card">
+                    <img src="${course.image_url || '/static/images/default-course.png'}" 
+                         alt="${course.title}" 
+                         class="course-image">
+                    <div class="course-content">
+                        <h6>${course.title || course.skill}</h6>
+                        <a href="${course.url}" target="_blank" class="btn btn-sm btn-outline-primary">View Course</a>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+</script>
+{% endblock %}

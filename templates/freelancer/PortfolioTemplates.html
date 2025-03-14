@@ -1,8 +1,7 @@
 {% extends 'freelancer/base.html' %}
 {% block 'freelancer_content' %}
 {% load static %}
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
     #template-container {
         display: flex;
@@ -146,6 +145,8 @@
         border-radius: 5px; /* Rounded corners */
         transition: background-color 0.3s, transform 0.2s; /* Transition for hover effect */
         font-size: 1em; /* Font size for buttons */
+        pointer-events: auto; /* Ensure pointer events are enabled */
+        opacity: 1; /* Ensure the button is fully opaque */
     }
 
     .upload-button:hover {
@@ -165,61 +166,71 @@
         height:180px;
         width: 200px;
     }
+    .upload-button {
+        z-index: 10; /* Make sure the button appears above other elements */
+    }
+    
+    /* New style for disabled button */
+    .upload-button:disabled {
+        background-color: red; /* Change background color to red when disabled */
+        cursor: not-allowed; /* Change cursor to indicate it's not clickable */
+        opacity: 0.6; /* Optional: make it slightly transparent */
+        
+    }
 </style>
-
 <script>
-    $(document).ready(function () {
+    jQuery.noConflict();
+    (function($) {
+        $(document).ready(function () {
+            $("#file").change(function () {
+                check_file();
+            });
 
-        $("#file").change(function () {
-            check_file();
-        });
+            var file_error = false;
 
-        var file_error = false;
-
-        function check_file() {
-            var file_input = $("#file").val();
-            var extension = file_input.split('.').pop().toLowerCase();
-
-            if (file_input === "") {
-                // If no file is selected, show an error and disable the submit button
-                $("#error_file").html("<br>Please select a file to upload.").show();
-                $("#file").css("border", "2px solid red");
-                file_error = true;
-                $("#subbtn").prop("disabled", true);
-            } else if (extension === "pdf") {
-                // If the file has a .pdf extension, allow submission
-                $("#error_file").hide();
-                $("#file").css("border", "2px solid green");
-                $("#subbtn").prop("disabled", false);
-                file_error = false;
-            } else {
-                // If the file is not a .pdf, show an error and disable the submit button
-                $("#error_file").html("<br>Only PDF files are allowed.").show();
-                $("#file").css("border", "2px solid red");
-                file_error = true;
-                $("#subbtn").prop("disabled", true);
+            function check_file() {
+                var file_input = $("#file").val();
+                var extension = file_input.split('.').pop().toLowerCase();
+                console.log(extension);  // Log to check file extension
+            
+                if (file_input === "") {
+                    $("#error_file").html("<br>Please select a file to upload.").show();
+                    $("#file").css("border", "2px solid red");
+                    file_error = true;
+                    $("#subbtn").prop("disabled", true);
+                } else if (extension === "pdf") {
+                    $("#error_file").hide();
+                    $("#file").css("border", "2px solid green");
+                    $("#subbtn").prop("disabled", false);
+                    file_error = false;
+                } else {
+                    $("#error_file").html("<br>Only PDF files are allowed.").show();
+                    $("#file").css("border", "2px solid red");
+                    file_error = true;
+                    $("#subbtn").prop("disabled", true);
+                }
             }
-        }
-
-        $("#resumeform").submit(function (event) {
-            // Reset error flags
-            file_error = false;
-
-            // Perform validations
-            check_file();
-
-            if (file_error) {
-                $("#form_err").html("Please upload a valid PDF file.").show();
-                event.preventDefault(); // Prevent form submission if validation fails
-            } else {
-                $("#form_err").hide();
-                $("#subbtn").prop("disabled", false);
-                alert("Your resume is being uploaded!"); // Alert when upload button is clicked
-            }
+            
+            $("#subbtn").click(function (event) {
+                event.preventDefault(); // Prevent default form submission
+                console.log("Button clicked for form submission."); // Log button click
+                if (file_error) {
+                    $("#form_err").html("Please upload a valid PDF file.").show();
+                } else {
+                    $("#form_err").hide();
+                    console.log("Form submitted successfully."); // Log for debugging
+                    $("#resumeform").submit(); // Manually submit the form
+                }
+            });
         });
-    });
+    })(jQuery);
+
+    function openModal(templateId) {
+        console.log("Opening modal for template ID:", templateId); // Log template ID
+        document.getElementById("uploadModal").style.display = "flex"; // Show modal
+        document.getElementById("template_id_input").value = templateId; // Set template ID in hidden input
+    }
 </script>
-
 
 <div id="template-container">
     {% for template in templates %}
@@ -289,7 +300,7 @@
 
         <form action="{% url 'freelancer:upload_resume' %}" method="POST" enctype="multipart/form-data" id="resumeform">
             {% csrf_token %}
-            <input type="file" name="resume" id="file" required>
+            <input type="file" name="resume"  id="file" required>
             <br><span id="error_file" style="color: red;"></span>
             <input type="hidden" name="template_id" id="template_id_input">
             <button type="submit" class="upload-button" id="subbtn">Upload Resume</button>
@@ -302,11 +313,6 @@
     function previewTemplate(templateId) {
         const url = "/freelancer/preview_template/" + templateId + "/";
         window.open(url, '_blank'); // Opens the template preview in a new tab
-    }
-
-    function openModal(templateId) {
-        document.getElementById("uploadModal").style.display = "flex"; // Show modal
-        document.getElementById("template_id_input").value = templateId; // Set template ID in hidden input
     }
 
     function closeModal() {

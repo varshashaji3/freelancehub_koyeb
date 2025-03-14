@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime as dt, date as dt_date, timedelta
 import random
 import string
 from django.http import HttpResponse
@@ -14,7 +14,7 @@ from core.models import CustomUser, Event, Notification, Register
 
 from django.contrib.auth.decorators import login_required
 
-from freelancer.models import FreelancerProfile, Proposal, ProposalFile, Todo,Document
+from freelancer.models import FreelancerProfile, Proposal, ProposalFile, Todo,Document,SalaryPayment
 from administrator.models import Template
 from django.contrib import messages
 from django.db.models import Q
@@ -36,6 +36,46 @@ from django.utils import timezone
 
 from django.db.models import Sum,Avg
 from django.db.models.functions import TruncMonth
+from django.urls import reverse  # Add this import
+
+import pandas as pd
+import time
+
+from django.http import JsonResponse
+from django.core.mail import EmailMessage  # Add this line
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+import json
+
+import warnings
+
+# Suppress specific FutureWarnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+from datetime import datetime as dt, date as dt_date, timedelta
+
+import pandas as pd
+import os
+
+# Load the standardized skills DataFrame, skipping bad lines and without a header
+try:
+    standardized_skills_df = pd.read_csv(
+        os.path.join(os.path.dirname(__file__), 'skills.csv'),
+        header=None,  # Specify that there is no header
+        on_bad_lines='skip'  # This will skip lines with too many fields
+    )
+    standardized_skills_df.columns = ['skill']  # Assign a column name
+except Exception as e:
+    print(f"Error reading skills.csv: {e}")
+
+# Now you can access the 'skill' column
+standardized_skills = set(standardized_skills_df['skill'].str.strip())  # Store for quick lookup
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
 @login_required
 @nocache
 def freelancer_view(request):
@@ -126,22 +166,71 @@ def freelancer_view(request):
             'events': events
         })
     
-    # Calculate monthly earnings based on the paid_at date and status
-    monthly_earnings = PaymentInstallment.objects.filter(
-        contract__freelancer=logged_user,  # Ensure the contract is associated with the logged-in freelancer
-        status='paid',  # Only include installments with status 'paid'
-        paid_at__isnull=False  # Ensure only paid installments are considered
-    ).annotate(
-        month=TruncMonth('paid_at')
-    ).values('month').annotate(
-        total_earnings=Sum('amount')
-    ).order_by('month')
+    # Calculate monthly earnings
+    monthly_earnings_data = []
 
-    # Prepare data for the chart
+    # Get all paid payment installments for individual projects
+    payment_installments = PaymentInstallment.objects.filter(
+        status='paid',
+        paid_at__isnull=False,
+        contract__project__freelancer=logged_user
+    )
+
+    print("\n=== Individual Project Earnings ===")
+    for installment in payment_installments:
+        amount = float(installment.amount)
+        paid_date = installment.paid_at.strftime('%Y-%m-%d')
+        print(f"Date: {paid_date} | Amount: ${amount:.2f} | Project: {installment.contract.project.title}")
+        
+        # Convert to datetime if it's a date
+        month_date = installment.paid_at
+        if isinstance(month_date, dt_date) and not isinstance(month_date, dt):
+            month_date = dt.combine(month_date, dt.min.time())
+        monthly_earnings_data.append({
+            'month': month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0),
+            'amount': amount
+        })
+
+    # Get all paid salary payments for team projects
+    salary_payments = SalaryPayment.objects.filter(
+        status='completed',  
+        team_member__user=logged_user
+    )
+
+    print("\n=== Team Project Earnings ===")
+    for salary in salary_payments:
+        amount = float(salary.amount_paid)
+        date = salary.payment_date.strftime('%Y-%m-%d')
+        print(f"Date: {date} | Amount: ${amount:.2f} | Team: {salary.team_member.team.name}")
+        # Convert to datetime if it's a date
+        month_date = salary.payment_date
+        if isinstance(month_date, dt_date) and not isinstance(month_date, dt):
+            month_date = dt.combine(month_date, dt.min.time())
+        monthly_earnings_data.append({
+            'month': month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0),
+            'amount': amount
+        })
+
+    # Aggregate earnings by month
+    earnings_by_month = {}
+    for entry in monthly_earnings_data:
+        month = entry['month']
+        earnings_by_month[month] = earnings_by_month.get(month, 0) + float(entry['amount'])
+
+    print("\n=== Monthly Totals ===")
+    for month, total in sorted(earnings_by_month.items()):
+        print(f"Month: {month.strftime('%B %Y')} | Total: ${total:.2f}")
+
+    # Sort months and prepare final data
+    sorted_months = sorted(earnings_by_month.keys())
     earnings_data = {
-        'months': [entry['month'].strftime('%B') for entry in monthly_earnings],
-        'earnings': [float(entry['total_earnings']) for entry in monthly_earnings]
+        'months': [month.strftime('%B') for month in sorted_months],
+        'earnings': [earnings_by_month[month] for month in sorted_months]
     }
+
+    print("\n=== Final Chart Data ===")
+    print("Months:", earnings_data['months'])
+    print("Earnings:", [f"${amount:.2f}" for amount in earnings_data['earnings']])
 
     # Calculate top clients by revenue
     top_clients = Project.objects.filter(freelancer=logged_user).values(
@@ -195,6 +284,168 @@ def freelancer_view(request):
         ]
     }
 
+    # Get freelancer's profile and skills
+    try:
+        freelancer = FreelancerProfile.objects.get(user_id=uid)
+        skills = freelancer.skills.strip('[]').replace("'", "").split(', ') if freelancer.skills else []
+        professions = freelancer.professional_title.strip('[]').replace("'", "").split(', ') if freelancer.professional_title else []
+        
+        # Step 1: Print profession to category mapping
+        print("\n=== Step 1: Profession Category Mapping ===")
+        profession_category_map = {
+            'Web Developer': 'Web Development',
+            'Front End Developer': 'Front-End Development',
+            'Back End Developer': 'Back-End Development',
+            'Full Stack Developer': 'Full-Stack Development',
+            'Mobile App Developer': 'Mobile Development',
+            'Android Developer': 'Android Development',
+            'iOS Developer': 'iOS Development',
+            'UI/UX Designer': 'UI/UX Design',
+            'Graphic Designer': 'Graphic Design',
+            'Logo Designer': 'Logo Design',
+            'Poster Designer': 'Poster Design',
+            'Software Developer': 'Software Development',
+            'Machine Learning Engineer': 'Machine Learning Engineering',
+            'Artificial Intelligence Specialist': 'Artificial Intelligence'
+        }
+        print("Available mappings:", profession_category_map)
+
+        # Step 2: Print relevant categories
+        print("\n=== Step 2: Freelancer's Relevant Categories ===")
+        print("Freelancer's professions:", professions)
+        relevant_categories = [profession_category_map[prof] for prof in professions if prof in profession_category_map]
+        print("Mapped categories:", relevant_categories)
+
+        # Step 3: Print submitted proposals
+        print("\n=== Step 3: Already Submitted Proposals ===")
+        submitted_proposal_project_ids = Proposal.objects.filter(
+            freelancer_id=uid
+        ).values_list('project_id', flat=True)
+        print("Already proposed project IDs:", list(submitted_proposal_project_ids))
+
+        # Step 4: Print available projects
+        print("\n=== Step 4: Available Projects ===")
+        available_projects = Project.objects.filter(
+            Q(freelancer__isnull=True) | Q(team_id__isnull=True),
+            project_status='Not Started',
+            status='open'
+        ).filter(
+            Q(category__in=relevant_categories) | 
+            Q(required_skills__isnull=False)  # Changed to just check if skills exist
+        ).exclude(
+            id__in=submitted_proposal_project_ids
+        )
+
+        print("Freelancer skills:", skills)
+        print("Available projects:")
+        filtered_projects = []
+        for project in available_projects:
+            # Split required skills and convert to lowercase for case-insensitive comparison
+            project_skills = [skill.strip().lower() for skill in project.required_skills] if project.required_skills else []
+            freelancer_skills = [skill.strip().lower() for skill in skills]
+            
+            # Check if there's any skill overlap
+            matching_skills = set(project_skills) & set(freelancer_skills)
+            
+            if matching_skills or project.category in relevant_categories:
+                filtered_projects.append(project)
+                print(f"- {project.title}")
+                print(f"  Category: {project.category}")
+                print(f"  Required skills: {project.required_skills}")
+                print(f"  Matching skills: {matching_skills}")
+
+        # Step 5: Print text documents
+        print("\n=== Step 5: Text Documents for Analysis ===")
+        project_docs = []
+        project_objects = []
+        for project in filtered_projects:  # Use filtered_projects instead of available_projects
+            project_text = f"{project.title} {project.description} {' '.join(project.required_skills)}".lower()
+            print(f"\nProject: {project.title}")
+            print(f"Text document: {project_text[:100]}...")  # Print first 100 chars
+            project_docs.append(project_text)
+            project_objects.append(project)
+
+        recommended_projects = []
+        if project_docs:  # Only proceed if there are projects
+            # Step 6: Print similarity scores
+            print("\n=== Step 6: TF-IDF Analysis ===")
+            vectorizer = TfidfVectorizer(stop_words='english')
+            freelancer_text = ' '.join(skills).lower()
+            print(f"Freelancer document: {freelancer_text}")
+            all_docs = [freelancer_text] + project_docs
+            
+            tfidf_matrix = vectorizer.fit_transform(all_docs)
+            cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+            
+            print("\nCosine similarities:")
+            for project, score in zip(project_objects, cosine_similarities):
+                print(f"- {project.title}: {score:.3f}")
+            
+            # Create list of (project, similarity_score) tuples
+            project_scores = list(zip(project_objects, cosine_similarities))
+            
+            # Sort projects by similarity score
+            project_scores.sort(key=lambda x: x[1], reverse=True)
+            
+            # Step 7: Print final recommendations
+            print("\n=== Step 7: Final Recommendations ===")
+            for project, score in project_scores[:5]:  # Limit to top 5
+                client_profile = ClientProfile.objects.get(user=project.user_id)
+                client_register = Register.objects.get(user=project.user_id)
+                
+                if client_profile.client_type == 'Individual':
+                    client_name = f"{client_register.first_name} {client_register.last_name}"
+                else:
+                    client_name = client_profile.company_name
+
+                # Get client's profile picture
+                client_profile_picture = client_register.profile_picture if client_register.profile_picture else None
+
+                # Convert skills to lowercase for case-insensitive comparison
+                project_skills = {skill.lower() for skill in project.required_skills}
+                freelancer_skills = {skill.lower() for skill in skills}
+                
+                # Calculate skill matches
+                matching_skills = project_skills.intersection(freelancer_skills)
+                missing_skills = project_skills - freelancer_skills
+                
+                if project_skills:
+                    match_percentage = len(matching_skills) / len(project_skills) * 100
+                else:
+                    match_percentage = 0
+
+                # Determine category match
+                category_match = project.category in relevant_categories
+
+                # Generate recommendation reasons
+                reasons = []
+                if matching_skills:
+                    reasons.append(f"You have {len(matching_skills)} matching skills: {', '.join(matching_skills)}")
+                if category_match:
+                    reasons.append(f"Project category ({project.category}) matches your professional expertise")
+                if score > 0.3:  # Only include similarity if it's significant
+                    reasons.append(f"Project requirements align with your skill set")
+
+                print(f"\nProject: {project.title}")
+                print(f"- Skill match: {match_percentage:.1f}%")
+                print(f"- Similarity score: {score * 100:.1f}%")
+                print(f"- Matching skills: {matching_skills}")
+                print(f"- Missing skills: {missing_skills}")
+
+                recommended_projects.append({
+                    'project': project,
+                    'client_name': client_name,
+                    'client_profile_picture': client_profile_picture,  # Add this line
+                    'match_percentage': round(match_percentage, 1),
+                    'similarity_score': round(score * 100, 1),
+                    'matching_skills': list(matching_skills),
+                    'missing_skills': list(missing_skills),
+                    'reasons': reasons
+                })
+
+    except FreelancerProfile.DoesNotExist:
+        recommended_projects = []
+
     return render(request, 'freelancer/index.html', {
         'profile2': profile2,
         'profile1': profile1,
@@ -209,6 +460,7 @@ def freelancer_view(request):
         'earnings_data': json.dumps(earnings_data),
         'top_clients_data': json.dumps(top_clients_data),
         'rating_data': rating_data,
+        'recommended_projects': recommended_projects,
     })
 
 
@@ -316,12 +568,12 @@ def AddProfileFreelancer(request, uid):
 def account_settings(request):
     uid=request.user.id
     profession = [
-    'Web Developer','Front-End Developer','Back-End Developer','Full-Stack Developer',
+    'Web Developer','Front End Developer','Back End Developer','Full Stack Developer',
     'Mobile App Developer','Android Developer','iOS Developer','UI/UX Designer','Graphic Designer',
     'Logo Designer','Poster Designer','Machine Learning Engineer','Artificial Intelligence Specialist','Software Developer',
 ]
     skills = [
-    "java", "c++", "python", "eclipse", "visual studio", "html/css", "javascript", "bootstrap", "sass", 
+    "java", "c++", "python", "eclipse", "visual studio", "html","css", "javascript", "bootstrap", "sass", 
     "swift", "xcode", "kotlin", "android studio", "flutter", "react native", "r", "jupyter", "pandas", 
     "numpy", "tensorflow", "pytorch", "keras", "scikit-learn", "adobe xd", "sketch", "figma", "invision", 
     "react", "angular", "vue.js", "webpack", "node.js", "django", "ruby on rails", "spring boot", 
@@ -896,8 +1148,10 @@ def update_todo_status(request):
     
     try:
         todo = Todo.objects.get(id=todo_id)
-        todo.is_completed = is_completed
-        todo.save()
+        # Only allow marking as completed, ignore attempts to unmark
+        if is_completed:
+            todo.is_completed = True
+            todo.save()
         return JsonResponse({'status': 'success'})
     except Todo.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Todo not found'}, status=404)
@@ -928,9 +1182,9 @@ def view_project(request):
         'Graphic Designer': 'Graphic Design',
         'Logo Designer': 'Logo Design',
         'Poster Designer': 'Poster Design',
+        'Software Developer': 'Software Development',
         'Machine Learning Engineer': 'Machine Learning Engineering',
-        'Artificial Intelligence Specialist': 'Artificial Intelligence',
-        'Software Developer': 'Software Development'
+        'Artificial Intelligence Specialist': 'Artificial Intelligence'
     }
 
     if profile1.permission:
@@ -1008,7 +1262,7 @@ def view_project(request):
 @login_required
 @nocache
 def single_project_view(request, pid):
-    uid = request.user.id  # Use request.user.id to get the logged-in user's ID
+    uid = request.user.id
     
     # Fetch user profiles and project
     profile1 = get_object_or_404(CustomUser, id=uid)
@@ -1023,6 +1277,18 @@ def single_project_view(request, pid):
         
         proposal_exists = Proposal.objects.filter(freelancer=uid, project_id=pid).exists()
         
+        # Get owned teams with exactly 5 members
+        owned_teams = Team.objects.filter(created_by=profile1)
+        complete_teams = []
+        
+        for team in owned_teams:
+            # Count unique users in the team
+            member_count = TeamMember.objects.filter(team=team).values('user').distinct().count()
+            
+            # Only add teams with exactly 5 members
+            if member_count == 5:
+                complete_teams.append(team)
+        
         todos = Todo.objects.filter(user_id=uid)
         
         context = {
@@ -1034,10 +1300,15 @@ def single_project_view(request, pid):
             'client_profile': client_profile,
             'client_register': client_register,
             'proposal_exists': proposal_exists,
+            'complete_teams': complete_teams,  # Only teams with exactly 5 members
         }
         return render(request, 'freelancer/SingleProject.html', context)
     else:
-        return render(request, 'freelancer/PermissionDenied.html',{'profile1':profile1,'profile2':profile2,'freelancer':freelancer})
+        return render(request, 'freelancer/PermissionDenied.html',{
+            'profile1':profile1,
+            'profile2':profile2,
+            'freelancer':freelancer
+        })
         
     
     
@@ -1104,8 +1375,6 @@ def proposal_list(request):
             project = proposal.project
             client_profile = ClientProfile.objects.get(user_id=project.user_id)
             reg = Register.objects.get(user_id=project.user_id)
-            
-            print(f"Proposal: {proposal}, Project: {project}, Client: {reg.first_name} {reg.last_name}")
 
             if client_profile.client_type == 'Individual':
                 client_name = f"{reg.first_name} {reg.last_name}"
@@ -1137,25 +1406,30 @@ def proposal_list(request):
         
 @login_required
 @nocache        
-def generate_proposal(request,pid):
+def generate_proposal(request, pid):
     
     if 'uid' not in request.session:
         return redirect('login')
 
     uid = request.session['uid']
     profile1 = CustomUser.objects.get(id=uid)
-    profile2=Register.objects.get(user_id=uid)
-    freelancer=FreelancerProfile.objects.get(user_id=uid)
+    profile2 = Register.objects.get(user_id=uid)
+    freelancer = FreelancerProfile.objects.get(user_id=uid)
     
-    if profile1.permission==True:
+    if profile1.permission == True:
         todos = Todo.objects.filter(user_id=uid)
-        project=Project.objects.get(id=pid)
-        uid=project.user_id
+        project = Project.objects.get(id=pid)
+        uid = project.user_id
         client_profile = ClientProfile.objects.get(user_id=uid)
         client_register = Register.objects.get(user_id=uid)
-        userprofile=CustomUser.objects.get(id=uid)
-        fancy_id=generate_fancy_proposal_id()
+        userprofile = CustomUser.objects.get(id=uid)
+        fancy_id = generate_fancy_proposal_id()
+
+        team_id = request.GET.get('team_id')  #
+        team_details = None
         
+        if team_id:
+            team_details = get_object_or_404(Team, id=team_id)
         if request.method == 'POST':
             description = request.POST.get('proposal_description')
             if project.allow_bid:
@@ -1170,13 +1444,30 @@ def generate_proposal(request,pid):
                 proposal_details=description,
                 budget=budget,
                 deadline=end_date,
-                fancy_num=fancy_id
+                fancy_num=fancy_id,
+                team_id=team_details 
             )
             proposal.save()
             return redirect('freelancer:proposal_detail1', prop_id=proposal.id)
-        return render(request, 'freelancer/template.html',{'profile1':profile1,'profile2':profile2,'freelancer':freelancer,'todos':todos,'project':project,'client_profile':client_profile,'client_register':client_register,'userprofile':userprofile,'number':fancy_id})
+
+        return render(request, 'freelancer/template.html', {
+            'profile1': profile1,
+            'profile2': profile2,
+            'freelancer': freelancer,
+            'todos': todos,
+            'project': project,
+            'client_profile': client_profile,
+            'client_register': client_register,
+            'userprofile': userprofile,
+            'number': fancy_id,
+            'team_details': team_details  # Pass team details to the template
+        })
     else:
-        return render(request, 'freelancer/PermissionDenied.html',{'profile1':profile1,'profile2':profile2,'freelancer':freelancer})
+        return render(request, 'freelancer/PermissionDenied.html', {
+            'profile1': profile1,
+            'profile2': profile2,
+            'freelancer': freelancer
+        })
          
      
   
@@ -1201,6 +1492,10 @@ def proposal_detail1(request, prop_id):
     if profile1.permission:
         todos = Todo.objects.filter(user_id=uid)
 
+        team_id = proposal.team_id_id  
+        team_details = None
+        if team_id:
+            team_details = get_object_or_404(Team, id=team_id)  
         if request.method == 'POST':
             # Handle additional file uploads
             files = request.FILES.getlist('additional_files[]')
@@ -1221,7 +1516,8 @@ def proposal_detail1(request, prop_id):
             'freelancer': freelancer,
             'client_profile': client_profile,
             'client_register': client_register,
-            'userprofile': userprofile
+            'userprofile': userprofile,
+            'team_details': team_details  # Pass team details to the template
         })
 
     return render(request, 'freelancer/PermissionDenied.html', {
@@ -1258,6 +1554,12 @@ def proposal_detail2(request, prop_id):
     if profile1.permission:
         todos = Todo.objects.filter(user_id=uid)
 
+        # Get team details if associated with the proposal
+        team_id = proposal.team_id_id  
+        team_details = None
+        if team_id:
+            team_details = get_object_or_404(Team, id=team_id)
+
         return render(request, 'freelancer/single_proposal.html', {
             'proposal': proposal,
             'profile1': profile1,
@@ -1265,7 +1567,8 @@ def proposal_detail2(request, prop_id):
             'freelancer': freelancer,
             'client_profile': client_profile,
             'client_register': client_register,
-            'userprofile': userprofile
+            'userprofile': userprofile,
+            'team_details': team_details  # Pass team details to the template
         })
 
     return render(request, 'freelancer/PermissionDenied.html', {
@@ -1494,6 +1797,26 @@ def view_repository(request, repo_id):
         project = get_object_or_404(Project, id=repository.project_id)
         client_profile = ClientProfile.objects.get(user_id=project.user_id)
         client_register = Register.objects.get(user_id=project.user_id)
+
+        # Initialize team_members_data to ensure it is always defined
+        team_members_data = []
+
+        if project.freelancer:
+            is_project_manager = False  
+        else:
+            if project.team_id:
+                is_project_manager = TeamMember.objects.filter(team_id=project.team_id, user=request.user, role='PROJECT_MANAGER').exists()
+                team_members = TeamMember.objects.filter(team=project.team_id).select_related('user')
+                for member in team_members:
+                    if member.user:
+                        team_members_data.append({
+                            'username': member.user.username,  # Fetch the username
+                            'role': member.role,  # Fetch the role
+                            'user_id': member.user.id,  # Pass the user ID
+                        })
+            else:
+                is_project_manager = False 
+
         
         if client_profile.client_type == 'Individual':
             client_name = f"{client_register.first_name} {client_register.last_name}"
@@ -1501,6 +1824,7 @@ def view_repository(request, repo_id):
             client_name = client_profile.company_name
         
         client_profile_picture = client_register.profile_picture if client_register.profile_picture else None
+        client_email = client_profile.user.email
 
         shared_files = SharedFile.objects.filter(repository=repository).values(
             'file', 'uploaded_at', 'uploaded_by', 'description'
@@ -1508,7 +1832,7 @@ def view_repository(request, repo_id):
         shared_urls = SharedURL.objects.filter(repository=repository).values(
             'url', 'shared_at', 'shared_by', 'description'
         )
-        proposals = Proposal.objects.filter(project=project,status='Accepted')
+        proposals = Proposal.objects.filter(project=project, status='Accepted')
         contracts = FreelanceContract.objects.filter(project=project)
         items = []
         
@@ -1533,27 +1857,29 @@ def view_repository(request, repo_id):
         
         items.sort(key=lambda x: x['date'])
         notes = SharedNote.objects.filter(repository=repository).order_by('added_at')
-        tasks=Task.objects.filter(project=project)
+        tasks = Task.objects.filter(project=project)
         try:
             cancellation_details = CancellationRequest.objects.get(project=project)
         except CancellationRequest.DoesNotExist:
             cancellation_details = None  # Set to None if no cancellation request exists
-
+        
         return render(request, 'freelancer/SingleRepository.html', {
             'profile1': profile1,
             'profile2': profile2,
             'freelancer': freelancer,
             'repository': repository,
             'items': items,
-             'notes':notes,
-            'tasks':tasks,
+            'notes': notes,
+            'tasks': tasks,
             'client_name': client_name,
             'client_profile_picture': client_profile_picture,
+            'client_email': client_email,
             'proposals': proposals,
             'contracts': contracts,
-            
+            'is_project_manager': is_project_manager,
             'project': project,
             'cancellation_details': cancellation_details,
+            'team_members': team_members_data,
         })
     else:
         return render(request, 'freelancer/PermissionDenied.html', {
@@ -1777,28 +2103,14 @@ def submit_user_review(request):
         project_id = int(request.POST.get('project_id'))
         overall_rating = int(request.POST.get('overall_rating'))
         client_id = int(client_id)
-        
-        # Debugging prints
-        print(f"Review Text: {review_text}")
-        print(f"Reviewer ID: {reviewer_id}")
-        print(f"Reviewee ID: {client_id}")
-        print(f"Project ID: {project_id}")
-        print(f"Overall Rating: {overall_rating}S")
-
-        # Fetch the related objects
         try:
             project = get_object_or_404(Project, id=project_id)
             freelancer = get_object_or_404(CustomUser, id=reviewer_id)
             client = get_object_or_404(CustomUser, id=client_id)
         except Exception as e:
-            print(f"Error fetching data: {e}")
             return HttpResponse(status=404, content=f"Error: {e}")
 
-        print(f"Project: {project}")
-        print(f"Freelancer: {freelancer}")
-        print(f"Client: {client}")
-
-        # Create and save the review
+      
         review = Review(
             reviewer=freelancer,
             reviewee=client,
@@ -1808,12 +2120,9 @@ def submit_user_review(request):
         )
         review.save()
 
-        print("Review saved successfully.")
-
         if project.freelancer and project.freelancer == freelancer:
             project.freelancer_review_given = True
             project.save()
-            print(f"Project updated with freelancer review: {project.freelancer_review_given}")
         else:
             print(f"Freelancer ID mismatch. Expected: {project.freelancer.id}, Found: {freelancer.id}")
 
@@ -1821,16 +2130,6 @@ def submit_user_review(request):
         return redirect('freelancer:freelancer_view')
 
     return HttpResponse(status=405, content="Method Not Allowed")
-
-
-
-
-
-
-
-
-
-
 
 
 from client.models import ChatRoom 
@@ -1848,28 +2147,47 @@ def chat_view(request):
 
     if profile1.permission: 
         
-        # Fetch chat rooms associated with the freelancer
         chat_rooms = ChatRoom.objects.filter(participants=freelancer.user_id).prefetch_related('participants')
 
-        # Debugging: Check if chat_rooms are fetched
-        print(f"Chat Rooms: {chat_rooms}")  # Debugging line
-
-        # Fetch client details for each chat room
         clients = []
+        group_chats = []  
         for chat in chat_rooms:
-            # Exclude the freelancer from the participants to get only clients
-            for participant in chat.participants.exclude(id=freelancer.user_id):
-                client_profile = ClientProfile.objects.get(user=participant)
-                client_register = Register.objects.get(user_id=participant.id)
+            if chat.chat_type == 'private':  
+                for participant in chat.participants.all().exclude(id=freelancer.user_id):  
+                    try:
+                        client_profile = ClientProfile.objects.get(user=participant)
+                        client_register = Register.objects.get(user_id=participant.id)
+                        clients.append({
+                            'user': participant,
+                            'profile': client_profile,
+                            'register': client_register,
+                            'chat_room_id': chat.id
+                        })
+                    except ClientProfile.DoesNotExist:
+                        continue 
+            elif chat.chat_type == 'group':  
+                members = []
+                for participant in chat.participants.all():  
+                    members.append({
+                        'user': participant,
+                        'user_id': participant.id,
+                        'name': f"{participant.register.first_name} {participant.register.last_name}",
+                        'profile_picture': participant.register.profile_picture.url if participant.register.profile_picture else None
+                    })
+                group_chats.append({
+                    'chat_room_id': chat.id,
+                    'chat_name': chat.name,  
+                    'chat_type': chat.chat_type,
+                    'members': members
+                })
+                
                 clients.append({
-                    'user': participant,
-                    'profile': client_profile,
-                    'register': client_register,
-                    'chat_room_id': chat.id
-                })  # Store user, profile, and register details
-        
-        # Debugging: Check if clients are being populated
-        print(f"Clients: {clients}")  # Debugging line
+                    'chat_room_id': chat.id,
+                    'chat_name': chat.name,  
+                    'chat_type': chat.chat_type,
+                    'members': members
+                })
+
         
         return render(request, 'freelancer/chat.html', {
             'profile1': profile1,
@@ -1877,7 +2195,7 @@ def chat_view(request):
             'freelancer': freelancer,
             'chat_rooms': chat_rooms,
             'clients': clients,  
-            # Ensure clients are passed to the template
+            'group_chats': group_chats,  
         })
     else:
         return render(request, 'freelancer/PermissionDenied.html', {
@@ -1885,7 +2203,6 @@ def chat_view(request):
             'profile2': profile2,
             'freelancer': freelancer,
         })
-        
         
         
         
@@ -1898,7 +2215,6 @@ def send_message(request):
             chat_room_id = data.get('chat_room_id')
             content = data.get('content')
 
-            # Validate inputs
             if not chat_room_id or not content:
                 return JsonResponse({'success': False, 'error': 'Missing chat_room_id or content'}, status=400)
 
@@ -1932,26 +2248,36 @@ def fetch_messages(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         chat_room_id = data.get('chat_room_id')
-
-        # Fetch messages for the given chat room
+        chat_room = ChatRoom.objects.get(id=chat_room_id)
         messages = Message.objects.filter(chat_room_id=chat_room_id).order_by('timestamp')
 
-        # Prepare messages for response
         messages_list = []
         for message in messages:
-            print(f"Message ID: {message.id}, Content: {message.content}, Image: {message.image}, File: {message.file}")  # Debugging line
+            # Get sender's Register information
+            try:
+                sender_register = Register.objects.get(user_id=message.sender.id)
+                sender_name = f"{sender_register.first_name} {sender_register.last_name}"
+                sender_profile_picture = sender_register.profile_picture.url if sender_register.profile_picture else None
+            except Register.DoesNotExist:
+                sender_name = message.sender.username
+                sender_profile_picture = None
 
-            msg_data = {
-                'content': message.content if message.content else '',  # Ensure content is not None
+            message_data = {
+                'content': message.content if message.content else '',
                 'type': 'sent' if message.sender == request.user else 'received',
-                'image': message.image.url if message.image and hasattr(message.image, 'url') else None,  # Check if image exists
-                'file': message.file.url if message.file and hasattr(message.file, 'url') else None,    # Check if file exists
+                'image': message.image.url if message.image else None,
+                'file': message.file.url if message.file else None,
+                'is_group_chat': chat_room.chat_type == 'group',
+                'sender_name': sender_name,
+                'sender_profile_picture': sender_profile_picture,
+                'timestamp': message.timestamp.strftime("%I:%M %p")  # Adding time in 12-hour format
             }
-            messages_list.append(msg_data)
+            messages_list.append(message_data)
 
-        print(messages_list)  # Debugging line to check the messages list
-
-        return JsonResponse({'success': True, 'messages': messages_list})
+        return JsonResponse({
+            'success': True,
+            'messages': messages_list
+        })
 
     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
@@ -2273,8 +2599,6 @@ def process_resume(request, document_id):
         return HttpResponse(rendered_html, content_type='text/html') 
     except Exception as e:
         return HttpResponse(f"Error loading template: {e}", status=500)
-
-
 
 
 
@@ -2675,3 +2999,1334 @@ def edit_portfolio(request, portfolio_id):
         'portfolio': portfolio,
         'content': content
     })
+
+@login_required
+@nocache
+def my_teams(request):
+    if 'uid' not in request.session:
+        return redirect('login')
+
+    uid = request.session['uid']
+    profile1 = CustomUser.objects.get(id=uid)
+    profile2 = Register.objects.get(user_id=uid)
+    freelancer = FreelancerProfile.objects.get(user_id=uid)
+
+    if profile1.permission:
+        owned_teams = Team.objects.filter(created_by=request.user)
+        
+        return render(request, 'freelancer/my_teams.html', {
+            'profile1': profile1,
+            'profile2': profile2,
+            'freelancer': freelancer,
+            'owned_teams': owned_teams,
+        })
+    else:
+        return render(request, 'freelancer/PermissionDenied.html', {
+            'profile1': profile1,
+            'profile2': profile2,
+            'freelancer': freelancer,
+        })
+
+from django.contrib import messages
+from django.shortcuts import redirect
+from .models import Team,TeamMember
+import uuid
+
+def create_team(request):
+    if request.method == 'POST':
+        team_name = request.POST.get('team_name')
+        try:
+            # Generate join code
+            while True:
+                join_code = str(uuid.uuid4())[:8]
+                # Check if this code already exists
+                if not Team.objects.filter(join_code=join_code).exists():
+                    break
+            
+            # Create team with the generated join code
+            team = Team.objects.create(
+                name=team_name,
+                created_by=request.user,
+                join_code=join_code
+            )
+
+            # Add the team creator as a project manager
+            TeamMember.objects.create(
+                team=team,
+                user=request.user,
+                role='PROJECT_MANAGER'
+            )
+
+            messages.success(request, f'Team "{team_name}" created successfully! Join code: {team.join_code}')
+        except Exception as e:
+            messages.error(request, f'Failed to create team: {str(e)}')
+            
+        
+    return redirect('freelancer:my_teams')
+
+
+def edit_team(request, team_id):
+    team = get_object_or_404(Team, id=team_id)
+    if request.method == 'POST':
+        team_name = request.POST.get('team_name')  # Get the team name from the POST data
+        if team_name:  # Validate that the team name is provided
+            team.name = team_name  # Update the team name
+            team.save()  # Save the changes
+            return redirect('freelancer:my_teams')  # Redirect to the team management page
+    
+    return redirect('freelancer:my_teams')
+
+
+def delete_team(request, team_id):
+    team = get_object_or_404(Team, id=team_id)
+    if request.method == 'POST':
+        team.delete()
+        return redirect('freelancer:my_teams')  # Redirect to the team management page
+    return redirect('freelancer:my_teams')
+
+from django.shortcuts import render, get_object_or_404
+from .models import Team 
+
+def manage_team(request, team_id):
+    if not request.user.is_authenticated or request.user.role != 'freelancer':
+        return redirect('login')
+
+    team = get_object_or_404(Team, id=team_id)
+    team_projects = Project.objects.filter(team=team)
+    client_details = []
+    salary_paid_all_members = False  # Initialize the variable here
+    payment_received = False  # Initialize payment_received variable
+
+    for project in team_projects:
+        client_profile = ClientProfile.objects.get(user=project.user)
+        client_register = None
+
+        if client_profile.client_type == 'Individual':
+            client_register = Register.objects.get(user=project.user)
+            client_name = f"{client_register.first_name} {client_register.last_name}"
+        else:
+            client_register = Register.objects.get(user=project.user)
+            client_name = client_profile.company_name
+
+        client_details.append({
+            'client_name': client_name,
+            'client_profile_picture': client_register.profile_picture.url if client_register.profile_picture else None,
+            'client_email': client_profile.user.email
+        })
+
+        try:
+            contract = FreelanceContract.objects.get(project_id=project.id)
+            installments = PaymentInstallment.objects.filter(contract=contract)
+            payment_received = all(installment.status == 'paid' for installment in installments)
+
+            team_members = TeamMember.objects.filter(team=team)
+            salaries_paid = SalaryPayment.objects.filter(
+                project_id=project.id,
+                status='completed'
+            ).values_list('team_member_id', flat=True)
+
+            team_member_ids = team_members.values_list('id', flat=True)
+            salary_paid_all_members = len(salaries_paid) == len(team_member_ids)
+        except FreelanceContract.DoesNotExist:
+            payment_received = False
+            salary_paid_all_members = False
+    
+    team_members = TeamMember.objects.filter(team=team).select_related(
+        'user',
+        'user__register',
+        'user__freelancerprofile'
+    )
+
+    # Fetch all available freelancers excluding the current user
+    available_freelancers = CustomUser.objects.filter(role='freelancer').exclude(id=request.user.id).select_related('register', 'freelancerprofile')
+
+    # Define required roles
+    REQUIRED_ROLES = ['PROJECT_MANAGER', 'DESIGNER', 'FRONTEND_DEV', 'BACKEND_DEV', 'QA_TESTER']
+
+    # Check if all required roles exist and are assigned
+    all_roles_assigned = all(
+        TeamMember.objects.filter(
+            team=team,
+            role=role,
+            user__isnull=False
+        ).exists()
+        for role in REQUIRED_ROLES
+    )
+
+    # Check if salary percentages are set for all roles
+    salary_percentages_set = all(
+        TeamMember.objects.filter(
+            team=team, 
+            role=role,
+            salary_percentage__gt=0  # Changed to only check if greater than 0
+        ).exists()
+        for role in ['PROJECT_MANAGER', 'DESIGNER', 'FRONTEND_DEV', 'BACKEND_DEV', 'QA_TESTER']
+    )
+
+    print("Salary percentages check:", salary_percentages_set)  # Debug print
+    print("Individual role checks:")  # Debug print
+    for role in ['PROJECT_MANAGER', 'DESIGNER', 'FRONTEND_DEV', 'BACKEND_DEV', 'QA_TESTER']:
+        has_salary = TeamMember.objects.filter(
+            team=team, 
+            role=role,
+            salary_percentage__gt=0
+        ).exists()
+        print(f"{role}: {has_salary}")  # Debug print
+
+    # Format team member data
+    team_members_data = []
+    for member in team_members:
+        if member.user:
+            profile = getattr(member.user, 'freelancerprofile', None)
+            titles = []
+            if profile and profile.professional_title:
+                titles = profile.professional_title.strip('[]').replace("'", "").split(', ')
+            
+            team_members_data.append({
+                'id': member.user.id,
+                'name': f"{member.user.register.first_name} {member.user.register.last_name}",
+                'profession': ', '.join(titles) if titles else "No profession listed",
+                'role': member.role,
+                'join_date': member.joined_at,
+                'status': member.is_active,
+                'email': member.user.email,
+                'profile_picture': member.user.register.profile_picture.url if member.user.register.profile_picture else None,
+                'salary_percentage': member.salary_percentage or 0  # Add this line
+            })
+
+    # Format available freelancers data with professions
+    available_freelancers_data = []
+    for freelancer in available_freelancers:
+        profile = getattr(freelancer, 'freelancerprofile', None)
+        titles = []
+        if profile and profile.professional_title:
+            titles = profile.professional_title.strip('[]').replace("'", "").split(', ')
+        
+        available_freelancers_data.append({
+            'id': freelancer.id,
+            'name': f"{freelancer.register.first_name} {freelancer.register.last_name}",
+            'profession': ', '.join(titles) if titles else "No profession listed",
+            'email': freelancer.email,
+            'profile_picture': freelancer.register.profile_picture.url if freelancer.register.profile_picture else None
+        })
+
+    current_percentages = {
+        member.role: member.salary_percentage 
+        for member in TeamMember.objects.filter(team=team)
+    }
+
+    project_details = []
+    for project in team_projects:
+        repository = Repository.objects.filter(project=project).first()  # Get the repository associated with the project
+        repository_id = repository.id if repository else None  # Get repository ID if it exists
+        project_details.append({
+            'project': project,
+            'repository_id': repository_id
+        })
+    # Fetch invitations sent by the user for this team
+    invitations_sent = TeamInvitation.objects.filter(invited_by=request.user, team=team)
+
+    # Prepare invitations data
+    invitations_data = []
+    for invitation in invitations_sent:
+        expired = timezone.now() > invitation.expires_at  # Check if the token has expired
+        invitations_data.append({
+            'email': invitation.email,
+            'role': invitation.role,
+            'status': invitation.status,
+            'invitation_date': invitation.created_at,  # Assuming you have a created_at field
+            'expired': expired,
+            'invitation_id': invitation.id  # Pass the expired status
+        })
+
+    # Calculate total allocated salary percentage
+    total_allocated_percentage = sum(
+        member.get('salary_percentage', 0) 
+        for member in team_members_data
+    )
+
+    context = {
+        'team': team,
+        'team_members': team_members_data,
+        'current_percentages': current_percentages,
+        'total_allocated_percentage': total_allocated_percentage,
+        'is_manager': TeamMember.objects.filter(
+            team=team,
+            user=request.user,
+            role='PROJECT_MANAGER'
+        ).exists(),
+        'all_roles_assigned': all_roles_assigned,
+        'unassigned_roles': REQUIRED_ROLES,  
+        'available_freelancers': available_freelancers_data,  
+        'invitations': invitations_data,
+        'team_projects': team_projects,  # Include team projects in the context
+        'client_details': client_details,
+        'project_details': project_details,
+        'salary_paid_all_members': salary_paid_all_members,
+        'payment_received': payment_received,  # Pass client details to the template
+        'salary_percentages_set': salary_percentages_set,
+    }
+
+    return render(request, 'freelancer/manage_team.html', context)
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.mail import send_mail
+from django.conf import settings
+import uuid
+from .models import TeamInvitation, Team, TeamMember, Project 
+from client.models import FreelanceContract, PaymentInstallment
+from django.core.signing import Signer, BadSignature
+import secrets
+
+def send_team_invitation(request):
+    if request.method == 'POST':
+        freelancer_id = request.POST.get('freelancer')
+        role = request.POST.get('role')
+        team_id = request.POST.get('team_id')
+        team = Team.objects.get(id=team_id)
+
+        # Check if the selected freelancer is "other"
+        if freelancer_id == "other":
+            email = request.POST.get('email')  # Get the email from the input
+            if not email:
+                messages.error(request, 'Email is required for non-registered members.')
+                return redirect('freelancer:manage_team', team_id=team_id)
+        else:
+            freelancer = get_object_or_404(CustomUser, id=freelancer_id)
+            email = freelancer.email
+
+        # Generate a secure token
+        token = secrets.token_urlsafe(32)
+        signer = Signer()
+        signed_token = signer.sign(token)
+
+        # Save invitation to database with the signed token
+        invitation = TeamInvitation.objects.create(
+            team=team,
+            email=email,
+            role=role,
+            invited_by=request.user,
+            token=signed_token,
+            expires_at=timezone.now() + timezone.timedelta(days=15)  # Set expiration to 15 days from now
+        )
+
+        # Generate invitation link using the secure token
+        invite_link = f"http://127.0.0.1:8000/freelancer/join_team/{token}/"
+        decline_link = f"http://127.0.0.1:8000/freelancer/decline_invitation/{invitation.id}/"  # Link to decline invitation
+
+        # Send the email
+        send_mail(
+            subject=f'Invitation to join {team.name}',
+            message='',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            html_message=render_to_string('freelancer/team_invitation.html', {
+                'team': team,
+                'invitation': invitation,
+                'invite_link': invite_link,
+                'decline_link': decline_link,  # Pass the decline link
+                'join_code': team.join_code
+            })
+        )
+
+        messages.success(request, f'Invitation sent to {email}')
+        return redirect('freelancer:manage_team', team_id=team_id)
+
+    return redirect('freelancer:manage_team', team_id=team_id)
+
+@login_required
+def join_team(request, token):
+    if request.method == 'GET':
+        if not token:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid invitation link'
+            })
+            
+        signer = Signer()
+        
+        try:
+            # Correctly filter invitations by status
+            invitations = TeamInvitation.objects.filter(status='pending')  # Specify the status here
+            invitation = None
+            
+            for inv in invitations:
+                try:
+                    # Verify the token signature
+                    original_token = signer.unsign(inv.token)
+                    if original_token == token:
+                        invitation = inv
+                        break
+                except BadSignature:
+                    continue
+            
+            if not invitation:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Invalid or expired invitation'
+                })
+                
+            # Check if the user exists using the email from the invitation
+            email = invitation.email
+            
+            if not CustomUser.objects.filter(email=email).exists():
+                return redirect('register')  
+            return render(request, 'freelancer/join_team.html', {
+                'team': invitation.team,
+                'invitation': invitation
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error verifying invitation: {str(e)}'
+            })
+            
+    elif request.method == 'POST':
+        return handle_join_team_post(request)
+
+def handle_join_team_post(request):
+    join_code = request.POST.get('join_code')
+    team_id = request.POST.get('team_id')
+    invitation_id = request.POST.get('invitation_id')
+    
+    if not all([join_code, team_id, invitation_id]):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Missing required information'
+        })
+        
+    try:
+        team = Team.objects.get(id=team_id)
+        invitation = TeamInvitation.objects.get(id=invitation_id, status='pending')
+        
+        if join_code != team.join_code:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid join code'
+            })
+        if TeamMember.objects.filter(team=team, user=request.user).exists():
+            return JsonResponse({
+                'status': 'warning',
+                'message': 'You are already a member of this team'
+            })
+        
+        TeamMember.objects.filter(
+            team=team,
+            role=invitation.role
+        ).update(user=request.user,joined_at=timezone.now())  
+        
+        TeamInvitation.objects.filter(
+            team=team,
+            role=invitation.role,
+            status='pending'
+        ).exclude(id=invitation.id).update(status='rejected')  
+        
+        invitation.status = 'accepted'  
+        invitation.save()
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Successfully joined the team',
+            'redirect_url': reverse('freelancer:freelancer_view')  
+        })
+        
+    except (Team.DoesNotExist, TeamInvitation.DoesNotExist):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid team or invitation'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Error joining team: {str(e)}'
+        })
+
+from django.http import JsonResponse
+from .models import Team  
+
+def check_team_name(request):
+    if request.method == 'GET':
+        team_name = request.GET.get('team_name', '')
+        exists = Team.objects.filter(name=team_name).exists()
+        return JsonResponse({'exists': exists})
+
+from django.utils import timezone
+from django.core.mail import send_mail
+import secrets
+
+@login_required
+def resend_invitation(request, invitation_id):
+    if request.method == 'POST':
+        invitation = get_object_or_404(TeamInvitation, id=invitation_id)
+
+        new_token = secrets.token_urlsafe(32)
+        signer = Signer()
+        signed_token = signer.sign(new_token)
+
+        invitation.token = signed_token
+        invitation.expires_at = timezone.now() + timedelta(days=15)  # Set expiration to 7 days from now
+        invitation.save()
+
+        invite_link = f"http://127.0.0.1:8000/freelancer/join_team/{new_token}/"
+        decline_link = f"http://127.0.0.1:8000/freelancer/decline_invitation/{invitation.id}/"  # Link to decline invitation
+
+        # Send the email
+        send_mail(
+            subject=f'Invitation to join {invitation.team.name}',
+            message='',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            html_message=render_to_string('freelancer/team_invitation.html', {
+                'team': invitation.team,
+                'invitation': invitation,
+                'invite_link': invite_link,
+                'decline_link': decline_link, 
+                'join_code': invitation.team.join_code
+            })
+        )
+ 
+        messages.success(request, f'Invitation resent to {invitation.email}')
+        return redirect('freelancer:manage_team', team_id=invitation.team.id)
+
+    return redirect('freelancer:manage_team', team_id=invitation.team.id)
+
+@login_required
+def decline_invitation(request, invitation_id):
+    invitation = get_object_or_404(TeamInvitation, id=invitation_id)
+    invitation.status = 'rejected'
+    invitation.save()
+    
+    messages.success(request, 'Invitation declined successfully.')
+    
+    return render(request, 'freelancer/decline_confirmation.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from .models import Team, TeamMember
+
+@login_required
+def save_team_salaries(request):
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method')
+        return redirect('freelancer:manage_team')
+
+    try:
+        team_id = request.POST.get('team_id')
+        team = Team.objects.get(id=team_id)
+        
+        # Update PROJECT_MANAGER percentage
+        pm_percentage = int(request.POST.get('PROJECT_MANAGER', 0))
+        TeamMember.objects.filter(
+            team=team,
+            role='PROJECT_MANAGER'
+        ).update(salary_percentage=pm_percentage)
+
+        # Update or create other roles
+        other_roles = ['DESIGNER', 'FRONTEND_DEV', 'BACKEND_DEV', 'QA_TESTER']
+        for role in other_roles:
+            percentage = int(request.POST.get(role, 0))
+            TeamMember.objects.update_or_create(
+                team=team,
+                role=role,
+                defaults={
+                    'salary_percentage': percentage,
+                    'is_active': True  # Using is_active instead of status
+                }
+            )
+
+        messages.success(request, 'Salary percentages updated successfully')
+        
+    except Team.DoesNotExist:
+        messages.error(request, 'Team not found')
+    except ValueError as e:
+        messages.error(request, f'Invalid percentage value provided: {str(e)}')
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+
+    return redirect('freelancer:manage_team', team_id=team_id)
+
+
+from django.http import Http404
+import json  # Import json to parse the request body
+
+def create_chatroom(request):
+    if request.method == 'POST':
+        data = json.loads(request.body) 
+        team_id = data.get('team_id') 
+        try:
+            team = get_object_or_404(Team, id=team_id)  
+           
+            existing_chatroom = ChatRoom.objects.filter(name=team.name).first()
+            if existing_chatroom:
+                return JsonResponse({'status': 'error', 'message': 'Chatroom already exists.', 'chatroom_id': existing_chatroom.id})
+
+            participants = TeamMember.objects.filter(team=team).values_list('user', flat=True)  
+            if not participants:
+                print("Warning: No participants found for the team.")  
+
+            chat_type = 'group' 
+            chatroom = ChatRoom.objects.create(name=team.name, chat_type=chat_type)
+            chatroom.participants.set(participants) 
+            chatroom.save()
+
+            return JsonResponse({'status': 'success', 'chatroom_id': chatroom.id})
+
+        except Http404:
+            return JsonResponse({'status': 'error', 'message': 'Team not found.'}, status=404)
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from client.models import Task  # Import your Task model
+
+@csrf_exempt  
+def assign_task(request):
+    if request.method == 'POST':
+        task_id = request.POST.get('task_id')
+        assigned_to = request.POST.get('assigned_to')
+
+        try:
+            task = Task.objects.get(id=task_id)  # Fetch the task by ID
+            task.assigned_to_id = assigned_to  # Assuming 'assigned_to' is a ForeignKey to User
+            task.save()  # Save the changes
+            return JsonResponse({'success': True, 'message': 'Task assigned successfully.'})
+        except Task.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Task not found.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+
+
+
+
+@csrf_exempt  # Use this only if you are not using CSRF tokens in AJAX requests
+def pay_team_salaries(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        project_id = data.get('project_id')
+        print(project_id)
+
+        # Validate project_id
+        if not project_id :
+            return JsonResponse({'error': 'Invalid project ID provided.'}, status=400)
+
+        try:
+            project = Project.objects.get(id=project_id)  
+            team = project.team  
+            team_members = TeamMember.objects.filter(team=team)  
+
+            total_percentage = sum(member.salary_percentage for member in team_members)
+
+            if total_percentage > 100:
+                return JsonResponse({'error': 'Total salary percentage exceeds 100%'}, status=400)
+
+            for member in team_members:
+                salary = (member.salary_percentage / 100) * project.total_including_gst  # Calculate salary based on percentage
+                
+                SalaryPayment.objects.create(
+                    team_member=member,
+                    project=project,
+                    amount_paid=salary,
+                    paid_by=request.user,
+                    status='completed'
+                )
+
+            return JsonResponse({'success': 'Salaries paid successfully for all team members.'})
+
+        except Project.DoesNotExist:
+            return JsonResponse({'error': 'Project not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+
+@csrf_exempt  # Use this only if you are not using CSRF tokens in AJAX requests
+@login_required
+def toggle_open_to_work(request):
+    if request.method == 'POST':
+        status = request.POST.get('status')
+        if status in ['open', 'close']:
+            # Get the user's FreelancerProfile
+            freelancer_profile = FreelancerProfile.objects.get(user=request.user)
+            # Set the is_open_to_work field based on the status
+            freelancer_profile.is_open_to_work = (status == 'open')  # True if 'open', False if 'close'
+            freelancer_profile.save()
+            return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from client.models import EventAndQuiz, EventRegistration
+
+@login_required
+def events_and_quizzes_view(request):
+    current_time = timezone.now()
+    upcoming_events = EventAndQuiz.objects.filter(
+        date__gt=current_time,
+        event_status='upcoming'
+    ).order_by('date')
+    
+    past_events = EventAndQuiz.objects.filter(
+        Q(event_status='done') | Q(date__gt=current_time)  # OR condition
+    ).order_by('date')
+    
+    # Get both registration IDs and attended status
+    registrations = EventRegistration.objects.filter(
+        freelancer=request.user
+    ).values('event_id', 'attended')
+    
+    registered_events = {reg['event_id']: reg['attended'] for reg in registrations}
+    
+    print(registered_events)
+    upcoming_events_list = upcoming_events.filter(type='event')
+    upcoming_quizzes = upcoming_events.filter(type='quiz')
+    past_events_list = past_events.filter(type='event')
+    past_quizzes = past_events.filter(type='quiz')
+
+    # Fetch certificates
+    user_id = request.user.id
+    certificates_path = os.path.join(settings.MEDIA_ROOT, 'certificates', str(user_id))
+    certificates = []
+
+    if os.path.exists(certificates_path):
+        for filename in os.listdir(certificates_path):
+            if filename.endswith('.pdf') or filename.endswith('.jpg') or filename.endswith('.png'):  # Adjust as needed
+                certificates.append({
+                    'name': filename,
+                    'view_url': f'/media/certificates/{user_id}/{filename}',  # URL to view the certificate
+                    'download_url': f'/media/certificates/{user_id}/{filename}'  # URL to download the certificate
+                })
+
+    context = {
+        'upcoming_events': upcoming_events_list,
+        'upcoming_quizzes': upcoming_quizzes,
+        'past_events': past_events_list,
+        'past_quizzes': past_quizzes,
+        'registered_events': registered_events,  # Now contains both event_id and attended status
+        'active_page': 'events_quizzes',
+        'certificates': certificates  # Add certificates to context
+    }
+    
+    return render(request, 'freelancer/events_and_quizzes.html', context)
+
+from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+import json
+
+@login_required
+def register_event(request):
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():  # Use transaction to ensure data consistency
+                data = json.loads(request.body)
+                event_id = data.get('event_id')
+                
+                # Get the event/quiz
+                event = EventAndQuiz.objects.select_for_update().get(id=event_id)  
+                
+                # Increment the registration count
+                event.number_of_registrations += 1
+                event.save()
+                
+                # Register the user
+                registration = EventRegistration.objects.create(
+                    freelancer=request.user,
+                    event=event
+                )
+                
+                # Prepare email content
+                context = {
+                    'user': request.user,
+                    'event': event,
+                    'registration': registration
+                }
+                
+                # Render email template
+                email_html = render_to_string('freelancer/email_registration.html', context)
+                
+                # Create email message
+                email = EmailMessage(
+                    subject=f'Registration Confirmation: {event.title}',
+                    body=email_html,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[request.user.email]
+                )
+                email.content_subtype = "html"  # Main content is now HTML
+                
+                # Attach poster if it exists
+                if event.poster:
+                    # Get the file name from the poster path
+                    file_name = event.poster.name.split('/')[-1]
+                    # Attach the poster file
+                    email.attach(
+                        filename=file_name,
+                        content=event.poster.read(),
+                        mimetype='application/octet-stream'
+                    )
+                
+                # Send email
+                email.send(fail_silently=False)
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Registration successful!'
+                })
+                
+        except EventAndQuiz.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Event not found.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method.'
+    })
+    
+    
+from client.models import QuizQuestion  
+import json  # Add this import at the top
+
+def quiz_view(request, quiz_id):
+    is_registered = EventRegistration.objects.filter(
+        freelancer=request.user,
+        event=quiz_id  
+    ).exists()
+    event = get_object_or_404(EventAndQuiz, id=quiz_id)
+    is_attended = EventRegistration.objects.filter(
+        freelancer=request.user,
+        event=quiz_id,
+        attended=True
+    ).exists()
+    duration = event.duration  
+    
+    # Get questions and convert QuerySet to list of dictionaries
+    questions = QuizQuestion.objects.filter(quiz=quiz_id).values(
+        'question', 
+        'option1', 
+        'option2', 
+        'option3', 
+        'option4',
+        'correct_answer',
+        'points'
+    )
+    questions_list = list(questions)
+    
+    # Serialize the questions list to JSON
+    questions_json = json.dumps(questions_list)
+    
+    return render(request, 'freelancer/quiz.html', {
+        'quiz_id': quiz_id,
+        'questions': questions_json,  # Send serialized JSON
+        'is_registered': is_registered,
+        'duration': duration,
+        'is_attended': is_attended
+    })
+    
+from client.models import QuizAttempt  # Add this import at the top
+
+@login_required
+@csrf_exempt  # Be careful with CSRF exemption in production
+def submit_quiz(request, quiz_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            score = data.get('score', 0)
+            
+            # Create quiz attempt record
+            quiz = get_object_or_404(EventAndQuiz, id=quiz_id)
+            QuizAttempt.objects.create(
+                quiz=quiz,
+                freelancer=request.user,
+                score=score
+            )
+            
+            # Update EventRegistration to mark as attended
+            registration = EventRegistration.objects.get(
+                freelancer=request.user,
+                event=quiz
+            )
+            registration.attended = True
+            registration.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Quiz submitted successfully!'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method.'
+    }, status=400)
+    
+    
+    
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import requests
+import json
+from .models import FreelancerProfile
+
+@login_required
+@nocache
+def analyze_skill_gap(request):
+    if 'uid' not in request.session:
+        return redirect('login')
+
+    uid = request.session['uid']
+    profile1 = CustomUser.objects.get(id=uid)
+    profile2 = Register.objects.get(user_id=uid)
+    freelancer = FreelancerProfile.objects.get(user_id=uid)
+    
+    if profile1.permission:
+        
+        context = {
+            'profile1': profile1,
+            'profile2': profile2,
+            'freelancer': freelancer,
+        }
+        
+        return render(request, 'freelancer/skill_gap_analysis.html', context)
+    else:
+        return render(request, 'freelancer/PermissionDenied.html', {
+            'profile1': profile1,
+            'profile2': profile2,
+            'freelancer': freelancer
+        })
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+import json
+import os
+import pandas as pd
+import requests
+from .models import FreelancerProfile
+from dotenv import load_dotenv
+import google.generativeai as genai
+import spacy
+from bs4 import BeautifulSoup
+import re
+from fuzzywuzzy import fuzz
+
+# Load spaCy NLP model
+nlp = spacy.load('en_core_web_sm')
+standardized_skills_df = pd.read_csv(os.path.join(os.path.dirname(__file__), 'skills.csv')) 
+standardized_skills = set(standardized_skills_df['skill'].str.lower().str.strip())  # Store for quick lookup
+
+
+def standardize_skill(skill):
+    # Remove numbers, dashes, and extra characters
+    skill = re.sub(r'[\d\.\-\(\)\[\]•]', '', skill).strip().lower()
+
+    exact_matches = {
+        "javascript": "javascript",
+        "js": "javascript",
+        "html5": "html",
+        "css3": "css",
+        "react": "react",
+        "react.js": "react",
+        "react native": "react native",
+        "node.js": "node.js",
+        "node": "node.js",
+    }
+    
+    # If exact match found, return the standardized version
+    if skill in exact_matches:
+        return exact_matches[skill]
+
+    # Tokenize and lemmatize using spaCy
+    doc = nlp(skill)
+    clean_skill = ' '.join([token.lemma_ for token in doc if not token.is_stop])
+
+    return clean_skill
+
+
+
+def clean_and_match_skills(raw_skills):
+    """
+    Cleans raw skill names and matches them against the standardized skill set from CSV.
+    """
+    cleaned_skills = []
+    
+    for skill in raw_skills:
+        cleaned_skill = standardize_skill(skill)
+        words = cleaned_skill.split()
+
+        matched_skill = next((s for s in standardized_skills if fuzz.partial_ratio(s, cleaned_skill) > 80), None)
+
+        if matched_skill:
+            cleaned_skills.append(matched_skill)
+
+    return cleaned_skills
+
+
+@require_http_methods(["POST"])
+def get_skill_analysis(request):
+    try:
+        data = json.loads(request.body)
+        job_role = data.get('job_role')
+        
+        freelancer = FreelancerProfile.objects.get(user=request.user)
+        existing_skills = []
+        if freelancer.skills:
+            skills_str = freelancer.skills.strip('[]')
+            existing_skills = [
+                standardize_skill(skill.strip().strip("'").replace('-', ''))
+                for skill in skills_str.split(',')
+                if skill.strip()
+            ]
+            
+        load_dotenv()
+        genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        professional_check_prompt = f"Is {job_role} a professional job role? yes/no"
+        professional_check_response = model.generate_content(professional_check_prompt)
+        print(professional_check_response.text)  # For debugging
+
+        # Clean and normalize the response
+        is_professional = professional_check_response.text.strip().lower()
+        if 'yes' in is_professional:  # More flexible check
+            
+            fundamental_prompt = f"""I'm interested in a career as a {job_role}. 
+            What are the core technical skills I need to develop to be competitive in this field?
+            List only 5 main skills, without any description."""
+            
+            print("Fundamental Prompt:", fundamental_prompt)
+            
+            try:
+                fundamental_response = model.generate_content(fundamental_prompt)
+                print("Fundamental Response:", fundamental_response.text)  # Print the response from the AI
+                
+                raw_fundamental_skills = [skill.strip() for skill in fundamental_response.text.split('\n') if skill.strip()]
+                fundamental_skills = clean_and_match_skills(raw_fundamental_skills)
+
+                print("Standardized Fundamental Skills:", fundamental_skills)  # Print standardized skills
+
+                missing_fundamentals = [skill for skill in fundamental_skills if skill not in existing_skills]
+                print("Missing Fundamentals:", missing_fundamentals)  # Debugging statement
+
+                # If fundamental skills are missing, recommend courses
+                if missing_fundamentals:
+                    course_recommendations = []
+                    for skill in missing_fundamentals:
+                        courses = fetch_classcentral_courses(skill)
+                        course_recommendations.extend(courses)
+
+                    return JsonResponse({
+                        'success': True,
+                        'existing_skills': existing_skills,
+                        'fundamental_skills': fundamental_skills,
+                        'missing_fundamentals': missing_fundamentals,
+                        'needs_fundamentals': True,
+                        'course_recommendations': course_recommendations
+                    })
+
+                # Get Trending Skills
+                current_year = datetime.now().year
+                trending_prompt = f"""I'm a {job_role} looking to stay ahead of the curve. 
+                What are the most in-demand technical skills, frameworks, and specific technologies for a {job_role} in {current_year}? 
+                Focus only on specific tools, libraries, and frameworks. Provide just the names, no descriptions."""
+
+                print("Trending Prompt:", trending_prompt)  # Print the prompt given to the AI
+                
+                trending_response = model.generate_content(trending_prompt)
+                print("Trending Response:", trending_response.text)  # Print the response from the AI
+                
+                raw_trending_skills = [skill.strip() for skill in trending_response.text.split('\n') if skill.strip()]
+                trending_skills = clean_and_match_skills(raw_trending_skills)
+
+                print("Standardized Trending Skills:", trending_skills)  # Print standardized skills
+
+                skill_gaps = [skill for skill in trending_skills if skill not in existing_skills]
+
+                course_recommendations = []
+                for skill in skill_gaps:
+                    courses = fetch_classcentral_courses(skill)
+                    course_recommendations.extend(courses)
+
+                return JsonResponse({
+                    'success': True,
+                    'existing_skills': existing_skills,
+                    'fundamental_skills': fundamental_skills,
+                    'trending_skills': trending_skills,
+                    'skill_gaps': skill_gaps,
+                    'needs_fundamentals': False,
+                    'course_recommendations': course_recommendations
+                })
+
+            except Exception as e:
+                print("Error in fundamental skills generation:", str(e))  # Debugging statement
+                return JsonResponse({'success': False, 'message': f'Error generating recommendations: {str(e)}'}, status=500)
+        else:
+            return JsonResponse({'success': False, 'message': "It is not a professional job role."}, status=400)
+    except FreelancerProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Freelancer profile not found'}, status=404)
+    except Exception as e:
+        print("General error:", str(e))  # Debugging statement
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+def fetch_classcentral_courses(skill):
+    """
+    Fetches top courses from Class Central for a given skill.
+    """
+    base_url = "https://www.classcentral.com/search?q="
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+    def scrape_courses(url):
+        """Helper function to scrape courses from a given URL."""
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        courses = []
+
+        for course_card in soup.find_all("li", class_="bg-white", limit=3):  
+            try:
+                title_elem = course_card.find("h2", class_="text-1")
+                if not title_elem:
+                    continue
+                title = title_elem.text.strip()
+
+                link_elem = course_card.find("a", class_="color-charcoal")
+                link = "https://www.classcentral.com" + link_elem["href"] if link_elem else ""
+
+                img_elem = course_card.find("img")
+                img_url = img_elem["src"] if img_elem and "src" in img_elem.attrs else ""
+
+                provider_elem = course_card.find("a", class_="color-charcoal")
+                provider = provider_elem.text.strip() if provider_elem else "Unknown Provider"
+
+                if title and link:
+                    courses.append({
+                        "title": title,
+                        "platform": provider,
+                        "url": link,
+                        "image_url": img_url
+                    })
+            except Exception as e:
+                print(f"Error processing course card: {e}")
+                continue
+
+        return courses
+
+    courses = scrape_courses(base_url + skill)
+
+    if not courses:
+        courses = scrape_courses(base_url + skill + "&level=beginner")
+
+    return courses
+
+
+# Refactored FreelanceHub API with Performance and NLP Improvements
+
+# import json
+# import os
+# import requests
+# from bs4 import BeautifulSoup
+# from django.http import JsonResponse
+# from django.views.decorators.http import require_http_methods
+# from django.core.cache import cache
+# from concurrent.futures import ThreadPoolExecutor
+# from django.db.models import F
+# from fuzzywuzzy import fuzz
+# import spacy
+# import google.generativeai as genai
+# from dotenv import load_dotenv
+# from .models import FreelancerProfile
+# import re
+
+
+# nlp = spacy.load('en_core_web_sm')
+
+# def standardize_skill(skill):
+#     doc = nlp(skill)
+#     clean_skill = re.sub(r'[^a-zA-Z0-9\s]', '', ' '.join([token.lemma_ for token in doc if not token.is_stop]))
+#     return clean_skill.lower().strip()
+
+# def scrape_courses(skill):
+#     base_url = f"https://www.classcentral.com/search?q={skill}"
+#     response = requests.get(base_url, headers={"User-Agent": "Mozilla/5.0"})
+#     if response.status_code != 200:
+#         return []
+#     soup = BeautifulSoup(response.text, "html.parser")
+#     courses = []
+#     for card in soup.find_all("li", class_="bg-white", limit=3):
+#         title = card.find("h2", class_="text-1")
+#         link = card.find("a", class_="color-charcoal")
+#         if title and link:
+#             courses.append({"title": title.text.strip(), "url": "https://www.classcentral.com" + link["href"]})
+#     return courses
+
+# def fetch_courses_concurrently(skills):
+#     with ThreadPoolExecutor() as executor:
+#         results = list(executor.map(scrape_courses, skills))
+#     return [course for sublist in results for course in sublist]
+
+# @require_http_methods(["POST"])
+# def get_skill_analysis(request):
+#     try:
+#         data = json.loads(request.body)
+#         print("Received data:", data)  # Debugging statement
+#         job_role = data.get('job_role')
+#         print("Job role:", job_role)  # Debugging statement
+        
+#         freelancer = FreelancerProfile.objects.get(user=request.user)
+#         existing_skills = [
+#             skill.strip().strip("'").lower().replace('-', '')
+#             for skill in freelancer.skills.strip('[]').split(',') if skill.strip()
+#         ] if freelancer.skills else []
+#         print("Existing skills:", existing_skills)  # Debugging statement
+
+#         load_dotenv()
+#         genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+#         model = genai.GenerativeModel('gemini-pro')
+
+#         fundamental_response = model.generate_content(f"I'm interested in a career as a {job_role}. List 2 core technical skills needed (names only).")
+#         fundamental_skills = [standardize_skill(skill) for skill in fundamental_response.text.split('\n') if skill.strip()]
+#         print("Fundamental skills:", fundamental_skills)  # Debugging statement
+        
+#         # Clean up fundamental skills by removing numeric prefixes
+#         cleaned_fundamental_skills = [skill.split(' ', 1)[-1].strip() for skill in fundamental_skills]
+#         print("Cleaned fundamental skills:", cleaned_fundamental_skills)  # Debugging statement
+
+#         missing_fundamentals = []
+#         for skill in cleaned_fundamental_skills:
+#             is_missing = not any(fuzz.partial_ratio(skill, es) > 80 for es in existing_skills)
+#             print(f"Checking if '{skill}' is missing: {is_missing}")  # Debugging statement
+#             if is_missing:
+#                 missing_fundamentals.append(skill)
+
+#         print("Missing fundamentals:", missing_fundamentals)  # Debugging statement
+        
+#         if missing_fundamentals:
+#             fundamental_courses = fetch_courses_concurrently(missing_fundamentals)
+#             return JsonResponse({
+#                 'success': True,
+#                 'needs_fundamentals': True,
+#                 'fundamental_skills': cleaned_fundamental_skills,
+#                 'missing_fundamentals': missing_fundamentals,
+#                 'course_recommendations': fundamental_courses
+#             })
+
+#         trending_response = model.generate_content(f"What are the most in-demand technologies for {job_role} in 2025? Provide a plain list of names only.")
+#         trending_skills = [standardize_skill(skill) for skill in trending_response.text.split('\n') if skill.strip()]
+#         print("Trending skills:", trending_skills)  # Debugging statement
+
+#         skill_gaps = []
+#         for skill in trending_skills:
+#             is_gap = not any(fuzz.ratio(skill, es) > 80 for es in existing_skills)
+#             print(f"Checking if '{skill}' is a skill gap: {is_gap}")  # Debugging statement
+#             if is_gap:
+#                 skill_gaps.append(skill)
+
+#         print("Skill gaps:", skill_gaps)  # Debugging statement
+
+#         trending_courses = fetch_courses_concurrently(skill_gaps)
+#         return JsonResponse({
+#             'success': True,
+#             'needs_fundamentals': False,
+#             'trending_skills': trending_skills,
+#             'skill_gaps': skill_gaps,
+#             'course_recommendations': trending_courses
+#         })
+#     except Exception as e:
+#         print("Error occurred:", str(e))  # Debugging statement
+#         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+def freelancer_repositories(request):
+    if request.user.is_authenticated:
+        # Get projects where the user is the freelancer or is a member of the assigned team
+        assigned_projects = Project.objects.filter(
+            freelancer=request.user
+        ) | Project.objects.filter(
+            team_id__in=TeamMember.objects.filter(user=request.user).values('team_id')
+        )
+        
+        client_projects = Project.objects.filter(user=request.user)
+        
+        repositories = Repository.objects.filter(
+            project__in=assigned_projects | client_projects
+        ).distinct()
+
+
+        repository_data = []
+        for repo in repositories:
+            project = repo.project
+            team_members = TeamMember.objects.filter(team_id=project.team_id)
+            member_profiles = [{'user_id': member.user.id, 'profile_picture': member.user.register.profile_picture.url if member.user.register.profile_picture else None} for member in team_members]
+            
+            client_profile_picture = project.user.register.profile_picture.url if project.user.register.profile_picture else None
+            
+            # Determine if the user is part of a team
+            if team_members.filter(user=request.user).exists():
+                repository_data.append({
+                    'repository': repo,
+                    'repository_id': repo.id,
+                    'project_title': project.title,
+                    'project_category': getattr(project, 'category', 'N/A'),  # Using getattr for safer access
+                    'members': member_profiles,
+                    'client_profile_picture': client_profile_picture
+                })
+            else:
+                current_freelancer_picture = request.user.register.profile_picture.url if request.user.register.profile_picture else None
+                repository_data.append({
+                    'repository': repo,
+                    'repository_id': repo.id,
+                    'project_title': project.title,
+                    'project_category': getattr(project, 'category', 'N/A'),  # Using getattr for safer access
+                    'members': [{'user_id': request.user.id, 'profile_picture': current_freelancer_picture}],
+                    'client_profile_picture': client_profile_picture
+                })
+
+        is_project_manager = TeamMember.objects.filter(user=request.user, role='PROJECT_MANAGER').exists()
+        
+    else:
+        repository_data = []
+        is_project_manager = False
+        
+    return render(request, 'freelancer/Repositories.html', {
+        'repositories': repository_data,
+        'is_project_manager': is_project_manager
+    })
+
+from core.models import SubscriptionPlan,UserSubscription
+@login_required
+def plans(request):
+    plans = SubscriptionPlan.objects.all()
+    
+    for plan in plans:
+        plan.features_list = plan.features.split(',')  # Split the features by comma
+
+    return render(request, 'freelancer/plans.html', {'plans': plans})

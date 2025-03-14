@@ -1,0 +1,201 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Interview Invitation</title>
+    <style>
+        /* Reset styles */
+        body, table, td, div, p, a {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+        }
+        /* Container styles */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+        /* Header styles */
+        .header {
+            background: #2D3748;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        /* Content styles */
+        .content {
+            padding: 40px 20px;
+            background: #ffffff;
+        }
+        .job-details {
+            background: #F7FAFC;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #E2E8F0;
+            padding-bottom: 15px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .detail-label {
+            color: #4A5568;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .detail-value {
+            color: #2D3748;
+            font-size: 16px;
+            margin-top: 4px;
+        }
+        /* Button styles */
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .accept-button {
+            background-color: #48BB78;
+            color: #ffffff;
+        }
+        .decline-button {
+            background-color: #F56565;
+            color: #ffffff;
+        }
+        /* Footer styles */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: #F7FAFC;
+            color: #4A5568;
+            font-size: 14px;
+        }
+        .company-logo {
+            margin-bottom: 20px;
+        }
+        .divider {
+            height: 1px;
+            background: #E2E8F0;
+            margin: 20px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #EDF2F7;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" class="container" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px;">
+                    <!-- Header -->
+                    <tr>
+                        <td class="header">
+                            {% if client_profile_picture %}
+                            <img src="{{ client_profile_picture }}" alt="Company Logo" width="150" class="company-logo">
+                            {% else %}
+                            <img src="{% static 'assets/img/logo2.png' %}" alt="Company Logo" width="150" class="company-logo">
+                            {% endif %}
+                            <h1>Interview Invitation</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td class="content">
+                            <p style="font-size: 16px; color: #2D3748;">Dear {{freelancer_name}},</p>
+                            
+                            <p style="font-size: 16px; color: #2D3748;">We are pleased to invite you for an interview for the position of <strong>{{ job_role }}</strong>. Please find the details below:</p>
+
+                            <!-- Job Details Section -->
+                            <div class="job-details">
+                                <div class="detail-row">
+                                    <div class="detail-label">Company/Client</div>
+                                    <div class="detail-value">{{ client_name }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Position</div>
+                                    <div class="detail-value">{{ job_role }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Job Description</div>
+                                    <div class="detail-value">{{ job_description }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Compensation</div>
+                                    <div class="detail-value">{{ compensation }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Bond Period</div>
+                                    <div class="detail-value">{{ bond_period }} months</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Work Mode</div>
+                                    <div class="detail-value">{{ work_mode }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Contract Required</div>
+                                    <div class="detail-value">
+                                        {% if contract_needed %}Yes{% else %}No{% endif %}
+                                    </div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Benefits</div>
+                                    <div class="detail-value">{{ benefits }}</div>
+                                </div>
+                            </div>
+
+                            <p style="font-size: 16px; color: #2D3748;">Please indicate your interest by selecting one of the options below:</p>
+
+                            <!-- Action Buttons -->
+                            <div class="button-container">
+                                <a href="{{ accept_link }}" class="button accept-button">Accept Interview</a>
+                                <a href="{{ reject_link }}" class="button decline-button">Decline Interview</a>
+                            </div>
+
+                            <div class="divider"></div>
+
+                            <p style="font-size: 14px; color: #4A5568;">If you have any questions, please don't hesitate to contact us at {{ client_email }}.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer">
+                            <p style="margin: 0;">Best regards,<br>{{ client_name }}</p>
+                            <div class="divider"></div>
+                            <p style="margin: 0; font-size: 12px; color: #718096;">This email was sent via Freelance Platform. Please do not reply directly to this email.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html> 

@@ -4,6 +4,8 @@ from django.conf import settings
 from django.utils import timezone
 from core.models import CustomUser
 from decimal import Decimal
+from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class ClientProfile(models.Model):
     CLIENT_TYPE_CHOICES = (
@@ -64,6 +66,9 @@ class Project(models.Model):
     freelancer_review_given = models.BooleanField(default=False)
     
     scope = models.CharField(max_length=10, choices=SCOPE_CHOICES, default='medium')
+    team = models.ForeignKey('freelancer.Team', on_delete=models.SET_NULL, null=True, blank=True, related_name='projects')
+
+    required_skills = models.JSONField(default=list)  # Stores skills as a list
 
     def save(self, *args, **kwargs):
         if isinstance(self.budget, str):
@@ -143,6 +148,8 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     progress_percentage = models.FloatField(default=0.0)
+    assigned_to = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)  # Foreign key to assigned freelancer
+
     
     def save(self, *args, **kwargs):
         if self.start_date and self.start_date == timezone.now().date():
@@ -240,11 +247,18 @@ class Review(models.Model):
     
 
 class ChatRoom(models.Model):
+    CHAT_TYPE_CHOICES = [
+        ('group', 'Group Chat'),
+        ('private', 'Private Chat'),
+    ]
+    
     participants = models.ManyToManyField('core.CustomUser', related_name='chat_rooms')
-    project = models.ForeignKey('client.Project', on_delete=models.CASCADE, related_name='chat_rooms')
+    project = models.ForeignKey('client.Project', on_delete=models.CASCADE, related_name='chat_rooms', null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    chat_type = models.CharField(max_length=10, choices=CHAT_TYPE_CHOICES, default='private')
 
     def __str__(self):
-        return f"Chat Room {self.id} for Project {self.project.id}"
+        return f"{self.get_chat_type_display()} - {self.name} for Project {self.project.id if self.project else 'General'}"
 
     
     
@@ -313,3 +327,174 @@ class Complaint(models.Model):
 
     def __str__(self):
         return f"{self.subject} - {self.complaint_type} Complaint by {self.user}"
+
+class JobInvitation(models.Model):
+    freelancer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    client = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='job_invitations', null=True, blank=True)
+    job_role = models.CharField(max_length=255)
+    job_description = models.TextField()
+    compensation = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=[
+        ('Pending', 'Pending'),
+        ('Accepted', 'Accepted'),
+        ('Rejected', 'Rejected'),
+    ], default='Pending')
+    meeting_link = models.URLField(max_length=200, null=True, blank=True)  # Meeting link
+    meeting_datetime = models.DateTimeField(null=True, blank=True)  # Meeting date & time
+    work_mode = models.CharField(max_length=50, choices=[
+        ('Remote', 'Remote'),
+        ('Hybrid', 'Hybrid'),
+        ('On-Site', 'On-Site'),
+        ('Specify Later', 'Specify Later'),
+    ], default='Specify Later')
+    benefits = models.TextField(null=True, blank=True)  # Benefits field
+    bond_period = models.CharField(max_length=100,null=True, blank=True)  # Minimum bond period field
+    contract_needed = models.BooleanField(default=False)  # Contract needed field
+
+
+    HIRING_STATUS_CHOICES = [
+        ('Hired', 'Hired'),
+        ('Not Hired', 'Not Hired'),
+        ('Pending', 'Pending'),
+    ]
+    
+    hiring_status = models.CharField(max_length=10, choices=HIRING_STATUS_CHOICES, default='Pending')  # New field for hiring status
+
+    def __str__(self):
+        return f"Invitation for {self.job_role} to {self.freelancer.username}"
+
+class EventAndQuiz(models.Model):
+    EVENT_TYPES = [
+        ('event', 'Event'),
+        ('quiz', 'Quiz'),
+    ]
+    
+    EVENT_SUBTYPES = [
+        ('webinar', 'Webinar'),
+        ('workshop', 'Workshop'),
+        ('conference', 'Conference'),
+    ]
+
+    APPROVAL_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    date = models.DateTimeField()
+    type = models.CharField(max_length=10, choices=EVENT_TYPES)
+    type_of_event = models.CharField(max_length=20, choices=EVENT_SUBTYPES, blank=True, null=True)
+    poster = models.FileField(upload_to='event_posters/', blank=True, null=True)
+    max_participants = models.PositiveIntegerField(blank=True, null=True)
+    online_link = models.URLField(blank=True, null=True)
+    certificate_provided = models.BooleanField(default=False)
+    prize_enabled = models.BooleanField(default=False)
+    prize_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        blank=True, 
+        null=True,
+        validators=[MinValueValidator(0)]
+    )
+    client = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_events', null=True, blank=True)
+    quiz_file = models.FileField(upload_to='quiz_files/', null=True, blank=True)  #
+    duration = models.DurationField(null=True, blank=True)
+    registration_status = models.CharField(max_length=10, choices=[
+        ('open', 'Open'),
+        ('closed', 'Closed'),
+    ], default='open') 
+    registration_end_date = models.DateTimeField(null=True, blank=True) 
+    number_of_registrations = models.PositiveIntegerField(default=0)  
+    event_status = models.CharField(max_length=20, choices=[
+        ('upcoming', 'Upcoming'),
+        ('done', 'Done'),
+    ], default='upcoming')  
+    certificate_template = models.ImageField(upload_to='certificate_templates/', null=True, blank=True)
+    
+    approval_status = models.CharField(
+        max_length=20, 
+        choices=APPROVAL_STATUS_CHOICES, 
+        default='pending',
+        help_text='Approval status of the event/quiz'
+    )
+    rejection_reason = models.TextField(
+        null=True, 
+        blank=True,
+        help_text='Reason for rejection if the event/quiz is rejected'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Check if max_participants equals number_of_registrations
+        if self.max_participants is not None and self.max_participants == self.number_of_registrations:
+            self.registration_status = 'closed'
+        
+        # New: If this is a new event/quiz, set approval_status to pending
+        if not self.pk:  # if object is being created
+            self.approval_status = 'pending'
+        
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+class QuizQuestion(models.Model):
+    quiz = models.ForeignKey(EventAndQuiz, on_delete=models.CASCADE, related_name='quiz_questions')
+    question = models.TextField()
+    option1 = models.CharField(max_length=255)
+    option2 = models.CharField(max_length=255)
+    option3 = models.CharField(max_length=255)
+    option4 = models.CharField(max_length=255)
+    correct_answer = models.CharField(max_length=255)  
+    points = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.question
+
+class EventRegistration(models.Model):
+    freelancer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='event_registrations')
+    event = models.ForeignKey(EventAndQuiz, on_delete=models.CASCADE, related_name='registrations')
+    registration_time = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=50, 
+        choices=[('registered', 'Registered')], 
+        default='registered'
+    )
+    seen_popup = models.BooleanField(default=False)  
+    attended = models.BooleanField(default=False)  
+    class Meta:
+        unique_together = ['event', 'freelancer']  # Prevent duplicate registrations
+
+    def __str__(self):
+        return f"{self.freelancer} registered for {self.event.title}"
+
+class QuizAttempt(models.Model):
+    quiz = models.ForeignKey(EventAndQuiz, on_delete=models.CASCADE, related_name='attempts')  # Link to the quiz
+    freelancer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='quiz_attempts')  # Link to the freelancer
+    score = models.PositiveIntegerField(default=0)  # Score achieved in the quiz
+    attempt_time = models.DateTimeField(auto_now_add=True)  # Time of the attempt
+
+    def __str__(self):
+        return f"{self.freelancer.username} - {self.quiz.question} - Score: {self.score}"
+
+class PrizePayment(models.Model):
+    event = models.ForeignKey(EventAndQuiz, on_delete=models.CASCADE)
+    winner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed')
+    ], default='pending')
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        ordering = ['-payment_date']

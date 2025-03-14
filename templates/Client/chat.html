@@ -1,4 +1,4 @@
-{% extends 'Client/base.html' %}
+{% extends 'client/base.html' %}
 {% block 'client_content' %}
 {% load static %}
 
@@ -227,21 +227,31 @@
     <div class="container">
         <div class="sidebar1" id="sidebar1">
             <div class="search-bar">
-                <input type="text" placeholder="Search here...">
+                <input type="text" id="searchInput" placeholder="Search here...">
             </div>
             <div class="favorites">
                 <ul class="contact-list">
-                    {% for freelancer in freelancers %}
-                    <li class="contact" data-chat-room-id="{{ freelancer.chat_room_id }}">
-                        <img src="{{ freelancer.register.profile_picture.url }}" alt="{{ freelancer.register.first_name }}">
-                        <div class="contact-info">
-                            <p>{{ freelancer.register.first_name }} {{ freelancer.register.last_name }}</p>
-                        <span>{{ freelancer.last_message }}</span>
-                        </div>
-                        {% if freelancer.message_count %}
-                        <div class="message-count">{{ freelancer.message_count }}</div>
+                    {% for chat in chat_details %}
+                        {% if chat.chat_type == 'group' %}
+                            <!-- Group Chat Display - Simple Version -->
+                            <li class="contact" data-chat-room-id="{{ chat.chat_room_id }}">
+                                <div class="contact-info">
+                                    <p>{{ chat.name }}</p>
+                                </div>
+                            </li>
+                        {% else %}
+                            <!-- Private Chat Display - Unchanged -->
+                            <li class="contact" data-chat-room-id="{{ chat.chat_room_id }}">
+                                <img src="{{ chat.register.profile_picture.url }}" alt="{{ chat.register.first_name }}">
+                                <div class="contact-info">
+                                    <p>{{ chat.register.first_name }} {{ chat.register.last_name }}</p>
+                                    <span>{{ chat.last_message }}</span>
+                                </div>
+                                {% if chat.message_count %}
+                                <div class="message-count">{{ chat.message_count }}</div>
+                                {% endif %}
+                            </li>
                         {% endif %}
-                    </li>
                     {% endfor %}
                 </ul>
             </div>
@@ -281,9 +291,14 @@
         const chatRoomId = document.getElementById('chatRoomId').value;
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        if (!chatRoomId) return; // Exit if no chat room is selected
+        if (!chatRoomId) {
+            console.log("No chatRoomId found");
+            return;
+        }
 
-        fetch("{% url 'client:fetch_messages' %}", { // Update with your fetch URL
+        console.log("Fetching messages for chat room:", chatRoomId);
+
+        fetch("{% url 'client:fetch_messages' %}", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
@@ -291,46 +306,75 @@
             },
             body: JSON.stringify({ chat_room_id: chatRoomId })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log("Raw response:", response);
+            return response.json();
+        })
         .then(data => {
+            console.log("Received data:", data);
             if (data.success) {
                 const messagesHTML = data.messages.map(msg => {
-                    let messageContent = `<div class="message ${msg.type}">`;
+                    const defaultProfilePic = "{% static 'img/default-profile.png' %}";
+                    const messageClass = msg.type === 'sent' ? 'sent' : 'received';
+                    
+                    let messageContent = `
+                        <div class="message ${messageClass}" style="display: flex; align-items: start; margin: 20px 0; ${msg.type === 'sent' ? 'flex-direction: row-reverse;' : ''}">
+                            <div class="profile-pic" style="margin: ${msg.type === 'sent' ? '0 0 0 15px' : '0 15px 0 0'}">
+                                <img src="${msg.sender_profile_picture || defaultProfilePic}" 
+                                    alt="${msg.sender_name}"
+                                    onerror="this.onerror=null; this.src='${defaultProfilePic}';"
+                                    style="width: 25px; height: 25px; border-radius: 50%;">
+                            </div>
+                            <div class="message-content" style="max-width: auto;">
+                                <div class="sender-name" style="font-size: 11px; color: #666; margin-bottom: 5px;">${msg.sender_name}</div>
+                                <div class="bubble" style="
+                                                         color: ${msg.type === 'sent' ? 'white' : 'black'}; 
+                                                         padding: 5px ; 
+                                                         border-radius: 20px; 
+                                                         font-size: 12px;
+                                                         min-height: 50px;
+                                                         display: inline-block;
+                                                         min-width: 80px;max-width:auto;">`;
 
-                    // Check if there's an image
+                    // Handle different types of content
                     if (msg.image) {
-                        const alignmentClass = msg.type === 'sent' ? 'sent' : 'received'; // Determine alignment based on message type
-                        messageContent = `
-                            <div class="${alignmentClass}" style="text-align: ${alignmentClass === 'sent' ? 'right' : 'left'}; position: relative; display: inline-block;">
-                                <img src="${msg.image}" alt="Image" style="max-width: 30%; border-radius: 10px; margin-top: 5px;">
-                                <!-- Download icon placed at the top-right corner of the image -->
+                        messageContent += `
+                            <div style="position: relative;">
+                                <img src="${msg.image}" alt="Image" style="max-width: 200px; border-radius: 10px;">
                                 <a href="${msg.image}" download style="position: absolute; top: 5px; right: 5px;">
                                     <i class="fas fa-download" style="color: #2E4583; font-size: 18px;"></i>
                                 </a>
-                            </div><br>
-                        `;
-                    }
-                    // Check if there's a file
-                    else if (msg.file) {
-                        const fileName = msg.file.split('/').pop(); // Extract file name from path
-                        messageContent += `<br><p style="display: flex; align-items: center; justify-content: space-between;">
-                            <img src="{% static 'img/file.png' %}" alt="Download File" style="width: 20px; height: 20px; margin-right: 10px;">
-                            <span>${fileName}</span> <!-- Display only the file name -->
-                            <a href="${msg.file}" download style="margin-left: 10px;">
-                                <i class="fas fa-download" style="color: #2E4583;"></i> <!-- Download icon -->
-                            </a>
-                        </p>`;
-                    }
-                    // Otherwise, display the message content
-                    else {
-                        messageContent += `<p>${msg.content}</p>`;
+                            </div>`;
+                    } else if (msg.file) {
+                        const fileName = msg.file.split('/').pop();
+                        messageContent += `
+                            <div style="display: flex; align-items: center;">
+                                <img src="{% static 'img/file.png' %}" alt="File" style="width: 20px; height: 20px; margin-right: 10px;">
+                                <span>${fileName}</span>
+                                <a href="${msg.file}" download style="margin-left: 10px;">
+                                    <i class="fas fa-download" style="color: #2E4583;"></i>
+                                </a>
+                            </div>`;
+                    } else {
+                        messageContent += `<p style="margin: 0; line-height: 1.4;">${msg.content}</p>`;
                     }
 
-                    messageContent += `</div>`;
+                    messageContent += `
+                                </div>
+                                <div class="timestamp" style="font-size: 12px; color: #999; margin-top: 5px; text-align: ${msg.type === 'sent' ? 'right' : 'left'};">
+                                    ${msg.timestamp}
+                                </div>
+                            </div>
+                        </div>`;
+
                     return messageContent;
                 }).join('');
+
+                console.log("Final HTML:", messagesHTML);
                 document.getElementById('chatMessages').innerHTML = messagesHTML;
                 document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+            } else {
+                console.error("Data success is false:", data);
             }
         })
         .catch((error) => {
@@ -362,20 +406,30 @@
     document.querySelectorAll('.contact').forEach(contact => {
         contact.addEventListener('click', function() {
             const chatRoomId = this.getAttribute('data-chat-room-id');
-            const userName = this.querySelector('.contact-info p').innerText;
-            const userImage = this.querySelector('img').src;
-
+            const isGroupChat = !this.querySelector('img'); // Check if it's a group chat (no profile image)
+            
             // Set the chat room ID for sending messages
             document.getElementById('chatRoomId').value = chatRoomId;
 
+            if (isGroupChat) {
+                // Handle group chat
+                const groupName = this.querySelector('.contact-info p').innerText;
+                document.getElementById('chatUserName').innerText = groupName;
+                document.getElementById('chatUserImage').style.display = 'none'; // Hide profile image for groups
+                document.getElementById('chatUserStatus').innerText = 'Group Chat';
+            } else {
+                // Handle private chat
+                const userName = this.querySelector('.contact-info p').innerText;
+                const userImage = this.querySelector('img').src;
+                document.getElementById('chatUserName').innerText = userName;
+                document.getElementById('chatUserImage').src = userImage;
+                document.getElementById('chatUserImage').style.display = 'block';
+                document.getElementById('chatUserStatus').innerText = ''; // Clear status for private chats
+            }
 
-            // Update chat header with selected user info
-            document.getElementById('chatUserName').innerText = userName;
-            document.getElementById('chatUserImage').src = userImage;
-            document.getElementById('chatUserImage').style.display = 'block';
-
-            // Load messages for the selected user (placeholder, implement message loading)
-            document.getElementById('chatMessages').innerHTML = `<div class="message received"><p>Loading messages for ${userName}...</p></div>`;
+            // Load messages for the selected chat
+            document.getElementById('chatMessages').innerHTML = `<div class="message received"><p>Loading messages...</p></div>`;
+            fetchMessages(); // Fetch messages immediately
         });
     });
 
@@ -486,6 +540,21 @@
     if (document.querySelectorAll('.contact').length === 0) {
         document.getElementById('chatMessages').innerHTML = `<div class="message received"><p>Select a user to start chatting...</p></div>`;
     }
+
+    // Add this near the top of your script section
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const contacts = document.querySelectorAll('.contact');
+        
+        contacts.forEach(contact => {
+            const contactName = contact.querySelector('.contact-info p').textContent.toLowerCase();
+            if (contactName.includes(searchTerm)) {
+                contact.style.display = 'flex';
+            } else {
+                contact.style.display = 'none';
+            }
+        });
+    });
 </script>
 
 <style>

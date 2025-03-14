@@ -145,21 +145,21 @@
     </div>
 
     <div class="column">
-        <h4 style="color:#4caf50">Completed</h4>
-        {% for task in tasks %}
-            {% if task.status == "Completed" %}
-                <div class="card">
-                    <h5>{{ task.title }}</h5>
-                    <p>{{ task.description }}</p>
-                    <div class="progress-bar">
-                        <div class="progress-high" style="width: 100%;"></div>
-                    </div>
-                    <span  class="due">Due Date :<i class="fa fa-calendar"></i>{{ task.due_date|date:"d M" }}</span>
-                    
+    <h4 style="color:#4caf50">Completed</h4>
+    {% for task in tasks|slice:":5" %}
+        {% if task.status == "Completed" %}
+            <div class="card">
+                <h5>{{ task.title }}</h5>
+                <p>{{ task.description }}</p>
+                <div class="progress-bar">
+                    <div class="progress-high" style="width: 100%;"></div>
                 </div>
-            {% endif %}
-        {% endfor %}
-    </div>
+                <span class="due">Due Date :<i class="fa fa-calendar"></i> {{ task.due_date|date:"d M" }}</span>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
 </div>
 
 {% endblock %}

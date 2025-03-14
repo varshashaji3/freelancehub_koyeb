@@ -52,9 +52,10 @@
     var category_error = false;
     var end_date_error = false;
     var scope_error = false;
+    var skills_error = false;
 
     function check_title() {
-      var pattern = /^[a-zA-Z-/ ]*$/;
+      var pattern = /^(?!.*([a-zA-Z])\1\1)(?!.* {2,})[a-zA-Z]+( [a-zA-Z]+)*$/;
       var title = $("#title").val();
       if (pattern.test(title) && title !== "") {
         $("#error_title").hide();
@@ -70,7 +71,7 @@
     
 
     function check_description() {
-      var pattern = /^(?!.*\d{3})(?=.*[a-zA-Z])[a-zA-Z0-9 -.,_'!""/?\n]*$/;
+      var pattern =/^(?!.*([a-zA-Z])\1\1)(?!.* {2,})[a-zA-Z!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+( [a-zA-Z!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+)*$/;
       var description = $("#description").val();
       if (pattern.test(description) && description !== "") {
         $("#error_des").hide();
@@ -160,6 +161,20 @@
 }
 
     
+  function check_skills() {
+    var checked_skills = $("input[name='required_skills']:checked").length;
+    if (checked_skills === 0) {
+        $("#error_skills").html("Please select at least one skill").show();
+        $(".skills-container").css("border", "2px solid red");
+        skills_error = true;
+    } else {
+        $("#error_skills").hide();
+        $(".skills-container").css("border", "2px solid green");
+        skills_error = false;
+    }
+}
+
+    
   $("#project_form").submit(function () {
    
     title_error = false;
@@ -169,6 +184,7 @@
     category_error = false;
     end_date_error = false;
     scope_error = false;
+    skills_error = false;
 
 
     
@@ -179,8 +195,9 @@
     check_category();
     check_end_date();
     check_scope();
+    check_skills();
 
-    if (title_error || description_error || file_error || budget_error || category_error || end_date_error || scope_error) {
+    if (title_error || description_error || file_error || budget_error || category_error || end_date_error || scope_error || skills_error) {
         $("#project_err").html("Please fill the form correctly.").show();
         return false; 
     } else {
@@ -325,7 +342,38 @@
     margin-top: -160px;
   }
 
-  
+  .skills-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+
+  .skill-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+  }
+
+  .skill-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+  }
+
+  .skill-checkbox label {
+    margin: 0;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .skill-checkbox:hover {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+  }
+
 </style>
 
 
@@ -431,6 +479,22 @@
                         <label for="file" class="form-label">Attach Additional Files</label>
                         <br><span id="error_file" class="error"></span>
                     </div>
+                </div>
+        
+                <!-- Required Skills -->
+                <div class="form-group">
+                    <label class="form-label">Required Skills</label>
+                    <div class="skills-container">
+                        {% for skill in skills %}
+                        <div class="skill-checkbox">
+                            <input type="checkbox" name="required_skills" value="{{ skill }}" 
+                                   id="skill_{{ forloop.counter }}"
+                                   {% if skill in project.required_skills %}checked{% endif %}>
+                            <label for="skill_{{ forloop.counter }}">{{ skill }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <span id="error_skills" class="error"></span>
                 </div>
         
                 <!-- Submit Button -->

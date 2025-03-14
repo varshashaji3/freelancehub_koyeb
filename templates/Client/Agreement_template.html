@@ -1,4 +1,4 @@
-{% extends 'Client/base.html' %}
+{% extends 'client/base.html' %}
 {% block 'client_content' %}
 {% load static %}
 
@@ -332,12 +332,23 @@ function validate_due_dates() {
        {% csrf_token %}
         <h1>Freelance Contract Agreement</h1>
         <input type="hidden" name="client_id" value="{{ project.user_id }}">
-        <input type="hidden" name="freelancer_id" value="{{ project.freelancer_id }}">
         <input type="hidden" name="project_id" value="{{ project.id }}">
+        {% if project.freelancer %}
+        
+        <input type="hidden" name="freelancer_id" value="{{ project.freelancer_id }}">
+        {% else %}
+        
+        <input type="hidden" name="freelancer_id" value="{{ project.team_id }}">
+        {% endif %}
         <p class="section-title">1. Parties</p>
         <p>This Freelance Contract ("Contract") is made and entered into on <span id="contractDate"></span></p>
         <p><strong>Client:</strong> {% if client.client_type == 'Individual' %}{{profile2.first_name}} {{ profile2.last_name}}{% else %}{{ client.company_name}}{% endif %}</p>
+        {% if team_name %}
+        <p><strong>Freelancer:</strong> {{freelancer_name}} </p><span style="color:red;margin-left:85px;">PROJECT MANAGER & TEAM LEAD ,{{team_name}}</span>
+        {% else %}
         <p><strong>Freelancer:</strong> {{freelancer_name}}</p>
+
+        {% endif %}
     
         <p class="section-title">2. Project Description</p>
         <p>The Client hereby engages the Freelancer to provide the following services:</p>

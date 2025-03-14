@@ -1,0 +1,16 @@
+Question,Option 1,Option 2,Option 3,Option 4,Correct Answer,Points
+What does HTML stand for?,HyperText Markup Language,HighText Machine Learning,Hyper Transfer Markup Language,None of the above,HyperText Markup Language,5
+Which CSS property controls text size?,font-size,text-style,text-size,font-style,font-size,5
+What is the correct way to link an external JavaScript file?,<script src='script.js'></script>,<js href='script.js'></js>,<script link='script.js'></script>,<javascript src='script.js'></javascript>,<script src='script.js'></script>,5
+Which of the following is a JavaScript framework?,React,Flask,Django,Laravel,React,5
+What is the default HTTP method for submitting forms in HTML?,GET,POST,PUT,DELETE,GET,5
+Which tag is used to create a hyperlink in HTML?,<a>,<link>,<href>,<url>,<a>,5
+What does CSS stand for?,Computer Style Sheets,Cascading Style Sheets,Creative Style System,Colorful Style Sheets,Cascading Style Sheets,5
+Which of the following is used to declare a variable in JavaScript?,var,let,const,All of the above,All of the above,5
+Which HTML element is used to specify a footer for a document?,<bottom>,<footer>,<foot>,<section>,<footer>,5
+Which property is used to change the background color in CSS?,background-color,color,bgcolor,background,background-color,5
+What is the correct syntax for a function in JavaScript?,function = myFunction(),function myFunction(),def myFunction(),create function myFunction(),function myFunction(),5
+Which symbol is used for comments in JavaScript?,//,/* */,#,--,//,5
+What is the purpose of the <head> tag in HTML?,To contain the main content,"To define the document title, metadata, and links",To structure the footer,To create sections in the page,"To define the document title, metadata, and links",5
+Which HTTP status code indicates a successful request?,200,404,500,302,200,5
+Which JavaScript method is used to write content to an HTML document?,document.write(),console.log(),document.create(),window.alert(),document.write(),5

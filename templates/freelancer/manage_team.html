@@ -1,0 +1,1100 @@
+{% extends 'freelancer/base.html' %}
+
+{% block 'freelancer_content' %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<div class="container">
+    <div class="header">
+        <div class="title-section">
+            <h1 class="project-title">{{ team.name }}</h1><br>
+         
+        </div>
+        <div class="header-buttons">
+            {% if not salary_percentages_set %}
+            <button class="invite-button" onclick="openInviteModal()" disabled title="Please set salary percentages for all roles first">
+                <i class="fas fa-user-plus"></i> Invite Member  
+            </button>
+            {% elif all_roles_assigned %}
+            <button class="invite-button" onclick="openInviteModal()" disabled title="All roles are assigned, you cannot invite more members.">
+                <i class="fas fa-user-plus"></i> Invite Member  
+            </button>
+            {% else %}
+                <button class="invite-button" onclick="openInviteModal()">
+                    <i class="fas fa-user-plus"></i> Invite Member  
+                </button>
+            {% endif %}
+            <button class="set-salary-button" onclick="openSalaryModal()">Set Salary for Roles</button>
+            </div>
+    </div>
+    {% if not salary_percentages_set %}
+    <div class="warning-badge">
+        <i class="fas fa-exclamation-triangle"></i>
+        Salary Percentages Not Set
+        <div class="tooltip">Please set salary percentages for all roles before inviting team members</div>
+    </div>
+    {% elif not all_roles_assigned %}
+    <div class="warning-badge">
+        <i class="fas fa-exclamation-triangle"></i>
+        Incomplete Team - Cannot Submit Proposals
+        <div class="tooltip">All core roles must be assigned before submitting project proposals</div>
+    </div>
+    {% else %}
+    <div class="success-badge">
+        <i class="fas fa-check-circle"></i>
+        Complete Team - Ready for submitting Proposals for projects
+        <div class="tooltip">Your team has all core roles assigned and is ready to submit proposals</div>
+    </div>
+{% endif %} <br><br>
+    <div class="view-controls">
+        <button class="view-button active" onclick="toggleSection('members')">
+            <i class="fas fa-users"></i> Team
+        </button>
+        <button class="view-button" onclick="toggleSection('invitation')">
+            <i class="fas fa-envelope"></i> Invitation
+        </button>
+        <!-- <button class="view-button" onclick="toggleSection('projects')">
+            <i class="fas fa-project-diagram"></i> Projects
+        </button>
+        <button class="view-button" onclick="toggleSection('dashboard')">
+            <i class="fas fa-chart-bar"></i> Analysis
+        </button> -->
+    </div>
+
+    <div id="members" class="toggle-section" style="display: none;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined Date</th>
+                        <!-- <th>Actions</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in team_members %}
+                    <tr>
+                        <td class="member-cell">
+                            {% if member.profile_picture %}
+                            <img src="{{ member.profile_picture }}" alt="{{ member.name }}" class="member-avatar">
+                        {% endif %}
+                        <div class="member-info">
+                                <div class="member-name">
+                                    {% if member.id == request.user.id %}
+                                        You
+                                    {% else %}
+                                        {{member.name}}
+                                    {% endif %}
+                                </div>
+                                {% if member.email %}
+                                <div class="member-email">{{ member.email }}</div>
+                               
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if member.role == 'PROJECT_MANAGER' %}
+                                Project Manager & Team Leader
+                            {% elif member.role == 'DESIGNER' %}
+                                Designer (UI/UX)
+                            {% elif member.role == 'FRONTEND_DEV' %}
+                                Frontend Developer
+                            {% elif member.role == 'BACKEND_DEV' %}
+                                Backend Developer
+                            {% elif member.role == 'QA_TESTER' %}
+                                Quality Assurance Tester
+                            {% else %}
+                                {{member.role}}
+                            {% endif %}
+                        </td>
+                        <td><span class="status-badge {% if member.status == True %}active{% else %}inactive{% endif %}">
+                            {% if member.status == True %}Active{% else %}Not Active{% endif %}
+                        </span></td>
+                        <td>{{ member.join_date|date:"M d, Y" }}</td>
+                        <!-- <td>
+                            <div class="actions">
+                                <button class="action-btn"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td> -->
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="inviteModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Invite Team Member</h2>
+            <form id="inviteForm" method="POST" action="{% url 'freelancer:send_team_invitation'%}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="hidden" name="team_id" value="{{ team.id }}">
+    
+                    <label for="freelancer">Select Freelancer</label>
+                    <select id="freelancer" name="freelancer" required onchange="toggleEmailInput(); validateFreelancer();">
+                        <option value="">Select Freelancer</option>
+                        {% for freelancer in available_freelancers %}
+                            <option value="{{ freelancer.id }}">
+                                {{ freelancer.name }} - {{ freelancer.profession }}
+                            </option>
+                        {% endfor %}
+                        <option value="other">Other (Enter Email)</option>
+                    </select>
+                    <div class="error-message" id="freelancerError" style="color: red; display: none;">Please select a freelancer.</div>
+                </div>
+                <div class="form-group" id="emailGroup" style="display: none;">
+                    <label for="email">Email (for non-registered members)</label>
+                    <input type="email" id="email" name="email" placeholder="Enter email address" onkeyup="validateEmail();">
+                    <div class="error-message" id="emailError" style="color: red; display: none;">Please enter a valid email address.</div>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" required onchange="validateRole();">
+                        <option value="">Select Role</option>
+                        <option value="DESIGNER">Designer (UI/UX)</option>
+                        <option value="FRONTEND_DEV">Frontend Developer</option>
+                        <option value="BACKEND_DEV">Backend Developer</option>
+                        <option value="QA_TESTER">Quality Assurance Tester</option>
+                    </select>
+                    <div class="error-message" id="roleError" style="color: red; display: none;">Please select a role.</div>
+                </div>
+                <button type="submit" class="submit-btn" id="submitBtn" disabled title="Please fill out all fields correctly.">Send Invitation</button>
+                <div class="error-message" id="formError" style="color: red; display: none;">Please fill the form correctly.</div>
+            </form>
+        </div>
+    </div>
+
+    <div id="invitation" class="toggle-section" style="display: none;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Freelancer</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Sent Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invitation in invitations %}
+                    <tr>
+                        <td class="member-cell">
+                            {% if invitation.invited_by_profile_picture %}
+                            <img src="{{ invitation.invited_by_profile_picture  }}" alt="" class="member-avatar">
+                        {% endif %}
+                        <div class="member-info">
+                                <div class="member-name">
+                                        {{invitation.invited_by_first_name}} {{invitation.invited_by_last_name}}
+                                </div>
+                                {% if invitation.email %}
+                                <div class="member-email">{{invitation.email}}</div>
+                               
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td> {% if invitation.role == 'PROJECT_MANAGER' %}
+                            Project Manager & Team Leader
+                        {% elif invitation.role == 'DESIGNER' %}
+                            Designer (UI/UX)
+                        {% elif invitation.role == 'FRONTEND_DEV' %}
+                            Frontend Developer
+                        {% elif invitation.role == 'BACKEND_DEV' %}
+                            Backend Developer
+                        {% elif invitation.role == 'QA_TESTER' %}
+                            Quality Assurance Tester
+                        {% else %}
+                            {{invitation.role}}
+                        {% endif %}</td>
+                        <td>
+                            <span class="status-badge 
+                                {% if invitation.status == 'accepted' %}active Accepted
+                                {% elif invitation.expired %}expired
+                                {% elif invitation.status == 'pending' %}pending
+                                {% elif invitation.status == 'rejected' %}inactive Rejected
+                                {% else %}inactive{% endif %}">
+                                {% if invitation.status == 'accepted' %}Accepted
+                                {% elif invitation.expired %}Expired
+                                {% elif invitation.status == 'rejected' %}Rejected
+                                {% else %}{{ invitation.status }}{% endif %}
+                            </span>
+                            {% if invitation.expired and invitation.status != 'accepted' and not all_roles_assigned %}
+                                <button class="action-btn resend" onclick="resentInvitation('{{ invitation.invitation_id }}')">Resend Invitation</button>
+                            {% endif %}
+                        </td>
+                        <td>{{ invitation.invitation_date|date:"M d, Y" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="projects" class="toggle-section" style="display: none;">
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Project Title</th>
+                    <th>Start Date</th>
+                    <th>Status</th>
+                    <th>Repository</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in team_projects %}
+                <tr>
+                    <td class="member-cell">
+                        {% for client in client_details %}
+                        {% if client.client_profile_picture %}
+                                <img src="{{ client.client_profile_picture }}" alt="" class="member-avatar">
+                                {% endif %}
+                                <div class="member-info">
+                                    <div class="member-name">{{ client.client_name }}</div>
+                                    <div class="member-email">{{ client.client_email }}</div>
+                                </div>
+                        {% endfor %}
+                    </td>
+                    <td>{{ project.title }}</td>
+                    <td>{{ project.start_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="status-badge 
+                            {% if project.project_status == 'In Progress' %}badge-inprogress
+                            {% elif project.project_status == 'Not Started' %}badge-inactive
+                            {% elif project.project_status == 'Cancelled' %}badge-cancelled
+                            {% elif project.project_status == 'Completed' %}badge-completed
+                            {% else %}badge-inactive {% endif %}">
+                            {{ project.project_status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% for project_detail in project_details %}
+                            {% if project_detail.repository_id %}
+                                <a href="{% url 'freelancer:view_repository' project_detail.repository_id %}" title="Repository" class="btn btn-sm btn-info view-repo-btn">
+                                    <i class="fa-solid fa-folder-open"></i>Repository
+                                </a>
+                            {% else %}
+                                <span>Not Available</span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if salary_paid_all_members %}
+        <button class="action-btn paid-btn" disabled>Paid</button>
+    {% else %}
+        <button class="pay-salary-btn action-btn" onclick="paySalary('{{ project.id }}');" {% if not payment_received %}disabled{% endif %}>Pay Salary</button>
+    {% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="dashboard" class="toggle-section" style="display: none;">
+        <!-- Add dashboard details here -->
+    </div>
+</div>
+
+<div id="salaryModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeSalaryModal()">&times;</span>
+        <h2>Set Salary for Roles</h2>
+        <div class="modal-body">
+            <form id="salaryForm" method="POST" action="{% url 'freelancer:save_team_salaries' %}">
+                {% csrf_token %}
+                <input type="hidden" name="team_id" value="{{ team.id }}">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Project Manager & Team Leader</td>
+                            <td>
+                                <input type="number" 
+                                       name="PROJECT_MANAGER" 
+                                       value="{% for member in team_members %}{% if member.role == 'PROJECT_MANAGER' %}{{ member.salary_percentage }}{% endif %}{% endfor %}" 
+                                       placeholder="Enter Percentage" 
+                                       oninput="updatePercentageCounter()">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Designer (UI/UX)</td>
+                            <td>
+                                <input type="number" 
+                                       name="DESIGNER" 
+                                       value="{% for member in team_members %}{% if member.role == 'DESIGNER' %}{{ member.salary_percentage }}{% endif %}{% endfor %}" 
+                                       placeholder="Enter Percentage" 
+                                       oninput="updatePercentageCounter()">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Frontend Developer</td>
+                            <td>
+                                <input type="number" 
+                                       name="FRONTEND_DEV" 
+                                       value="{% for member in team_members %}{% if member.role == 'FRONTEND_DEV' %}{{ member.salary_percentage }}{% endif %}{% endfor %}" 
+                                       placeholder="Enter Percentage" 
+                                       oninput="updatePercentageCounter()">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Backend Developer</td>
+                            <td>
+                                <input type="number" 
+                                       name="BACKEND_DEV" 
+                                       value="{% for member in team_members %}{% if member.role == 'BACKEND_DEV' %}{{ member.salary_percentage }}{% endif %}{% endfor %}" 
+                                       placeholder="Enter Percentage" 
+                                       oninput="updatePercentageCounter()">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Quality Assurance Tester</td>
+                            <td>
+                                <input type="number" 
+                                       name="QA_TESTER" 
+                                       value="{% for member in team_members %}{% if member.role == 'QA_TESTER' %}{{ member.salary_percentage }}{% endif %}{% endfor %}" 
+                                       placeholder="Enter Percentage" 
+                                       oninput="updatePercentageCounter()">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="percentageCounter">Remaining Percentage: 100%</div>
+                <button type="submit" id="saveSalaryBtn" class="submit-btn" disabled>Save Salaries</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.project-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+}
+
+.invite-button {
+    background-color: #4040ff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.invite-button:hover {
+    background-color: #3333cc;
+}
+
+.view-controls {
+    display: flex;
+    gap: 12px;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+}
+
+.view-button {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: #666;
+    font-weight: 500;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.view-button.active {
+    color: #4040ff;
+}
+
+.view-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #4040ff;
+}
+
+.toggle-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.toggle-section[style*="block"] {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 16px 0;
+}
+
+th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+th {
+    padding: 16px;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+    white-space: nowrap;
+}
+
+td {
+    padding: 12px;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Enhanced Table Styles */
+.table-container {
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px;
+}
+
+/* Member Cell Styling */
+.member-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-name {
+    font-weight: 500;
+    color: #212529;
+}
+
+.member-email {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 2px;
+    display: block;
+}
+
+/* Status Badge Styling */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #e6f4ea;
+    color: #1e7e34;
+}
+
+.status-badge.inactive {
+    background-color: #fef3f2;
+    color: #b42318;
+}
+
+.status-badge.pending {
+    background-color: #fff8e6;
+    color: #b58407;
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 6px;
+    border: none;
+    background: none;
+    border-radius: 4px;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+/* View Button Enhancements */
+.view-button:hover {
+    color: #4040ff;
+}
+
+.view-button i {
+    margin-right: 8px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    background-color: white;
+}
+
+.close-modal {
+    position: absolute;
+    right: 24px;
+    top: 16px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.submit-btn {
+    background-color: #4040ff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    width: 100%;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background-color: #3333cc;
+}
+
+/* Add this new style for the expired badge */
+.status-badge.expired {
+    background-color: #f8d7da; /* Light red background */
+    color: #721c24; /* Dark red text */
+}
+
+/* Add this new style for the resend button */
+.action-btn.resend {
+    background-color: #ffc107; /* Yellow background */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-left:10px;
+}
+
+.action-btn.resend:hover {
+    background-color: #e0a800; /* Darker yellow on hover */
+}
+
+/* Style for the Set Salary button */
+.set-salary-button {
+    background-color: #28a745; /* Green background */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.set-salary-button:hover {
+    background-color: #218838; /* Darker green on hover */
+}
+
+.modal-body {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.title-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.warning-badge {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    cursor: help;
+}
+
+.warning-badge i {
+    color: #856404;
+}
+
+.warning-badge .tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.warning-badge:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.warning-badge .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.success-badge {
+    background-color: #e6f4ea;
+    color: #1e7e34;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    cursor: help;
+}
+
+.success-badge i {
+    color: #1e7e34;
+}
+.badge-inprogress {
+    background-color: #ffc107; /* Yellow for in progress */
+    color: white; /* Text color */
+}
+
+.badge-inactive {
+    background-color: #6c757d; /* Gray for inactive */
+    color: white;
+}
+
+.badge-cancelled {
+    background-color: #dc3545; /* Red for cancelled */
+    color: white;
+}
+
+.badge-completed {
+    background-color: #28a745; /* Green for completed */
+    color: white;
+}
+
+/* Add this new style for the accepted badge */
+.status-badge.accepted {
+    background-color: #28a745; /* Green background */
+    color: white; /* White text */
+}
+
+/* Add this new style for the pending badge */
+.status-badge.pending {
+    background-color: #ffc107; /* Yellow background */
+    color: white; /* White text */
+}
+
+/* Add this new style for the Pay Salary button */
+.pay-salary-btn {
+    background-color: #007bff; /* Blue background */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.pay-salary-btn:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.pay-salary-btn:disabled {
+    background-color: #6c757d; /* Gray background for disabled state */
+    cursor: not-allowed; /* Change cursor to indicate disabled */
+}
+
+.submit-btn:disabled {
+    background-color: red; /* Change background color to red when disabled */
+    color: white; /* Change text color to white for better contrast */
+    cursor: not-allowed; /* Change cursor to indicate disabled state */
+}
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Validation flags
+    var freelancer_error = false;
+    var email_error = false;
+    var role_error = false;
+
+    // Validate freelancer selection
+    function validateFreelancer() {
+        var freelancerSelect = $("#freelancer").val();
+        if (freelancerSelect === "") {
+            $("#freelancerError").show();
+            freelancer_error = true;
+        } else {
+            $("#freelancerError").hide();
+            freelancer_error = false;
+        }
+        toggleSubmitButton();
+    }
+
+    // Validate email
+    function validateEmail() {
+        var emailInput = $("#email").val();
+        var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if ($("#freelancer").val() === 'other') {
+            if (emailPattern.test(emailInput) && emailInput !== "") {
+                $("#emailError").hide();
+                email_error = false;
+            } else {
+                $("#emailError").html("Invalid Email id").show();
+                email_error = true;
+            }
+        } else {
+            $("#emailError").hide();
+            email_error = false;
+        }
+        toggleSubmitButton();
+    }
+
+    // Validate role selection
+    function validateRole() {
+        var roleSelect = $("#role").val();
+        if (roleSelect === "") {
+            $("#roleError").show();
+            role_error = true;
+        } else {
+            $("#roleError").hide();
+            role_error = false;
+        }
+        toggleSubmitButton();
+    }
+
+    // Toggle submit button based on validation
+    function toggleSubmitButton() {
+        if (!freelancer_error && !email_error && !role_error) {
+            $("#submitBtn").prop("disabled", false);
+            $("#formError").hide();
+        } else {
+            $("#submitBtn").prop("disabled", true);
+            $("#formError").show();
+        }
+    }
+
+    // Event listeners
+    $("#freelancer").on('change', function() {
+        toggleEmailInput();
+        validateFreelancer();
+    });
+    $("#email").on('keyup', validateEmail);
+    $("#role").on('change', validateRole);
+
+    // Validate on form submit
+    $("#inviteForm").on('submit', function(event) {
+        validateFreelancer();
+        validateEmail();
+        validateRole();
+
+        // Prevent form submission if there are validation errors
+        if (freelancer_error || email_error || role_error) {
+            event.preventDefault(); // Prevent form submission
+            $("#formError").html("Please fill the form correctly.").show();
+        }
+    });
+});
+</script>
+
+<script>
+function toggleSection(section) {
+    const sections = ['members', 'invitation', 'projects', 'dashboard'];
+    const buttons = document.querySelectorAll('.view-button');
+    
+    sections.forEach(sec => {
+        const element = document.getElementById(sec);
+        if (sec === section) {
+            element.style.display = element.style.display === 'none' ? 'block' : 'none';
+        } else {
+            element.style.display = 'none';
+        }
+    });
+
+    // Update active button state
+    buttons.forEach(button => {
+        if (button.textContent.toLowerCase().includes(section)) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
+}
+
+// Show first section by default
+window.onload = function() {
+    document.getElementById('members').style.display = 'block';
+    document.querySelector('.view-button').classList.add('active');
+}
+
+function openInviteModal() {
+    document.getElementById('inviteModal').style.display = 'block';
+}
+
+// Close modal when clicking the X button or outside the modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('inviteModal');
+    const closeBtn = document.querySelector('.close-modal');
+
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+});
+
+function resentInvitation(invitationId) {
+    fetch(`{% url 'freelancer:resend_invitation' 0 %}`.replace('0', invitationId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}' 
+        },
+        body: JSON.stringify({ invitation_id: invitationId })
+    })
+    .then(response => {
+        if (response.ok) {
+            // Use Toastr for success notification
+            toastr.success('Invitation resent successfully!');
+        } else {
+            // Use Toastr for error notification
+            toastr.error('Failed to resend invitation. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Use Toastr for error notification
+        toastr.error('An error occurred. Please try again.');
+    });
+}
+
+function openSalaryModal() {
+    document.getElementById('salaryModal').style.display = 'block';
+}
+
+function closeSalaryModal() {
+    document.getElementById('salaryModal').style.display = 'none';
+}
+
+function updatePercentageCounter() {
+    const percentageInputs = document.querySelectorAll('input[type="number"]');
+    let totalPercentage = 0;
+    const saveButton = document.getElementById('saveSalaryBtn');
+
+    percentageInputs.forEach(input => {
+        const value = parseInt(input.value) || 0;
+        totalPercentage += value;
+    });
+
+    const remainingPercentage = 100 - totalPercentage;
+    const counterElement = document.getElementById('percentageCounter');
+    
+    counterElement.textContent = `Remaining Percentage: ${remainingPercentage}%`;
+    
+    if (totalPercentage > 100) {
+        counterElement.style.color = '#b42318';  // Red for error
+        saveButton.disabled = true;
+    } else if (totalPercentage < 100) {
+        counterElement.style.color = '#b58407';  // Yellow for warning
+        saveButton.disabled = true;
+    } else {
+        counterElement.style.color = '#1e7e34';  // Green for success
+        saveButton.disabled = false;
+    }
+}
+
+function toggleEmailInput() {
+    const freelancerSelect = document.getElementById('freelancer');
+    const emailGroup = document.getElementById('emailGroup');
+    
+    if (freelancerSelect.value === 'other') {
+        emailGroup.style.display = 'block'; // Show email input
+    } else {
+        emailGroup.style.display = 'none'; // Hide email input
+    }
+}
+
+{% if all_roles_assigned %}
+    let chatroomCreated = false; // Flag to check if chatroom has been created
+
+    function createGroupChatroom() {
+        if (chatroomCreated) return; // Exit if chatroom is already created
+
+        const teamId = "{{ team.id }}"; 
+        if (!teamId) {
+            console.error('Team ID is not available.');
+            return; // Exit if teamId is not set
+        }
+        console.log(`Creating chatroom for team with ID: ${teamId}`);
+        fetch("{% url 'freelancer:create_chatroom' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ team_id: teamId }) 
+        })
+        .then(response => {
+            if (response.ok) {
+                chatroomCreated = true; // Set flag to true after successful creation
+            } else {
+                return response.text().then(text => {
+                    console.error('Error response:', text);
+                    toastr.error('Failed to create chatroom. ' + text);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toastr.error('An error occurred while creating the chatroom.');
+        });
+    }
+
+    createGroupChatroom();
+{% endif %}
+
+function paySalary(projectId) {
+    fetch(`{% url 'freelancer:pay_team_salaries' %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ project_id: projectId })
+    })
+    .then(response => {
+        if (response.ok) {
+            toastr.success('Salaries paid successfully for all team members based on project budget.');
+        } else {
+            return response.text().then(text => {
+                console.error('Error response:', text);
+                toastr.error('Failed to pay salaries: ' + text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('An error occurred while paying salaries. Please try again.');
+    });
+}
+</script>
+{% endblock %}

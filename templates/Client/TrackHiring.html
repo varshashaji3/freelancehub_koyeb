@@ -1,0 +1,505 @@
+{% extends 'Client/base.html'%}
+{% block 'client_content' %}
+
+<style>
+    .badge-inprogress {
+        background-color: #ffc107; /* Yellow for in progress */
+        color: white; /* Text color */
+    }
+    
+    .badge-inactive {
+        background-color: #6c757d; /* Gray for inactive */
+        color: white;
+    }
+    
+    .badge-cancelled {
+        background-color: #dc3545; /* Red for cancelled */
+        color: white;
+    }
+    
+    .badge-completed {
+        background-color: #28a745; /* Green for completed */
+        color: white;
+    }
+
+    .styled-btn {
+        background-color: #007bff; /* Blue background */
+        color: white; /* White text */
+        border: none; /* No border */
+        border-radius: 4px; /* Rounded corners */
+        padding: 8px 16px; /* Padding */
+        cursor: pointer; /* Pointer cursor on hover */
+        transition: background-color 0.3s; /* Smooth transition */
+    }
+
+    .styled-btn:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+    }
+
+    .button-container {
+        display: flex;
+        gap: 8px; /* Adjust spacing between buttons as needed */
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<div class="container">
+    <div class="header">
+        <div class="title-section">
+            <h1 class="project-title">Track Hiring</h1>
+        </div>
+    </div>
+
+    
+
+    <div id="invitations" class="toggle-section" style="display: block;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Freelancer </th>
+                        <th>Job Role</th>
+                        <th>Job Description</th>
+                        <th>Salary</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if invitation_details|length == 0 %}
+                    <tr>
+                        <td colspan="8" class="text-center">No records found.</td>
+                    </tr>
+                    {% else %}
+                    {% for detail in invitation_details %}
+                    <tr>
+                        <td class="member-cell">
+                            {% if detail.freelancer_profile_picture %}
+                                    <img src="{{ detail.freelancer_profile_picture }}" alt="" class="member-avatar">
+                                    {% endif %}
+                                    <div class="member-info">
+                                        <div class="member-name">{{ detail.freelancer_first_name }} {{ detail.freelancer_last_name }}</div>
+                                        <div class="member-email">{{ detail.freelancer.email }}</div>
+                                    </div>
+                        </td><td>{{ detail.job_role }}</td>
+                        <td>{{ detail.job_description }}</td>
+                        <td>{{ detail.compensation }}</td>
+                        <td>
+                            <span class="status-badge 
+                            {% if detail.status == 'Pending' %}badge-inprogress
+                            {% elif detail.status == 'Rejected' %}badge-cancelled
+                            {% elif detail.status == 'Accepted' %}badge-completed{% endif %}">
+                            {{ detail.status}}
+                        </span>
+                        </td>
+                        <td>
+                            <div class="button-container">
+                                {% if detail.status == 'Accepted' and not detail.meeting_link %}
+                                    <button class="action-btn schedule-btn styled-btn" onclick="openModal({{ detail.id }})">Schedule Meeting</button>
+                                {% elif detail.meeting_link %}
+                                    <button class="action-btn styled-btn" onclick="showMeetingDetails('{{ detail.meeting_link }}', '{{ detail.meeting_datetime }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                {% else %}
+                                
+                                    <button class="action-btn schedule-btn styled-btn" disabled title="Meeting scheduling is not available for this invitation.">Schedule Meeting</button>
+                                {% endif %}
+                                <!-- New toggle status button -->
+                                <select class="action-btn toggle-status-select styled-btn" onchange="toggleHiringStatus({{ detail.id }}, this.value)">
+                                    <option value="Hired" {% if detail.hiring_status == 'Hired' %}selected{% endif %}>Hired</option>
+                                    <option value="Pending" {% if detail.hiring_status == 'Pending' %}selected{% endif %}>Pending</option>
+                                    <option value="Not Hired" {% if detail.hiring_status == 'Not Hired' %}selected{% endif %}>Not Hired</option>
+                                </select>
+                                <input type="hidden" class="invitation-id" value="{{ detail.id }}">
+                            </div>
+                            <!-- Add action buttons here if needed -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+   
+</div>
+
+<!-- Modal Structure -->
+<div id="scheduleModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h2>Schedule Meeting</h2>
+        <div class="form-group">
+            <label for="meetingLink">Meeting Link</label>
+            <input type="text" id="meetingLink" placeholder="Enter meeting link">
+        </div>
+        <div class="form-group">
+            <label for="meetingDate">Select Date and Time</label>
+            <input type="datetime-local" id="meetingDate">
+        </div>
+        <input type="hidden" id="invitationId" value="">
+        <button class="submit-btn" onclick="submitMeeting()">Submit</button>
+    </div>
+</div>
+
+<style>
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.project-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+}
+
+.view-controls {
+    display: flex;
+    gap: 12px;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+}
+
+.view-button {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: #666;
+    font-weight: 500;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.view-button.active {
+    color: #4040ff;
+}
+
+.view-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #4040ff;
+}
+
+.toggle-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.toggle-section[style*="block"] {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 10px 0;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+th {
+    padding: 16px;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+    white-space: nowrap;
+}
+
+td {
+    padding: 12px;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Enhanced Table Styles */
+.table-container {
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px;
+}
+
+/* Member Cell Styling */
+.member-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-name {
+    font-weight: 500;
+    color: #212529;
+}
+
+.member-email {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 2px;
+    display: block;
+}
+
+/* Status Badge Styling */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge.accepted {
+    background-color: #e6f4ea;
+    color: #1e7e34;
+}
+
+.status-badge.rejected {
+    background-color: #fef3f2;
+    color: #b42318;
+}
+
+.status-badge.pending {
+    background-color: #fff8e6;
+    color: #b58407;
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+
+.view-button:hover {
+    color: #4040ff;
+}
+
+.view-button i {
+    margin-right: 8px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    background-color: white;
+}
+
+.close-modal {
+    position: absolute;
+    right: 24px;
+    top: 16px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.submit-btn {
+    background-color: #4040ff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    width: 100%;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background-color: #3333cc;
+}
+</style>
+
+<script>
+    // Function to open the modal
+    function openModal(invitationId) {
+        document.getElementById('scheduleModal').style.display = 'block';
+        document.getElementById('meetingLink').value = '';
+        document.getElementById('meetingDate').value = '';
+        document.getElementById('meetingLink').dataset.invitationId = invitationId;
+        document.getElementById('invitationId').value = invitationId;
+        console.log(invitationId)
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        document.getElementById('scheduleModal').style.display = 'none';
+    }
+
+    // Function to handle meeting submission
+    function submitMeeting() {
+        const meetingLink = document.getElementById('meetingLink').value;
+        const meetingDate = document.getElementById('meetingDate').value;
+        const invitationId = document.getElementById('invitationId').value;
+
+        console.log('Meeting Link:', meetingLink);
+        console.log('Meeting Date:', meetingDate);
+        console.log('Invitation ID:', invitationId);
+
+        $.ajax({
+            type: 'POST',
+            url: '{% url "client:submit_meeting" %}',  // Ensure this URL matches your Django URL configuration
+            data: {
+                invitationId: invitationId,
+                link: meetingLink,
+                date: meetingDate,
+                csrfmiddlewaretoken: '{{ csrf_token }}'  // Include CSRF token for security
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Freelancer hired successfully!');
+                    $('#scheduleModal').modal('hide'); // Hide the modal
+                } else {
+                    toastr.error('Error: ' + response.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error details:', xhr.responseText); // Log the error response for debugging
+                toastr.error('An error occurred: ' + error);
+            }
+        });
+    }
+
+    // Optional: Close the modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('scheduleModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Function to toggle hiring status
+    function toggleHiringStatus(invitationId, newStatus) {
+        // SweetAlert confirmation
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You are about to change the status to " + newStatus,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, change it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Proceed with the AJAX request to update the status
+                console.log('Toggling status for ID:', invitationId, 'to', newStatus);
+                const hiddenInvitationId = document.querySelector(`.invitation-id[value="${invitationId}"]`).value; // Get the hidden invitationId
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "client:toggle_hiring_status" %}',  // Corrected URL syntax
+                    data: {
+                        invitationId: hiddenInvitationId, // Use the hidden invitationId
+                        status: newStatus,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'  // Include CSRF token for security
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success('Status updated to ' + newStatus);
+                            // Optionally refresh the page or update the UI to reflect the new status
+                        } else {
+                            toastr.error('Error: ' + response.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error details:', xhr.responseText); // Log the error response for debugging
+                        toastr.error('An error occurred: ' + error);
+                    }
+                });
+            } else {
+                // Reset the select to the previous status if the user cancels
+                const selectElement = document.querySelector(`.toggle-status-select[data-id="${invitationId}"]`);
+                selectElement.value = currentStatus;
+            }
+        });
+    }
+
+    // Function to show meeting details using SweetAlert
+    function showMeetingDetails(meetingLink, meetingDate) {
+        Swal.fire({
+            title: 'Meeting Details',
+            html: `<p><strong>Meeting Link:</strong> <a href="${meetingLink}" target="_blank">${meetingLink}</a></p>
+                   <p><strong>Meeting Date:</strong> ${meetingDate}</p>`,
+            icon: 'info',
+            confirmButtonText: 'Close'
+        });
+    }
+</script>
+
+{% endblock %}

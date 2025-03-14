@@ -1,0 +1,295 @@
+{% extends 'freelancer/base.html' %}
+{% block 'freelancer_content' %}
+<style>
+    #repositories-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        padding: 10px;
+    }
+
+    .repository-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+        padding-top: 44px;
+        margin-bottom: 20px;
+    }
+
+    .category-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        overflow: hidden;
+        margin: 0;
+    }
+
+    .category-icon-wrapper i {
+        font-size: 20px;
+        color: #7C7C7C;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Updated category colors to match the provided color palette */
+    .category-web-development { background: #FFCAD4; }        /* Pink */
+
+    .category-front-end-development { background: #9EACCA; }    /* Pastel pink */
+    .category-back-end-development { background: #ECCBC9; }     /* Pastel rose */
+    .category-full-stack-development { background: #B4C9DD; }   /* Pastel green */
+    .category-mobile-development { background: #F1B3A1; }       /* Pastel yellow */
+    .category-android-development { background: #C0BFCF; }      /* Pastel mint */
+    .category-ios-development { background: #8391A3; }         /* Pastel purple */
+    .category-ui-ux-design { background: #D1B4C6; }           /* Pastel peach */
+    .category-graphic-design { background: #CBC4D6; }         /* Pastel cyan */
+    .category-logo-design { background: #A99ABD; }            /* Pastel orange */
+    .category-poster-design { background: #DEC3B3; }          /* Pastel violet */
+    .category-software-development { background: #DDD3D2; }    /* Pastel indigo */
+    .category-machine-learning { background: #B3B3B3; }       /* Pastel sky blue */
+    .category-artificial-intelligence { background: #D0D5EA; } /* Pastel lime */
+
+    .repository-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+        margin-bottom: 4px;
+    }
+
+    .project-title {
+        font-size: 14px;
+        color: #888;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .repository-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        font-size: 13px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+    }
+
+    .stat-item i {
+        color: #888;
+        font-size: 14px;
+    }
+
+    .progress-section {
+        margin-top: 12px;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .progress-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .days-left {
+        background: #FFE5EE;
+        color: #FF4081;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+
+    .progress-bar {
+        height: 6px;
+        background: #f0f0f0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #FF4081;
+        border-radius: 3px;
+    }
+
+    .member-profiles {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 8px 0;
+    }
+
+    .profile-picture {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+        margin-left: -8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-picture:first-child {
+        margin-left: 0;
+    }
+
+    .category-label {
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    /* Add new button styles */
+    .open-repo-button {
+        margin-top: auto;
+        padding: 8px 16px;
+        background: #FF4081;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        text-align: center;
+        transition: background-color 0.2s;
+    }
+
+    .open-repo-button:hover {
+        background: #E63672;
+        color: white;
+    }
+
+    /* Add heading styles */
+    .repositories-heading {
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+
+    .repositories-heading h1 {
+        font-size: 22px;
+        color: #333;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .repositories-heading p {
+        color: #666;
+        margin: 8px 0 0 0;
+        font-size: 16px;
+    }
+</style>
+
+<div class="repositories-heading">
+    <h1>Repositories</h1>
+    <p>Manage and track all your project repositories in one place</p>
+</div>
+
+<div id="repositories-container">
+    {% for repository in repositories %}
+    <div class="repository-card">
+        <div class="category-icon-wrapper category-{{ repository.project_category|lower|slugify }}">
+            {% if repository.project_category == 'Web Development' %}
+                <i class="fas fa-globe"></i>
+            {% elif repository.project_category == 'Front-End Development' %}
+                <i class="fas fa-code"></i>
+            {% elif repository.project_category == 'Back-End Development' %}
+                <i class="fas fa-server"></i>
+            {% elif repository.project_category == 'Full-Stack Development' %}
+                <i class="fas fa-layer-group"></i>
+            {% elif repository.project_category == 'Mobile Development' %}
+                <i class="fas fa-mobile-alt"></i>
+            {% elif repository.project_category == 'Android Development' %}
+                <i class="fab fa-android"></i>
+            {% elif repository.project_category == 'iOS Development' %}
+                <i class="fab fa-apple"></i>
+            {% elif repository.project_category == 'UI/UX Design' %}
+                <i class="fas fa-pencil-ruler"></i>
+            {% elif repository.project_category == 'Graphic Design' %}
+                <i class="fas fa-palette"></i>
+            {% elif repository.project_category == 'Logo Design' %}
+                <i class="fas fa-vector-square"></i>
+            {% elif repository.project_category == 'Poster Design' %}
+                <i class="fas fa-image"></i>
+            {% elif repository.project_category == 'Software Development' %}
+                <i class="fas fa-laptop-code"></i>
+            {% elif repository.project_category == 'Machine Learning Engineering' %}
+                <i class="fas fa-brain"></i>
+            {% elif repository.project_category == 'Artificial Intelligence' %}
+                <i class="fas fa-robot"></i>
+            {% else %}
+                <i class="fas fa-folder"></i>
+            {% endif %}
+        </div>
+        <div class="repository-title">{{ repository.repository.name }}</div>
+        <div class="project-title">{{ repository.project_title }}</div>
+
+
+        <div class="member-profiles">
+            {% if repository.members %}
+                {% for member in repository.members %}
+                <img src="{{ member.profile_picture }}" alt="Profile Picture" class="profile-picture">
+                {% endfor %}
+            {% endif %}
+            {% if repository.client_profile_picture %}
+                <img src="{{ repository.client_profile_picture }}" alt="Client Profile Picture" class="profile-picture">
+            {% endif %}
+        </div>
+
+        <!-- <div class="repository-stats">
+            <div class="stat-item">
+                <i class="fas fa-paperclip"></i>
+                <span>{{ repository.attachments_count|default:"0" }} Attach</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-clock"></i>
+                <span>{{ repository.duration|default:"0" }} Month</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-users"></i>
+                <span>{{ repository.members|length }} Members</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-comments"></i>
+                <span>{{ repository.comments_count|default:"0" }}</span>
+            </div>
+        </div> -->
+
+        <!-- <div class="progress-section">
+            <div class="progress-header">
+                <span class="progress-label">Progress</span>
+                <span class="days-left">{{ repository.days_left }} Days Left</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ repository.progress }}%;"></div>
+            </div>
+        </div> -->
+        
+        <!-- Add the button at the bottom of the card -->
+        <a href="{% url 'freelancer:view_repository' repository.repository_id %}"  class="open-repo-button">
+            <i class="fas fa-external-link-alt"></i> Open Repository
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
