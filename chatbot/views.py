@@ -1,20 +1,10 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 import json
 from .knowledge_base import FreelanceHubBot
 
 # Create your views here.
-
-# Load the pre-trained model and tokenizer
-model_name = "microsoft/DialoGPT-medium"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
-
-# Initialize chat history
-chat_history_ids = None
 
 # Initialize the bot
 bot = FreelanceHubBot()
