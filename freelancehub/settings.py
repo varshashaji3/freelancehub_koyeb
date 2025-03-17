@@ -116,33 +116,33 @@ WSGI_APPLICATION = 'freelancehub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'freelancehub',
-        'USER': 'varsha',
-        'PASSWORD': 'varsha',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
-    }
-}
-
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'freelancehub_strangergo',
-#         'USER': 'freelancehub_strangergo',
-#         'PASSWORD': '739cd32a2c6f51df7fce54d52ff39b748c14c6c8',
-#         'HOST': 'l9i84.h.filess.io',
-#         'PORT': '3305',
+#         'NAME': 'freelancehub',
+#         'USER': 'varsha',
+#         'PASSWORD': 'varsha',
+#         'HOST': 'localhost',
+#         'PORT': '3306',
 #         'OPTIONS': {
 #             'charset': 'utf8mb4',
 #         },
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'freelancehub_strangergo',
+        'USER': 'freelancehub_strangergo',
+        'PASSWORD': '739cd32a2c6f51df7fce54d52ff39b748c14c6c8',
+        'HOST': 'l9i84.h.filess.io',
+        'PORT': '3305',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
+    }
+}
 
 
 
