@@ -38,7 +38,6 @@ from django.db.models import Sum,Avg
 from django.db.models.functions import TruncMonth
 from django.urls import reverse  # Add this import
 
-from pytrends.request import TrendReq
 import pandas as pd
 import time
 
