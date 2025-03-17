@@ -38,6 +38,7 @@ from django.db.models import Sum,Avg
 from django.db.models.functions import TruncMonth
 from django.urls import reverse  # Add this import
 
+from pytrends.request import TrendReq
 import pandas as pd
 import time
 
@@ -4111,7 +4112,7 @@ def fetch_classcentral_courses(skill):
         soup = BeautifulSoup(response.text, "html.parser")
         courses = []
 
-        for course_card in soup.find_all("li", class_="bg-white", limit=3):  
+        for course_card in soup.find_all("li", class_="bg-white", limit=3):  # Fetch top 3 courses
             try:
                 title_elem = course_card.find("h2", class_="text-1")
                 if not title_elem:

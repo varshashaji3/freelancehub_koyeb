@@ -10,6 +10,7 @@
     text-align: center;
     color: black;
     transition: transform 0.3s, box-shadow 0.3s;
+    margin-bottom: 15px;
   }
 
   .info-card:hover {
@@ -47,10 +48,27 @@
     justify-content: center;
     align-items: center;
   }
+
+  /* Add responsive styles */
+  @media (max-width: 768px) {
+    .info-card {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    
+    .welcome-banner {
+      height: auto !important;
+      min-height: 150px;
+    }
+    
+    .project-card {
+      max-width: 100%;
+    }
+  }
 </style>
 <div class="row" style="margin-bottom: 20px;">
-  <div class="col-md-8">
-    <div class="row" style="background-color:white;padding:30px;border-radius:10px; position: relative; overflow: hidden;width: 620px;height: 150px;margin-left:2px;">
+  <div class="col-md-8 col-sm-12">
+    <div class="row welcome-banner" style="background-color:white;padding:30px;border-radius:10px; position: relative; overflow: hidden;width: 100%;height: 150px;margin-left:2px;">
       <div class="confetti-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('{% static 'img/confetti.gif' %}'); background-repeat: repeat; opacity: 0.6; pointer-events: none;"></div>
       <div class="col-md-12 grid-margin">
         <div class="row">
@@ -66,11 +84,11 @@
     </div>
   </div>
   
-  <div class="col-md-4">
+  <div class="col-md-4 col-sm-12">
     <div class="row">
      
 
-      <a href="{% url 'freelancer:view_project' %}" class="col-md-6 info-card">
+      <a href="{% url 'freelancer:view_project' %}" class="col-md-6 col-sm-6 col-12 info-card">
         <img src="{% static 'img/project.png' %}" alt="Projects">
         <h5 class="card-title">View Projects</h5>
        
@@ -95,14 +113,15 @@
 }
 
 .project-card {
-    flex: 1 1 250px;  /* Reduced from 300px */
-    max-width: 280px; /* Reduced from 350px */
+    flex: 1 1 250px;
+    max-width: 280px;
     border: none;
     border-radius: 8px;
     padding: 15px;
     background: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     transition: all 0.3s ease;
+    margin-bottom: 15px;
 }
 
 .project-card:hover {
@@ -197,6 +216,31 @@
 
 .btn-primary:hover {
     background-color: #2980b9;
+}
+
+/* Add responsive styles */
+@media (max-width: 768px) {
+  .recommended-projects-container {
+    justify-content: center;
+  }
+  
+  .project-card {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .carousel-control-prev, .carousel-control-next {
+    display: none;
+  }
+  
+  .table-responsive {
+    overflow-x: auto;
+  }
+  
+  canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
 }
 </style>
 
@@ -299,7 +343,7 @@
 
   <br>
 <div class="row">
-  <div class="col-md-8 grid-margin stretch-card">
+  <div class="col-md-8 col-sm-12 grid-margin stretch-card">
     <div class="card position-relative">
       <div class="card-body">
         <div id="detailedReports" class="carousel slide detailed-report-carousel position-static pt-2"
@@ -421,7 +465,7 @@
 
 
 
-  <div class="col-md-4 grid-margin stretch-card">
+  <div class="col-md-4 col-sm-12 grid-margin stretch-card">
     <div class="card position-relative">
       <div class="card-body">
         <h4 class="card-title">Project Status</h4>
@@ -437,7 +481,9 @@
           </div>
 
         </div>
-        <canvas id="projectStatusChart" height="100px" width="100px"></canvas>
+        <div class="chart-container" style="position: relative; height:250px; width:100%;">
+          <canvas id="projectStatusChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -450,15 +496,15 @@
 
 <br>
 <div class="row">
-  <div class="col-md-5 grid-margin stretch-card">
+  <div class="col-md-5 col-sm-12 grid-margin stretch-card">
     <div class="card position-relative">
       <div class="card-body">
         <h4 class="card-title">Earnings Chart</h4>
         <div class="justify-content-end d-flex">
-          
-      
         </div> <br>
-        <canvas id="earningsLineChart" width="400" height="400"></canvas>
+        <div class="chart-container" style="position: relative; height:300px; width:100%;">
+          <canvas id="earningsLineChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -466,7 +512,7 @@
   
 
 
-  <div class="col-md-7 grid-margin stretch-card">
+  <div class="col-md-7 col-sm-12 grid-margin stretch-card">
     <div class="card">
       <div class="card-body">
         <p class="card-title mb-0">Projects</p><br>
@@ -533,15 +579,15 @@
 
 <div class="row">
 
-<div class="col-md-5 grid-margin stretch-card">
+<div class="col-md-5 col-sm-12 grid-margin stretch-card">
     <div class="card position-relative">
       <div class="card-body">
         <h4 class="card-title">Top Clients by Revenue</h4>
         <div class="justify-content-end d-flex">
-          
-      
         </div> <br>
-        <canvas id="topClientsChart" width="400" height="400"></canvas>
+        <div class="chart-container" style="position: relative; height:300px; width:100%;">
+          <canvas id="topClientsChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -563,12 +609,14 @@ document.addEventListener('DOMContentLoaded', function() {
           datasets: [{
               label: 'Revenue',
               data: topClientsData.revenues,
-              backgroundColor: 'rgba(0, 0, 139, 0.6)', // Dark blue with opacity
+              backgroundColor: 'rgba(0, 0, 139)', // Dark blue with opacity
               borderColor: 'rgba(0, 0, 139, 1)', // Solid dark blue
               borderWidth: 1
           }]
       },
       options: {
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
               y: {
                   beginAtZero: true,
@@ -598,8 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
               },
               title: {
                   display: true,
-                  text: 'Top Clients by Revenue',
-                  color: '#00008B' // Dark blue
+                  text: 'Top Clients by Revenue'
               }
           }
       }
@@ -638,6 +685,8 @@ document.addEventListener('DOMContentLoaded', function() {
           }]
         },
         options: {
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: {
               beginAtZero: true
@@ -668,25 +717,26 @@ document.addEventListener('DOMContentLoaded', function() {
       datasets: [{
         label: 'Project Status',
         data: [{{ completed_projects }}, {{ not_completed_projects }}],
-    backgroundColor: [
-      '#8C3061',  // Color for Completed
-      '#522258'   // Color for Not Completed
-    ],
-    borderColor: [
-      '#8C3061',  // Border color for Completed
-      '#522258'   // Border color for Not Completed
-    ],
-    borderWidth: 1
-  }]
+        backgroundColor: [
+          '#8C3061',  // Color for Completed
+          '#522258'   // Color for Not Completed
+        ],
+        borderColor: [
+          '#8C3061',  // Border color for Completed
+          '#522258'   // Border color for Not Completed
+        ],
+        borderWidth: 1
+      }]
     },
-  options: {
-    responsive: true,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: {
-      legend: {
-        position: 'top',
+        legend: {
+          position: 'top',
         },
+      }
     }
-  }
   });
 </script>
 
@@ -708,6 +758,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,

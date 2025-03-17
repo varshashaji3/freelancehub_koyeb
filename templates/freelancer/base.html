@@ -235,6 +235,193 @@
     .floating {
         animation: float 2s ease-in-out infinite;
     }
+
+  /* Modern navbar styling */
+  .navbar {
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    height: 70px;
+  }
+  
+  .navbar-brand-wrapper {
+    background-color: #f8f9fa;
+    border-right: 1px solid #eee;
+    padding: 0 15px;
+    transition: all 0.3s ease;
+  }
+  
+  .navbar-brand img {
+    max-height: 40px;
+    transition: all 0.3s ease;
+  }
+  
+  /* User info styling */
+  .user-greeting {
+    margin-right: 15px;
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .user-greeting p {
+    margin-bottom: 0;
+  }
+  
+  /* Notification styling */
+  .count-indicator {
+    position: relative;
+  }
+  
+  .count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: bold;
+    background-color: #4B49AC;
+    color: white;
+    height: 18px;
+    width: 18px;
+  }
+  
+  /* Button styling */
+  #upgradeBtn {
+    background-color: #FFC107;
+    border: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  #upgradeBtn:hover {
+    background-color: #e0a800;
+    transform: translateY(-2px);
+  }
+  
+  #openToWorkBtn {
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  #openToWorkBtn:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Profile image styling */
+  .nav-profile .nav-link img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #eee;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-profile .nav-link:hover img {
+    border-color: #4B49AC;
+  }
+  
+  /* Dropdown styling */
+  .dropdown-menu {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 10px 0;
+  }
+  
+  .dropdown-item {
+    padding: 8px 20px;
+    transition: all 0.2s ease;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .dropdown-header {
+    font-weight: 600;
+    color: #4B49AC;
+  }
+  
+  /* Responsive navbar styles */
+  @media (max-width: 767px) {
+    .navbar {
+      height: 60px;
+    }
+    
+    .navbar-nav-right {
+      margin-right: 40px;
+    }
+    
+    #openToWorkBtn {
+      padding: 5px 10px;
+      margin-right: 8px;
+      font-size: 12px;
+    }
+    
+    .nav-item.dropdown .dropdown-menu {
+      width: 280px;
+      max-width: 90vw;
+    }
+    
+    .navbar-brand-wrapper {
+      width: 120px;
+      background-color: transparent;
+      border-right: none;
+    }
+    
+    .navbar-brand-wrapper img {
+      max-width: 100%;
+      height: auto;
+      max-height: 30px;
+    }
+    
+    .nav-profile .nav-link img {
+      width: 35px;
+      height: 35px;
+    }
+  }
+  
+  /* For very small screens */
+  @media (max-width: 480px) {
+    .navbar-nav-right {
+      margin-right: 30px;
+    }
+    
+    #openToWorkBtn {
+      padding: 4px 8px;
+      margin-right: 5px;
+    }
+    
+    .count {
+      height: 14px !important;
+      width: 14px !important;
+      font-size: 8px !important;
+    }
+    
+    .navbar-brand-wrapper {
+      width: 100px;
+    }
+  }
+
+  /* Additional responsive styles for user greeting */
+  @media (max-width: 991px) {
+    .user-greeting {
+      display: none !important; /* Force hide on smaller screens */
+    }
+    
+    /* Also target any element that might contain the greeting */
+    .navbar-nav-right .nav-item:contains("Hi,") {
+      display: none !important;
+    }
+    
+    /* Hide any paragraph with greeting text */
+    .navbar-nav p:contains("Hi,") {
+      display: none !important;
+    }
+  }
 </style>
 
 <script>
@@ -294,19 +481,20 @@
           <!-- Remove these items from here -->
         </ul>
         <ul class="navbar-nav navbar-nav-right">
-          <li class="nav-item">
-            <a href="{% url 'freelancer:plans' %}" id="upgradeBtn" class="btn btn-warning" style="margin-right: 15px;">
+          <!-- Upgrade button - hide on small screens -->
+          <li class="nav-item d-none d-sm-inline-block">
+            <a href="{% url 'freelancer:plans' %}" id="upgradeBtn" class="btn btn-warning" style="margin-right: -20px;">
               Upgrade
-          </a>
-        </li>
-          <!-- Add this new list item for the Open to Work button -->
+            </a>
+          </li>
+          <!-- Open to Work button - responsive text -->
           <li class="nav-item">
-              <button id="openToWorkBtn" class="btn {% if freelancer.is_open_to_work %}btn-success{% else %}btn-primary{% endif %}" style="margin-right: 15px;">
-                  <i class="fas fa-briefcase"></i> {% if freelancer.is_open_to_work %}Not Open to Work{% else %}Open to Work{% endif %}
-              </button>
+            <button id="openToWorkBtn" class="btn {% if freelancer.is_open_to_work %}btn-success{% else %}btn-primary{% endif %}" style="margin-right: -20px;">
+              <i class="fas fa-briefcase"></i> <span class="d-none d-md-inline">{% if freelancer.is_open_to_work %}Not Open to Work{% else %}Open to Work{% endif %}</span>
+            </button>
           </li>
           
-          <!-- Existing notification dropdown and other items -->
+          <!-- Notification dropdown - keep visible on all screens -->
           <li class="nav-item dropdown">
             <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-toggle="dropdown">
                 <i class="icon-bell mx-0"></i>
@@ -341,46 +529,37 @@
             </div>
         </li>
 
-
-
-
-          <li class="nav-item nav-search d-none d-lg-block">
-            <p>Hi ,{{ profile2.first_name }}</p>
-          </li>
-          <li class="nav-item nav-profile dropdown">
-            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-              {% if profile2.profile_picture %}
-              <img src="{{ profile2.profile_picture.url }}" alt="profile" />
-              {% else %}
-              <img src="{% static 'path/to/default/image.jpg' %}" alt="profile" />
-              {% endif %}
-            </a>
-            <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-              <a class="dropdown-item" href="{% url 'freelancer:account_settings' %}">
-                <i class="ti-user text-primary"></i>
-                Profile
-              </a>
-             
-              <a class="dropdown-item" href="{% url 'logout' %}">
-                <i class="ti-power-off text-primary"></i>
-                Logout
-              </a>
-
-            </div>
-          </li>
-          <!-- <li class="nav-item nav-settings d-none d-lg-flex">
-            <a class="nav-link" href="#">
-              <i class="icon-ellipsis"></i>
-            </a>
-          </li> -->
-          <!-- Add this new list item for the review button -->
+        <!-- User greeting - hide on small screens -->
+        <li class="nav-item nav-search d-none d-lg-block user-greeting" style="display: none !important;">
+          <p>Hi, {{ profile2.first_name }}</p>
+        </li> 
         
-        </ul>
-        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
-          data-toggle="offcanvas">
-          <span class="icon-menu"></span>
-        </button>
-      </div>
+        <!-- Profile dropdown - always visible -->
+        <li class="nav-item nav-profile dropdown" style="margin-right: -35px;">
+          <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
+            {% if profile2.profile_picture %}
+            <img src="{{ profile2.profile_picture.url }}" alt="profile" />
+            {% else %}
+            <img src="{% static 'path/to/default/image.jpg' %}" alt="profile" />
+            {% endif %}
+          </a>
+          <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+            <a class="dropdown-item" href="{% url 'freelancer:account_settings' %}">
+              <i class="ti-user text-primary"></i>
+              Profile
+            </a>
+            
+            <a class="dropdown-item" href="{% url 'logout' %}">
+              <i class="ti-power-off text-primary"></i>
+              Logout
+            </a>
+          </div>
+        </li>
+      </ul>
+      <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
+        data-toggle="offcanvas">
+        <span class="icon-menu"></span>
+      </button>
     </nav>
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">

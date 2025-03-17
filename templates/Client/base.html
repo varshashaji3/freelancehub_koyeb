@@ -113,21 +113,113 @@
       color: #0d3d70;
     }
 
+    /* Responsive navbar styles */
+    .navbar-menu-wrapper {
+      flex-wrap: wrap;
+    }
 
+    .count {
+      margin-left: 8px;
+      color: white;
+      font-size: 10px;
+      background-color: rgb(14, 14, 160);
+      height: 16px;
+      width: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
 
-    
+    .nav-greeting {
+      font-size: 14px;
+      color: #333;
+      margin-right: 10px;
+      white-space: nowrap;
+    }
 
+    @media (max-width: 991px) {
+      .navbar-brand-wrapper {
+        width: auto;
+      }
+      
+      .navbar-menu-wrapper {
+        width: auto;
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+      
+      .navbar-nav {
+        flex-direction: row;
+        align-items: center;
+      }
+      
+      .navbar-nav .nav-item {
+        margin-left: 5px;
+        margin-right: 5px;
+      }
+      
+      #upgradeBtn {
+        margin-right: 5px !important;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .navbar-brand-wrapper {
+        padding: 0 10px;
+      }
+      
+      .navbar-brand-wrapper .brand-logo {
+        display: none;
+      }
+      
+      .navbar-brand-wrapper .brand-logo-mini {
+        display: block !important;
+      }
+      
+      #upgradeBtn {
+        padding: 4px 8px;
+        font-size: 11px;
+        margin-right: 5px !important;
+      }
+      
+      .nav-greeting {
+        display: none; /* Hide the greeting on mobile */
+      }
+      
+      .navbar-nav .nav-item {
+        margin-left: 2px;
+        margin-right: 2px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .navbar-menu-wrapper {
+        padding-left: 5px;
+        padding-right: 5px;
+      }
+      
+      .navbar-nav .nav-item {
+        margin-left: 1px;
+        margin-right: 1px;
+      }
+      
+      .dropdown-menu {
+        width: 280px;
+        max-width: 90vw;
+        left: auto !important;
+        right: 0 !important;
+      }
+    }
 
     .modal {
-      
       left: 0;
       top: 0;
       background-color: rgba(0, 0, 0, 0.5); 
-      
     }
 
-  
- 
     .modal-content {
       background-color: #fefefe; /* White background */
       margin: 5% auto; /* Centered */
@@ -137,7 +229,6 @@
       max-width: 600px; /* Max width of the modal */
       border-radius: 8px; /* Rounded corners */
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
-     
     }
     
     /* Close Button */
@@ -188,40 +279,34 @@
       resize: vertical; /* Allow vertical resizing */
     }
     
-   
-    
-
     .star-rating {
       display: flex;
       flex-direction: row-reverse;
       justify-content: center;
       margin: 10px 0;
-  }
-  
-  .star-rating input[type="radio"] {
+    }
+    
+    .star-rating input[type="radio"] {
       display: none;
-  }
-  
-  .star-rating label {
+    }
+    
+    .star-rating label {
       font-size: 2rem;
       color: #ccc;
       cursor: pointer;
       transition: color 0.3s;
       margin: 0 5px;
-  }
-  
-  .star-rating label:hover,
-  .star-rating label:hover ~ label {
-      color: #ffca08;
-  }
-  
-  .star-rating input[type="radio"]:checked ~ label {
-      color: #ffca08;
-  }
-
-
+    }
     
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      color: #ffca08;
+    }
     
+    .star-rating input[type="radio"]:checked ~ label {
+      color: #ffca08;
+    }
+
     /* Submit Button */
     #reviewForm button {
       background-color: #4CAF50; /* Green background */
@@ -240,10 +325,221 @@
       background-color: #45a049; /* Darker green on hover */
     }
 
-  
-  </style>
+    /* Improved responsive navbar styles */
+    .navbar {
+      padding: 0;
+    }
 
-  
+    .navbar-brand-wrapper {
+      transition: width 0.3s;
+    }
+
+    .navbar-menu-wrapper {
+      flex-wrap: nowrap;
+      transition: all 0.3s;
+    }
+
+    .navbar-nav {
+      display: flex;
+      align-items: center;
+    }
+
+    .navbar-nav .nav-item {
+      margin: 0 4px;
+    }
+
+    #upgradeBtn {
+      padding: 6px 12px;
+      font-size: 13px;
+      margin-right: 10px;
+      white-space: nowrap;
+      transition: all 0.3s;
+    }
+
+    .nav-greeting {
+      font-size: 14px;
+      color: #333;
+      margin-right: 10px;
+      white-space: nowrap;
+      transition: all 0.3s;
+    }
+
+    .dropdown-menu {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Extra large screens */
+    @media (min-width: 1200px) {
+      .navbar-brand-wrapper {
+        width: 250px;
+      }
+      
+      .navbar-menu-wrapper {
+        width: calc(100% - 250px);
+      }
+    }
+
+    /* Large screens */
+    @media (max-width: 1199px) {
+      .navbar-brand-wrapper {
+        width: 220px;
+      }
+      
+      .navbar-menu-wrapper {
+        width: calc(100% - 220px);
+      }
+    }
+
+    /* Medium screens */
+    @media (max-width: 991px) {
+      .navbar-brand-wrapper {
+        width: 180px;
+      }
+      
+      .navbar-menu-wrapper {
+        width: calc(100% - 180px);
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+      
+      .navbar-nav {
+        margin-left: auto;
+      }
+      
+      #upgradeBtn {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+    }
+
+    /* Small screens */
+    @media (max-width: 767px) {
+      .navbar-brand-wrapper {
+        width: 120px;
+        padding: 0 10px;
+      }
+      
+      .navbar-menu-wrapper {
+        width: calc(100% - 120px);
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      
+      .navbar-brand-wrapper .brand-logo {
+        display: none;
+      }
+      
+      .navbar-brand-wrapper .brand-logo-mini {
+        display: block !important;
+      }
+      
+      #upgradeBtn {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      
+      .nav-greeting {
+        display: none;
+      }
+      
+      .navbar-nav .nav-item {
+        margin: 0 2px;
+      }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 480px) {
+      .navbar-brand-wrapper {
+        width: 80px;
+        padding: 0 5px;
+      }
+      
+      .navbar-menu-wrapper {
+        width: calc(100% - 80px);
+        padding-left: 5px;
+        padding-right: 5px;
+      }
+      
+      .dropdown-menu {
+        width: 280px;
+        max-width: 90vw;
+        left: auto !important;
+        right: 0 !important;
+      }
+      
+      .navbar-nav .nav-item {
+        margin: 0 1px;
+      }
+    }
+    
+    /* Ensure dropdown menus are properly positioned on mobile */
+    @media (max-width: 480px) {
+      .dropdown-menu-right {
+        right: -50px !important;
+      }
+    }
+    
+    /* Fix for notification dropdown on small screens */
+    @media (max-width: 380px) {
+      .preview-item {
+        padding: 8px 5px;
+      }
+      
+      .preview-thumbnail {
+        margin-right: 5px;
+      }
+      
+      .preview-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+      }
+      
+      .preview-subject {
+        font-size: 12px;
+      }
+      
+      .small-text {
+        font-size: 10px;
+      }
+      
+      .btn-sm {
+        padding: 2px 5px;
+        font-size: 10px;
+      }
+    }
+    
+    /* Fix for notification dropdown on small screens */
+    @media (max-width: 380px) {
+      .preview-item {
+        padding: 8px 5px;
+      }
+      
+      .preview-thumbnail {
+        margin-right: 5px;
+      }
+      
+      .preview-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+      }
+      
+      .preview-subject {
+        font-size: 12px;
+      }
+      
+      .small-text {
+        font-size: 10px;
+      }
+      
+      .btn-sm {
+        padding: 2px 5px;
+        font-size: 10px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -252,7 +548,8 @@
     <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
       <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
         <a class="navbar-brand brand-logo mr-5" href="#"><img src="{% static 'img/logo.png' %}" class="mr-2"
-            alt="logo" /></a><a class="navbar-brand brand-logo-mini" href="#"><img src="{% static 'img/logo2.png' %}"
+            alt="logo" /></a>
+        <a class="navbar-brand brand-logo-mini" href="#"><img src="{% static 'img/logo2.png' %}"
             alt="logo" /></a>
       </div>
       <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
@@ -260,19 +557,19 @@
           <span class="icon-menu"></span>
         </button>
         
-        <ul class="navbar-nav navbar-nav-right">
-          <li class="nav-item">
-            <a href="{% url 'client:plans' %}" id="upgradeBtn" class="btn btn-warning" style="margin-right: 15px;">
+        <ul class="navbar-nav navbar-nav-right ml-auto">
+          <li class="nav-item d-none d-sm-inline-block">
+            <a href="{% url 'client:plans' %}" id="upgradeBtn" class="btn btn-warning">
               Upgrade
-          </a>
-        </li>
+            </a>
+          </li>
           <li class="nav-item dropdown">
             <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#"
               data-toggle="dropdown">
               <i class="icon-bell mx-0"></i>
               <span
-                style="margin-left:8px;color:white; font-size:10px;background-color:rgb(14, 14, 160);margin-top:-5px;height:16px;width:16px;"
-                class="count">{{ unread_notifications.count }}</span>
+                class="count badge badge-primary badge-pill position-absolute"
+                style="top: 0; right: 0; font-size: 10px;">{{ unread_notifications.count }}</span>
             </a>
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list"
               aria-labelledby="notificationDropdown">
@@ -297,26 +594,22 @@
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-link">Mark as Read</button>
                   </form>
-
                 </div>
               </a>
               {% endfor %}
               {% if not unread_notifications %}
-              <p class="font-weight-light small-text mb-0 text-muted">No unread notifications</p>
+              <p class="font-weight-light small-text mb-0 text-muted p-3">No unread notifications</p>
               {% endif %}
             </div>
           </li>
 
-
-          {% if client.client_type == 'Individual' %}
-          <li class="nav-item nav-search d-none d-lg-block">
-            <span>Hi,{{ profile2.first_name }}</span>
+          <li class="nav-item d-none d-lg-block">
+            {% if client.client_type == 'Individual' %}
+              <span class="nav-greeting">Hi, {{ profile2.first_name }}</span>
+            {% else %}
+              <span class="nav-greeting">Hi, {{ client.company_name }}</span>
+            {% endif %}
           </li>
-          {% else %}
-          <li class="nav-item nav-search d-none d-lg-block">
-            <span>Hi,{{ client.company_name }}</span>
-          </li>
-          {% endif %}
           <li class="nav-item nav-profile dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
               {% if profile2.profile_picture %}
@@ -330,7 +623,7 @@
                 <i class="ti-profil text-primary"></i>
                 Profile
               </a>
-             
+              
               <a class="dropdown-item" href="{% url 'logout' %}">
                 <i class="ti-power-off text-primary"></i>
                 Logout

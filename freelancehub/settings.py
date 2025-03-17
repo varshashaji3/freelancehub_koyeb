@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure--vamx(qq%e)g0=)b$17dg&4kj0&%73+wztckvwmj8b%(8m3k-p
 DEBUG = True
 
 # ALLOWED_HOSTS = ['freelancehub-production.up.railway.app', 'localhost', '127.0.0.1']
-ALLOWED_HOSTS = ['freelancehub.koyeb.app', 'localhost', '127.0.0.1','freelancehub-5tya.onrender.com','freelancehub-production.up.railway.app']
+ALLOWED_HOSTS = ['freelancehub.koyeb.app', 'localhost', '127.0.0.1','freelancehub-5tya.onrender.com']
 
 
 
@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-
+    'chatbot',
 ]
 
 MIDDLEWARE = [
@@ -78,7 +78,7 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
 ROOT_URLCONF = 'freelancehub.urls'
 
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000','https://freelancehub.koyeb.app','https://freelancehub-5tya.onrender.com','https://freelancehub-production.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000','https://freelancehub.koyeb.app','https://freelancehub-5tya.onrender.com']
 
 TEMPLATES = [
     {
@@ -116,33 +116,33 @@ WSGI_APPLICATION = 'freelancehub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'freelancehub',
-#         'USER': 'varsha',
-#         'PASSWORD': 'varsha',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'charset': 'utf8mb4',
-#         },
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'freelancehub_strangergo',
-        'USER': 'freelancehub_strangergo',
-        'PASSWORD': '739cd32a2c6f51df7fce54d52ff39b748c14c6c8',
-        'HOST': 'l9i84.h.filess.io',
-        'PORT': '3305',
+        'NAME': 'freelancehub',
+        'USER': 'varsha',
+        'PASSWORD': 'varsha',
+        'HOST': 'localhost',
+        'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'freelancehub_strangergo',
+#         'USER': 'freelancehub_strangergo',
+#         'PASSWORD': '739cd32a2c6f51df7fce54d52ff39b748c14c6c8',
+#         'HOST': 'l9i84.h.filess.io',
+#         'PORT': '3305',
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#         },
+#     }
+# }
 
 
 
@@ -172,7 +172,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True  # Use TLS for a secure connection
 EMAIL_PORT = 587      # Port for TLS
 EMAIL_HOST_USER = 'freelancehub76@gmail.com'  # Your Gmail address
-EMAIL_HOST_PASSWORD = 'slekgltdnkmvbmha'  # Your app password (ensure it's correct)
+EMAIL_HOST_PASSWORD = 'dvpokhgveibeawrk'  # Your app password (ensure it's correct)
 DEFAULT_FROM_EMAIL = 'freelancehub76@gmail.com'
 
 
@@ -204,7 +204,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL='core.CustomUser'
 
-SITE_ID = 2
+SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -222,6 +222,7 @@ SOCIALACCOUNT_PROVIDERS = {
             'access_type': 'online',
         },
         'OAUTH_PKCE_ENABLED': True,
+        'REDIRECT_URI': 'http://127.0.0.1:8000/accounts/google/login/callback/',
     }
 }
 
@@ -245,4 +246,9 @@ RAZORPAY_KEY_SECRET = 'eIKYygydEQ5iicHT2N6gaVuC'
 
 # settings.py
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB (adjust as needed)
+
+# Base URL for the application
+BASE_URL = 'http://127.0.0.1:8000'  # For local development
+# If in production, change to your domain:
+# BASE_URL = 'https://yourdomain.com'
 

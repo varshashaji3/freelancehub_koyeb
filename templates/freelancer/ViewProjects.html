@@ -1,10 +1,6 @@
-
 {% extends 'freelancer/base.html' %}
 {% block 'freelancer_content' %}
 {% load static %}
-
-
-
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -74,78 +70,156 @@ function handleFilterChange() {
 </div>
 
 <style>
-    @media screen and (max-width: 567px) {
-        .card-text {
-          margin-bottom: 0.5em;
-        }
-    }
-    
     .card {
-        flex-direction: row;
-        margin-top: 25px;
-        margin-left: -15px;
-        height: 180px;
-        width: 1070px;
+        margin-top: 10px;
+        height: auto;
+        width: 100%;
+        border-radius: 6px;
+        overflow: hidden;
+        transition: transform 0.3s;
+        font-size: 0.85rem;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .card-body {
-        padding: 0.5em 1em;
+        padding: 0.5rem;
     }
-    .card1.card img {
-        max-width: 170px;
-        height: 100%;
-        border-bottom-left-radius: calc(0.25rem - 1px);
-        border-top-left-radius: calc(0.25rem - 1px);
+    .card img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
     }
     
     .card-container {
-        width: 1070px;
-        
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 10px;
+        width: 100%;
+    }
+
+    /* Responsive adjustments */
+    @media screen and (max-width: 1200px) {
+        .card-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    @media screen and (max-width: 992px) {
+        .card-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media screen and (max-width: 576px) {
+        .card-container {
+            grid-template-columns: 1fr;
+        }
     }
 
     .form-inline {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-  }
-  .form-inline .form-control {
-      margin-right: 10px;
-      margin-bottom: 10px;
-  }
-  .filter-section {
-      margin-right: 10px;
-  }
-  .btn-secondary {
-      background-color: #6c757d;
-      border: none;
-  }
-  .ml-2 {
-      margin-left: 10px;
-  }
+    }
+    .form-inline .form-control {
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    .filter-section {
+        margin-right: 10px;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+    }
+    .ml-2 {
+        margin-left: 10px;
+    }
+    
+    .card-title {
+        color: red;
+        font-size: 1rem;
+        margin-bottom: 5px;
+        line-height: 1.2;
+    }
+    
+    .project-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        color: white;
+        font-size: 0.8rem;
+        background-color: #ff0057;
+    }
+    
+    .card-footer {
+        display: flex;
+        justify-content: center;
+        padding: 6px;
+        background-color: rgba(0,0,0,0.03);
+    }
+    
+    .card-text, .budget, .card p {
+        margin-bottom: 0.3rem;
+        font-size: 0.8rem;
+        line-height: 1.2;
+    }
+    
+    .btn-primary {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .proposal-submitted {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dc3545;
+        border-radius: 4px;
+        color: #dc3545;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .proposal-submitted:hover {
+        background-color: #dc3545;
+        color: white;
+        text-decoration: none;
+    }
 </style>
 
 <div class="card-container">
     {% for detail in project_details %}
-    <div class="card1 card align-items-center" style="max-width: 1020px;">
-        <img src="{{ detail.client_register.profile_picture.url }}" alt="...">
+    {% if detail.project.project_status != 'Completed' and detail.project.project_status != 'In Progress' %}
+    <div class="card">
+        <img src="{{ detail.client_register.profile_picture.url }}" alt="Client Profile">
         <div class="card-body">
-            <h5 class="card-title" style="color:red;padding-top:20px;">{{ detail.project.title|default:'' }}</h5>
-            <p class="card-text">{{ detail.project.description|truncatechars:100|default:'' }}</p>
+            <h5 class="card-title">{{ detail.project.title|default:'' }}</h5>
+            <p class="card-text">{{ detail.project.description|truncatechars:50|default:'' }}</p>
             <p class="budget"><strong style="color:red;">Budget:</strong> {{ detail.project.budget|default:'' }}</p>
             <p class="budget"><strong style="color:red;">Category:</strong> {{ detail.project.category|default:'' }}</p>
-            <p><strong style="color:blueviolet;">Proposal End Date:</strong> {{ detail.project.end_date|default:'' }}</p><br>
+            <p><strong style="color:blueviolet;">End Date:</strong> {{ detail.project.end_date|default:'' }}</p> <br>
+
+            {% if detail.has_proposal %}
+                <a href="{% url 'freelancer:single_project_view' detail.project.id %}" class="proposal-submitted">
+                    <i class="fas fa-check-circle"></i> Proposal Submitted
+                </a>
+            {% else %}
+                <a href="{% url 'freelancer:single_project_view' detail.project.id %}" class="btn btn-primary">
+                    View More
+                </a>
+            {% endif %}
         </div>
-        {% if detail.has_proposal %}
-            <!-- Link when a proposal has been submitted (styled differently) -->
-            <a href="{% url 'freelancer:single_project_view' detail.project.id %}" style="margin-right:30px;color:red;">
-                Proposal Submitted
-            </a>
-        {% else %}
-            <!-- 'View More' button when no proposal has been submitted -->
-            <a href="{% url 'freelancer:single_project_view' detail.project.id %}" class="btn btn-primary" style="margin-right:30px;">
-                View More
-            </a>
-        {% endif %}
+        
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 
